@@ -17,7 +17,7 @@ class OpenApiConfiguration(buildProperties: BuildProperties) {
       Info()
         .title("Adjustments API")
         .version(version)
-        .description("API for ")
+        .description("API for adjustments CRUD operations")
         .contact(
           Contact()
             .name("HMPPS Digital Studio")
