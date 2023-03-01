@@ -1,4 +1,4 @@
-package uk.gov.justice.digital.hmpps.hmppsadjustmentsapi.health
+package uk.gov.justice.digital.hmpps.adjustments.api.health
 
 import org.slf4j.LoggerFactory
 import org.springframework.boot.context.event.ApplicationReadyEvent
