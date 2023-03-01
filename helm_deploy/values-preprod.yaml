@@ -2,8 +2,9 @@
 # Per environment values which override defaults in hmpps-adjustments-api/values.yaml
 
 generic-service:
+  replicaCount: 2
   ingress:
-    host: hmpps-adjustments-api-preprod.hmpps.service.justice.gov.uk
+    host: adjustments-api-preprod.hmpps.service.justice.gov.uk
 
   env:
     APPLICATIONINSIGHTS_CONFIGURATION_FILE: applicationinsights.dev.json
