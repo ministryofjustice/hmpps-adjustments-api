@@ -1,4 +1,4 @@
-package uk.gov.justice.digital.hmpps.hmppsadjustmentsapi.config
+package uk.gov.justice.digital.hmpps.adjustments.api.config
 
 import org.slf4j.LoggerFactory
 import org.springframework.http.HttpStatus
