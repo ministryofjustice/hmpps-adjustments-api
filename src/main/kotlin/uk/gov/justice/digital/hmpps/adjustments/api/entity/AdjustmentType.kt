@@ -1,17 +1,11 @@
 package uk.gov.justice.digital.hmpps.adjustments.api.entity
 
-import javax.persistence.Entity
-import javax.persistence.Id
-import javax.persistence.Table
-import javax.validation.constraints.NotNull
-
-@Entity
-@Table
-data class AdjustmentType (
-
-  @Id
-  val id: String,
-
-  @NotNull
-  val creditOrDebit: Boolean
-)
+enum class AdjustmentType {
+  REMAND,
+  TAGGED_BAIL,
+  UNLAWFULLY_AT_LARGE,
+  LAWFULLY_AT_LARGE,
+  ADDITIONAL_DAYS_AWARDED,
+  RESTORATION_OF_ADDITIONAL_DAYS_AWARDED,
+  ADDITIONAL_DAYS_SERVED
+}

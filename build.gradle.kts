@@ -26,7 +26,6 @@ dependencies {
   runtimeOnly("org.postgresql:postgresql:42.5.1")
   implementation("com.vladmihalcea:hibernate-types-52:2.20.0")
 
-
   // OpenAPI
   implementation("org.springdoc:springdoc-openapi-ui:1.6.13")
   implementation("org.springdoc:springdoc-openapi-data-rest:1.6.13")

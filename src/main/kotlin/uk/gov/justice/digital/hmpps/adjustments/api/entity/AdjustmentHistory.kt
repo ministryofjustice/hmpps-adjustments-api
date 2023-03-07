@@ -1,16 +1,14 @@
 package uk.gov.justice.digital.hmpps.adjustments.api.entity
 
 import com.fasterxml.jackson.databind.JsonNode
+import com.vladmihalcea.hibernate.type.json.internal.JacksonUtil
 import org.hibernate.annotations.Type
-import java.time.LocalDate
 import java.time.LocalDateTime
 import java.util.UUID
 import javax.persistence.Column
 import javax.persistence.Entity
 import javax.persistence.EnumType
 import javax.persistence.Enumerated
-import javax.persistence.GeneratedValue
-import javax.persistence.GenerationType
 import javax.persistence.Id
 import javax.persistence.JoinColumn
 import javax.persistence.ManyToOne
@@ -19,30 +17,28 @@ import javax.validation.constraints.NotNull
 
 @Entity
 @Table
-data class AdjustmentHistory (
+class AdjustmentHistory(
 
   @Id
   @NotNull
-  @org.hibernate.annotations.Type(type="org.hibernate.type.PostgresUUIDType")
-  val id: UUID,
+  val id: UUID = UUID.randomUUID(),
 
   @NotNull
   @ManyToOne(optional = false)
   @JoinColumn(name = "adjustmentId", nullable = false, updatable = false)
-  val adjustment: Adjustment,
+  var adjustment: Adjustment = Adjustment(),
 
   @NotNull
   @Enumerated(EnumType.STRING)
-  val changeType: ChangeType,
+  val changeType: ChangeType = ChangeType.CREATE,
 
-  @NotNull
   @Type(type = "json")
   @Column(columnDefinition = "jsonb")
-  val change: JsonNode,
+  val change: JsonNode = JacksonUtil.toJsonNode("{}"),
 
   @NotNull
-  val changeByUsername: String,
+  val changeByUsername: String = "",
 
   @NotNull
   val changeAt: LocalDateTime = LocalDateTime.now(),
-  )
+)
