@@ -3,7 +3,6 @@ package uk.gov.justice.digital.hmpps.adjustments.api.repository
 import com.google.common.collect.Lists
 import com.vladmihalcea.hibernate.type.json.internal.JacksonUtil
 import org.assertj.core.api.Assertions.assertThat
-import org.hibernate.exception.ConstraintViolationException
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.dao.DataIntegrityViolationException
