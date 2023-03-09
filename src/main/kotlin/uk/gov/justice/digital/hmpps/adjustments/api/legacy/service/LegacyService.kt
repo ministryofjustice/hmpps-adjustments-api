@@ -29,7 +29,7 @@ class LegacyService(
   @Transactional
   fun create(resource: LegacyAdjustment): LegacyAdjustmentCreatedResponse {
     val adjustment = Adjustment(
-      person = resource.offenderId ?: "",
+      person = resource.offenderId,
       daysCalculated = resource.adjustmentDays,
       days = resource.adjustmentDays,
       fromDate = resource.adjustmentFromDate,
