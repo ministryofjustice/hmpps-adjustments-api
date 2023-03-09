@@ -1,12 +1,10 @@
 package uk.gov.justice.digital.hmpps.adjustments.api.controller
 
 import com.fasterxml.jackson.databind.ObjectMapper
-import org.apache.catalina.filters.AddDefaultCharsetFilter.ResponseWrapper
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
-import org.springframework.core.ParameterizedTypeReference
 import org.springframework.http.MediaType
 import org.springframework.test.annotation.Rollback
 import org.springframework.test.web.reactive.server.expectBodyList
@@ -22,7 +20,6 @@ import uk.gov.justice.digital.hmpps.adjustments.api.respository.AdjustmentReposi
 import java.time.LocalDate
 import java.util.UUID
 import javax.transaction.Transactional
-
 
 @Transactional
 @Rollback
@@ -90,7 +87,6 @@ class AdjustmentControllerIntTest : IntegrationTestBase() {
 
     assertThat(result).isEqualTo(CREATED_ADJUSTMENT)
   }
-
 
   @Test
   fun findByPerson() {
