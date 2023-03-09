@@ -15,6 +15,7 @@ import uk.gov.justice.digital.hmpps.adjustments.api.legacy.model.LegacyAdjustmen
 import uk.gov.justice.digital.hmpps.adjustments.api.legacy.model.LegacyAdjustmentCreatedResponse
 import uk.gov.justice.digital.hmpps.adjustments.api.legacy.service.LegacyService
 import uk.gov.justice.digital.hmpps.adjustments.api.model.AdjustmentDto
+import uk.gov.justice.digital.hmpps.adjustments.api.model.CreateResponseDto
 import uk.gov.justice.digital.hmpps.adjustments.api.service.AdjustmentsService
 import java.util.UUID
 
@@ -30,9 +31,9 @@ class AdjustmentsController(
     return adjustmentsService.create(adjustment)
   }
 
-  @GetMapping("/offender/{offenderId}")
-  fun get(@PathVariable("offenderId") offenderId: String): List<AdjustmentDto> {
-    return adjustmentsService.getByOffenderId(adjustmentId)
+  @GetMapping("/person/{person}")
+  fun findByPerson(@PathVariable("person") person: String): List<AdjustmentDto> {
+    return adjustmentsService.findByPerson(person)
   }
   @GetMapping("/{adjustmentId}")
   fun get(@PathVariable("adjustmentId") adjustmentId: UUID): AdjustmentDto {
