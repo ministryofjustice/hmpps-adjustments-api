@@ -1,5 +1,5 @@
 package uk.gov.justice.digital.hmpps.adjustments.api.legacy.error
 
-class LegacyAdjustmentTypeMissmatch(
+class LegacyAdjustmentTypeMismatch(
   override var message: String,
 ) : Exception(message)

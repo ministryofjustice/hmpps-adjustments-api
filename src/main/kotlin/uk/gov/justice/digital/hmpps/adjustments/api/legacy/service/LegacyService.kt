@@ -10,7 +10,7 @@ import uk.gov.justice.digital.hmpps.adjustments.api.entity.AdjustmentHistory
 import uk.gov.justice.digital.hmpps.adjustments.api.entity.AdjustmentSource
 import uk.gov.justice.digital.hmpps.adjustments.api.entity.AdjustmentType
 import uk.gov.justice.digital.hmpps.adjustments.api.entity.ChangeType
-import uk.gov.justice.digital.hmpps.adjustments.api.legacy.error.LegacyAdjustmentTypeMissmatch
+import uk.gov.justice.digital.hmpps.adjustments.api.legacy.error.LegacyAdjustmentTypeMismatch
 import uk.gov.justice.digital.hmpps.adjustments.api.legacy.model.LegacyAdjustment
 import uk.gov.justice.digital.hmpps.adjustments.api.legacy.model.LegacyAdjustmentCreatedResponse
 import uk.gov.justice.digital.hmpps.adjustments.api.legacy.model.LegacyAdjustmentType
@@ -78,7 +78,7 @@ class LegacyService(
     val persistedLegacyData = objectMapper.convertValue(adjustment.legacyData, LegacyData::class.java)
     val persistedLegacyAdjustmentType = transform(adjustment.adjustmentType, persistedLegacyData)
     if (persistedLegacyAdjustmentType != resource.adjustmentType) {
-      throw LegacyAdjustmentTypeMissmatch("The provided adjustment type ${resource.adjustmentType} doesn't match the persisted type $persistedLegacyAdjustmentType")
+      throw LegacyAdjustmentTypeMismatch("The provided adjustment type ${resource.adjustmentType} doesn't match the persisted type $persistedLegacyAdjustmentType")
     }
     val change = objectToJson(adjustment.copy(adjustmentHistory = emptyList()))
     adjustment.apply {
