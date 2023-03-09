@@ -40,7 +40,7 @@ class LegacyControllerIntTest : IntegrationTestBase() {
       .headers(
         setAuthorisation()
       )
-      .header("Content-Type", "application/nomis_offence+json")
+      .header("Content-Type", LegacyController.LEGACY_CONTENT_TYPE)
       .bodyValue(CREATED_ADJUSTMENT)
       .exchange()
       .expectStatus().isCreated
@@ -78,7 +78,7 @@ class LegacyControllerIntTest : IntegrationTestBase() {
       .headers(
         setAuthorisation()
       )
-      .header("Content-Type", "application/nomis_offence+json")
+      .header("Content-Type", LegacyController.LEGACY_CONTENT_TYPE)
       .exchange()
       .expectStatus().isOk
       .returnResult(LegacyAdjustment::class.java)
@@ -95,7 +95,7 @@ class LegacyControllerIntTest : IntegrationTestBase() {
       .headers(
         setAuthorisation()
       )
-      .header("Content-Type", "application/nomis_offence+json")
+      .header("Content-Type", LegacyController.LEGACY_CONTENT_TYPE)
       .bodyValue(
         CREATED_ADJUSTMENT.copy(
           adjustmentFromDate = CREATED_ADJUSTMENT.adjustmentFromDate!!.minusYears(1),
@@ -127,13 +127,14 @@ class LegacyControllerIntTest : IntegrationTestBase() {
 
   @Test
   fun `update with different adjustment type`() {
+
     val result = webTestClient
       .put()
       .uri("/adjustments/$CREATED_ID")
       .headers(
         setAuthorisation()
       )
-      .header("Content-Type", "application/nomis_offence+json")
+      .header("Content-Type", LegacyController.LEGACY_CONTENT_TYPE)
       .bodyValue(
         CREATED_ADJUSTMENT.copy(
           adjustmentType = LegacyAdjustmentType.UAL
@@ -143,7 +144,6 @@ class LegacyControllerIntTest : IntegrationTestBase() {
       .expectStatus().isBadRequest
       .returnResult(ErrorResponse::class.java)
       .responseBody.blockFirst()!!
-
     assertThat(result.userMessage).isEqualTo("The provided adjustment type UAL doesn't match the persisted type UR")
   }
 
@@ -155,7 +155,7 @@ class LegacyControllerIntTest : IntegrationTestBase() {
       .headers(
         setAuthorisation()
       )
-      .header("Content-Type", "application/nomis_offence+json")
+      .header("Content-Type", LegacyController.LEGACY_CONTENT_TYPE)
       .exchange()
       .expectStatus().isOk
 
@@ -171,7 +171,7 @@ class LegacyControllerIntTest : IntegrationTestBase() {
       .headers(
         setAuthorisation()
       )
-      .header("Content-Type", "application/nomis_offence+json")
+      .header("Content-Type", LegacyController.LEGACY_CONTENT_TYPE)
       .exchange()
       .expectStatus().isNotFound
   }

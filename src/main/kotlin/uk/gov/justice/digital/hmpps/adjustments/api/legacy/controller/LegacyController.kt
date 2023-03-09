@@ -17,7 +17,7 @@ import uk.gov.justice.digital.hmpps.adjustments.api.legacy.service.LegacyService
 import java.util.UUID
 
 @RestController
-@RequestMapping("/adjustments", produces = [MediaType.APPLICATION_JSON_VALUE], consumes = ["application/nomis_offence+json"])
+@RequestMapping("/adjustments", produces = [MediaType.APPLICATION_JSON_VALUE], consumes = [LegacyController.LEGACY_CONTENT_TYPE])
 class LegacyController(
   val legacyService: LegacyService
 ) {
@@ -44,5 +44,9 @@ class LegacyController(
   @DeleteMapping("/{adjustmentId}")
   fun delete(@PathVariable("adjustmentId") adjustmentId: UUID) {
     legacyService.delete(adjustmentId)
+  }
+
+  companion object {
+    const val LEGACY_CONTENT_TYPE = "vnd.nomis-offence+json"
   }
 }
