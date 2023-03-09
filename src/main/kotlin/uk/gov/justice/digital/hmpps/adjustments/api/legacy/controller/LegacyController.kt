@@ -47,6 +47,6 @@ class LegacyController(
   }
 
   companion object {
-    const val LEGACY_CONTENT_TYPE = "vnd.nomis-offence+json"
+    const val LEGACY_CONTENT_TYPE = "application/vnd.nomis-offence+json"
   }
 }
