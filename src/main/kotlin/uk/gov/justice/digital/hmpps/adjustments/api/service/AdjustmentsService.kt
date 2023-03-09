@@ -37,7 +37,7 @@ class AdjustmentsService(
     }
     val daysCalculated: Int? = if (resource.toDate != null) (ChronoUnit.DAYS.between(resource.fromDate, resource.toDate) + 1).toInt() else null
     val adjustment = Adjustment(
-      person = resource.offenderId,
+      person = resource.person,
       daysCalculated = resource.days ?: daysCalculated!!,
       days = resource.days,
       fromDate = resource.fromDate,
@@ -128,7 +128,7 @@ class AdjustmentsService(
   private fun mapToDto(adjustment: Adjustment): AdjustmentDto {
     val legacyData = objectMapper.convertValue(adjustment.legacyData, LegacyData::class.java)
     return AdjustmentDto(
-      offenderId = adjustment.person,
+      person = adjustment.person,
       days = if (adjustment.toDate == null) adjustment.daysCalculated else adjustment.days,
       fromDate = adjustment.fromDate!!,
       toDate = adjustment.toDate,

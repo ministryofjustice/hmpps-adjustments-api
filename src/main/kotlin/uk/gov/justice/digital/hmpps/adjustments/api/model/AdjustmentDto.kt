@@ -6,7 +6,7 @@ import java.time.LocalDate
 data class AdjustmentDto(
   val bookingId: Long,
   val sentenceSequence: Int?,
-  val offenderId: String,
+  val person: String,
   val adjustmentType: AdjustmentType,
   val toDate: LocalDate?,
   val fromDate: LocalDate,

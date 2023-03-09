@@ -2,11 +2,9 @@ package uk.gov.justice.digital.hmpps.adjustments.api.controller
 
 import com.fasterxml.jackson.databind.ObjectMapper
 import org.assertj.core.api.Assertions.assertThat
-import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.http.MediaType
-import org.springframework.test.annotation.Rollback
 import org.springframework.test.web.reactive.server.expectBodyList
 import uk.gov.justice.digital.hmpps.adjustments.api.config.ErrorResponse
 import uk.gov.justice.digital.hmpps.adjustments.api.entity.AdjustmentSource
@@ -22,7 +20,6 @@ import java.util.UUID
 import javax.transaction.Transactional
 
 @Transactional
-@Rollback
 class AdjustmentControllerIntTest : IntegrationTestBase() {
 
   @Autowired
@@ -31,29 +28,10 @@ class AdjustmentControllerIntTest : IntegrationTestBase() {
   @Autowired
   private lateinit var objectMapper: ObjectMapper
 
-  private lateinit var CREATED_ID: UUID
-
-  @BeforeEach
-  fun setup() {
-    val result = webTestClient
-      .post()
-      .uri("/adjustments")
-      .headers(
-        setAuthorisation()
-      )
-      .contentType(MediaType.APPLICATION_JSON)
-      .bodyValue(CREATED_ADJUSTMENT)
-      .exchange()
-      .expectStatus().isCreated
-      .returnResult(CreateResponseDto::class.java)
-      .responseBody.blockFirst()!!
-    CREATED_ID = result.adjustmentId
-  }
-
   @Test
   fun create() {
-    // Created in @BeforeEach.
-    val adjustment = adjustmentRepository.findById(CREATED_ID).get()
+    val id = createAnAdjustment()
+    val adjustment = adjustmentRepository.findById(id).get()
 
     assertThat(adjustment.adjustmentType).isEqualTo(AdjustmentType.REMAND)
     assertThat(adjustment.adjustmentHistory).singleElement()
@@ -73,9 +51,10 @@ class AdjustmentControllerIntTest : IntegrationTestBase() {
 
   @Test
   fun get() {
+    val id = createAnAdjustment()
     val result = webTestClient
       .get()
-      .uri("/adjustments/$CREATED_ID")
+      .uri("/adjustments/$id")
       .headers(
         setAuthorisation()
       )
@@ -90,9 +69,11 @@ class AdjustmentControllerIntTest : IntegrationTestBase() {
 
   @Test
   fun findByPerson() {
+    val person = "BCDEFG"
+    createAnAdjustment(person)
     val result = webTestClient
       .get()
-      .uri("/adjustments?person=ABC123")
+      .uri("/adjustments?person=$person")
       .headers(
         setAuthorisation()
       )
@@ -104,14 +85,15 @@ class AdjustmentControllerIntTest : IntegrationTestBase() {
       .responseBody!!
 
     assertThat(result.size).isEqualTo(1)
-    assertThat(result[0]).isEqualTo(CREATED_ADJUSTMENT)
+    assertThat(result[0]).isEqualTo(CREATED_ADJUSTMENT.copy(person = person))
   }
 
   @Test
   fun update() {
+    val id = createAnAdjustment()
     webTestClient
       .put()
-      .uri("/adjustments/$CREATED_ID")
+      .uri("/adjustments/$id")
       .headers(
         setAuthorisation()
       )
@@ -125,7 +107,7 @@ class AdjustmentControllerIntTest : IntegrationTestBase() {
       .exchange()
       .expectStatus().isOk
 
-    val adjustment = adjustmentRepository.findById(CREATED_ID).get()
+    val adjustment = adjustmentRepository.findById(id).get()
 
     assertThat(adjustment.adjustmentType).isEqualTo(AdjustmentType.REMAND)
     assertThat(adjustment.adjustmentHistory.size).isEqualTo(2)
@@ -145,10 +127,11 @@ class AdjustmentControllerIntTest : IntegrationTestBase() {
 
   @Test
   fun `update with different adjustment type`() {
+    val id = createAnAdjustment()
 
     val result = webTestClient
       .put()
-      .uri("/adjustments/$CREATED_ID")
+      .uri("/adjustments/$id")
       .headers(
         setAuthorisation()
       )
@@ -167,9 +150,10 @@ class AdjustmentControllerIntTest : IntegrationTestBase() {
 
   @Test
   fun delete() {
+    val id = createAnAdjustment()
     webTestClient
       .delete()
-      .uri("/adjustments/$CREATED_ID")
+      .uri("/adjustments/$id")
       .headers(
         setAuthorisation()
       )
@@ -177,7 +161,7 @@ class AdjustmentControllerIntTest : IntegrationTestBase() {
       .exchange()
       .expectStatus().isOk
 
-    val adjustment = adjustmentRepository.findById(CREATED_ID).get()
+    val adjustment = adjustmentRepository.findById(id).get()
 
     assertThat(adjustment.deleted).isEqualTo(true)
     assertThat(adjustment.adjustmentHistory.size).isEqualTo(2)
@@ -185,7 +169,7 @@ class AdjustmentControllerIntTest : IntegrationTestBase() {
 
     webTestClient
       .get()
-      .uri("/adjustments/$CREATED_ID")
+      .uri("/adjustments/$id")
       .headers(
         setAuthorisation()
       )
@@ -194,11 +178,26 @@ class AdjustmentControllerIntTest : IntegrationTestBase() {
       .expectStatus().isNotFound
   }
 
+  private fun createAnAdjustment(person: String = "ABC123"): UUID {
+    return webTestClient
+      .post()
+      .uri("/adjustments")
+      .headers(
+        setAuthorisation()
+      )
+      .contentType(MediaType.APPLICATION_JSON)
+      .bodyValue(CREATED_ADJUSTMENT.copy(person = person))
+      .exchange()
+      .expectStatus().isCreated
+      .returnResult(CreateResponseDto::class.java)
+      .responseBody.blockFirst()!!.adjustmentId
+  }
+
   companion object {
     private val CREATED_ADJUSTMENT = AdjustmentDto(
       bookingId = 1,
       sentenceSequence = 1,
-      offenderId = "ABC123",
+      person = "ABC123",
       adjustmentType = AdjustmentType.REMAND,
       fromDate = LocalDate.now().minusDays(5),
       toDate = LocalDate.now().minusDays(2),

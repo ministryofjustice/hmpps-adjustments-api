@@ -34,19 +34,21 @@ class LegacyControllerIntTest : IntegrationTestBase() {
 
   @BeforeEach
   fun setup() {
-    val result = webTestClient
-      .post()
-      .uri("/adjustments")
-      .headers(
-        setAuthorisation()
-      )
-      .header("Content-Type", LegacyController.LEGACY_CONTENT_TYPE)
-      .bodyValue(CREATED_ADJUSTMENT)
-      .exchange()
-      .expectStatus().isCreated
-      .returnResult(LegacyAdjustmentCreatedResponse::class.java)
-      .responseBody.blockFirst()!!
-    CREATED_ID = result.adjustmentId
+    if (!this::CREATED_ID.isInitialized) {
+      val result = webTestClient
+        .post()
+        .uri("/adjustments")
+        .headers(
+          setAuthorisation()
+        )
+        .header("Content-Type", LegacyController.LEGACY_CONTENT_TYPE)
+        .bodyValue(CREATED_ADJUSTMENT)
+        .exchange()
+        .expectStatus().isCreated
+        .returnResult(LegacyAdjustmentCreatedResponse::class.java)
+        .responseBody.blockFirst()!!
+      CREATED_ID = result.adjustmentId
+    }
   }
 
   @Test
