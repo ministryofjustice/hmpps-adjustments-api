@@ -32,14 +32,14 @@ data class Adjustment(
   @NotNull
   val person: String = "",
 
-  val fromDate: LocalDate? = null,
+  var fromDate: LocalDate? = null,
 
-  val toDate: LocalDate? = null,
+  var toDate: LocalDate? = null,
 
-  val days: Int? = null,
+  var days: Int? = null,
 
   @NotNull
-  val daysCalculated: Int = -1,
+  var daysCalculated: Int = -1,
 
   @NotNull
   @Enumerated(EnumType.STRING)
@@ -47,17 +47,17 @@ data class Adjustment(
 
   @Type(type = "json")
   @Column(columnDefinition = "jsonb")
-  val legacyData: JsonNode? = JacksonUtil.toJsonNode("{}"),
+  var legacyData: JsonNode? = JacksonUtil.toJsonNode("{}"),
 
   @NotNull
-  val deleted: Boolean = false,
+  var deleted: Boolean = false,
 
   @OneToMany(mappedBy = "adjustment", cascade = [CascadeType.ALL])
-  val adjustmentHistory: List<AdjustmentHistory> = ArrayList(),
+  var adjustmentHistory: List<AdjustmentHistory> = ArrayList(),
 
   @NotNull
   @Enumerated(EnumType.STRING)
-  val source: AdjustmentSource = AdjustmentSource.DPS
+  var source: AdjustmentSource = AdjustmentSource.DPS
 
 ) {
 

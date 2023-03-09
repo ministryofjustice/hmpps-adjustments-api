@@ -41,4 +41,8 @@ class AdjustmentHistory(
 
   @NotNull
   val changeAt: LocalDateTime = LocalDateTime.now(),
+
+  @NotNull
+  @Enumerated(EnumType.STRING)
+  val changeSource: AdjustmentSource = AdjustmentSource.DPS
 )
