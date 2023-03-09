@@ -9,7 +9,7 @@ import org.springframework.web.bind.annotation.ExceptionHandler
 import org.springframework.web.bind.annotation.RestControllerAdvice
 import org.springframework.web.client.RestClientException
 import org.springframework.web.client.RestClientResponseException
-import uk.gov.justice.digital.hmpps.adjustments.api.legacy.error.LegacyAdjustmentTypeMismatch
+import uk.gov.justice.digital.hmpps.adjustments.api.error.ApiValidationException
 import javax.persistence.EntityNotFoundException
 import javax.validation.ValidationException
 
@@ -100,9 +100,9 @@ class AdjustmentsApiExceptionHandler {
       )
   }
 
-  @ExceptionHandler(LegacyAdjustmentTypeMismatch::class)
-  fun handleLegacyAdjustmentTypeMismatch(e: LegacyAdjustmentTypeMismatch): ResponseEntity<ErrorResponse> {
-    log.info("Missmatch of adjustment type exception: {}", e.message)
+  @ExceptionHandler(ApiValidationException::class)
+  fun handleApiValidationException(e: ApiValidationException): ResponseEntity<ErrorResponse> {
+    log.info("ApiValidationException: {}", e.message)
     return ResponseEntity
       .status(HttpStatus.BAD_REQUEST)
       .body(
