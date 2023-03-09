@@ -4,9 +4,11 @@ enum class LegacyAdjustmentType {
   ADA,
   RADA,
   UAL,
+  LAL,
+  SREM, // special remission
   RSR,
   RST,
-  TX,
-  S240A,
-  UR
+  RX, // remand
+  S240A, // tagged bail
+  UR // unused remand
 }

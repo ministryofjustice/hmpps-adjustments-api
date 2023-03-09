@@ -4,9 +4,10 @@ import java.time.LocalDate
 
 data class LegacyAdjustment(
   val bookingId: Long,
-  val sentenceSequence: Int,
+  val sentenceSequence: Int?,
+  val offenderId: String?,
   val adjustmentType: LegacyAdjustmentType,
-  val adjustmentDate: LocalDate,
+  val adjustmentDate: LocalDate?, // Is that toDate?
   val adjustmentFromDate: LocalDate?,
   val adjustmentDays: Int,
   val comment: String?,
