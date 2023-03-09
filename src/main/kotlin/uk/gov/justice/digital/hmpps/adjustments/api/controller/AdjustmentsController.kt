@@ -1,5 +1,6 @@
 package uk.gov.justice.digital.hmpps.adjustments.api.controller
 
+import org.springframework.data.jpa.repository.Query
 import org.springframework.http.HttpStatus
 import org.springframework.http.MediaType
 import org.springframework.web.bind.annotation.DeleteMapping
@@ -9,6 +10,7 @@ import org.springframework.web.bind.annotation.PostMapping
 import org.springframework.web.bind.annotation.PutMapping
 import org.springframework.web.bind.annotation.RequestBody
 import org.springframework.web.bind.annotation.RequestMapping
+import org.springframework.web.bind.annotation.RequestParam
 import org.springframework.web.bind.annotation.ResponseStatus
 import org.springframework.web.bind.annotation.RestController
 import uk.gov.justice.digital.hmpps.adjustments.api.legacy.model.LegacyAdjustment
@@ -31,8 +33,8 @@ class AdjustmentsController(
     return adjustmentsService.create(adjustment)
   }
 
-  @GetMapping("/person/{person}")
-  fun findByPerson(@PathVariable("person") person: String): List<AdjustmentDto> {
+  @GetMapping("", params = ["person"])
+  fun findByPerson(@RequestParam("person") person: String): List<AdjustmentDto> {
     return adjustmentsService.findByPerson(person)
   }
   @GetMapping("/{adjustmentId}")

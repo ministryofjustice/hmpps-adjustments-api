@@ -1,21 +1,20 @@
 package uk.gov.justice.digital.hmpps.adjustments.api.controller
 
 import com.fasterxml.jackson.databind.ObjectMapper
+import org.apache.catalina.filters.AddDefaultCharsetFilter.ResponseWrapper
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
+import org.springframework.core.ParameterizedTypeReference
 import org.springframework.http.MediaType
 import org.springframework.test.annotation.Rollback
+import org.springframework.test.web.reactive.server.expectBodyList
 import uk.gov.justice.digital.hmpps.adjustments.api.config.ErrorResponse
 import uk.gov.justice.digital.hmpps.adjustments.api.entity.AdjustmentSource
 import uk.gov.justice.digital.hmpps.adjustments.api.entity.AdjustmentType
 import uk.gov.justice.digital.hmpps.adjustments.api.entity.ChangeType
 import uk.gov.justice.digital.hmpps.adjustments.api.integration.IntegrationTestBase
-import uk.gov.justice.digital.hmpps.adjustments.api.legacy.controller.LegacyController
-import uk.gov.justice.digital.hmpps.adjustments.api.legacy.model.LegacyAdjustment
-import uk.gov.justice.digital.hmpps.adjustments.api.legacy.model.LegacyAdjustmentCreatedResponse
-import uk.gov.justice.digital.hmpps.adjustments.api.legacy.model.LegacyAdjustmentType
 import uk.gov.justice.digital.hmpps.adjustments.api.legacy.model.LegacyData
 import uk.gov.justice.digital.hmpps.adjustments.api.model.AdjustmentDto
 import uk.gov.justice.digital.hmpps.adjustments.api.model.CreateResponseDto
@@ -23,6 +22,7 @@ import uk.gov.justice.digital.hmpps.adjustments.api.respository.AdjustmentReposi
 import java.time.LocalDate
 import java.util.UUID
 import javax.transaction.Transactional
+
 
 @Transactional
 @Rollback
@@ -89,6 +89,26 @@ class AdjustmentControllerIntTest : IntegrationTestBase() {
       .responseBody.blockFirst()!!
 
     assertThat(result).isEqualTo(CREATED_ADJUSTMENT)
+  }
+
+
+  @Test
+  fun findByPerson() {
+    val result = webTestClient
+      .get()
+      .uri("/adjustments?person=ABC123")
+      .headers(
+        setAuthorisation()
+      )
+      .header("Content-Type", MediaType.APPLICATION_JSON_VALUE)
+      .exchange()
+      .expectStatus().isOk
+      .expectBodyList<AdjustmentDto>()
+      .returnResult()
+      .responseBody!!
+
+    assertThat(result.size).isEqualTo(1)
+    assertThat(result[0]).isEqualTo(CREATED_ADJUSTMENT)
   }
 
   @Test
