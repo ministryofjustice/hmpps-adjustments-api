@@ -19,7 +19,7 @@ import uk.gov.justice.digital.hmpps.adjustments.api.service.AdjustmentsService
 import java.util.UUID
 
 @RestController
-@RequestMapping("/adjustments", produces = [MediaType.APPLICATION_JSON_VALUE], consumes = [MediaType.APPLICATION_JSON_VALUE])
+@RequestMapping("/adjustments", produces = [MediaType.APPLICATION_JSON_VALUE])
 class AdjustmentsController(
   val adjustmentsService: AdjustmentsService
 ) {

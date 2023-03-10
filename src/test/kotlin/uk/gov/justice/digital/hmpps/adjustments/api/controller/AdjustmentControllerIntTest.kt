@@ -59,7 +59,6 @@ class AdjustmentControllerIntTest : IntegrationTestBase() {
       .headers(
         setAuthorisation()
       )
-      .header("Content-Type", MediaType.APPLICATION_JSON_VALUE)
       .exchange()
       .expectStatus().isOk
       .returnResult(AdjustmentDetailsDto::class.java)
@@ -78,7 +77,6 @@ class AdjustmentControllerIntTest : IntegrationTestBase() {
       .headers(
         setAuthorisation()
       )
-      .header("Content-Type", MediaType.APPLICATION_JSON_VALUE)
       .exchange()
       .expectStatus().isOk
       .expectBodyList<AdjustmentDto>()
@@ -99,7 +97,6 @@ class AdjustmentControllerIntTest : IntegrationTestBase() {
       .headers(
         setAuthorisation()
       )
-      .header("Content-Type", MediaType.APPLICATION_JSON_VALUE)
       .bodyValue(
         CREATED_ADJUSTMENT.copy(
           fromDate = CREATED_ADJUSTMENT.fromDate.minusYears(1),
@@ -137,7 +134,6 @@ class AdjustmentControllerIntTest : IntegrationTestBase() {
       .headers(
         setAuthorisation()
       )
-      .header("Content-Type", MediaType.APPLICATION_JSON_VALUE)
       .bodyValue(
         CREATED_ADJUSTMENT.copy(
           adjustmentType = AdjustmentType.UNLAWFULLY_AT_LARGE
@@ -159,7 +155,6 @@ class AdjustmentControllerIntTest : IntegrationTestBase() {
       .headers(
         setAuthorisation()
       )
-      .header("Content-Type", MediaType.APPLICATION_JSON_VALUE)
       .exchange()
       .expectStatus().isOk
 
@@ -175,7 +170,6 @@ class AdjustmentControllerIntTest : IntegrationTestBase() {
       .headers(
         setAuthorisation()
       )
-      .header("Content-Type", MediaType.APPLICATION_JSON_VALUE)
       .exchange()
       .expectStatus().isNotFound
   }
