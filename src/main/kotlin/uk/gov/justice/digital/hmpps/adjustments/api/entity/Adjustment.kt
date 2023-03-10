@@ -1,6 +1,7 @@
 package uk.gov.justice.digital.hmpps.adjustments.api.entity
 
 import com.fasterxml.jackson.databind.JsonNode
+import com.vladmihalcea.hibernate.type.basic.PostgreSQLEnumType
 import com.vladmihalcea.hibernate.type.json.JsonType
 import com.vladmihalcea.hibernate.type.json.internal.JacksonUtil
 import org.hibernate.annotations.Type
@@ -21,7 +22,8 @@ import javax.validation.constraints.NotNull
 @Entity
 @Table
 @TypeDefs(
-  TypeDef(name = "json", typeClass = JsonType::class)
+  TypeDef(name = "json", typeClass = JsonType::class),
+  TypeDef(name = "pgsql_enum", typeClass = PostgreSQLEnumType::class)
 )
 data class Adjustment(
 
@@ -57,6 +59,8 @@ data class Adjustment(
 
   @NotNull
   @Enumerated(EnumType.STRING)
+  @Column(columnDefinition = "source_systems")
+  @Type(type = "pgsql_enum")
   var source: AdjustmentSource = AdjustmentSource.DPS
 
 ) {
