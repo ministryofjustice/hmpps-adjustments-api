@@ -12,6 +12,7 @@ import uk.gov.justice.digital.hmpps.adjustments.api.entity.AdjustmentType
 import uk.gov.justice.digital.hmpps.adjustments.api.entity.ChangeType
 import uk.gov.justice.digital.hmpps.adjustments.api.integration.IntegrationTestBase
 import uk.gov.justice.digital.hmpps.adjustments.api.legacy.model.LegacyData
+import uk.gov.justice.digital.hmpps.adjustments.api.model.AdjustmentDetailsDto
 import uk.gov.justice.digital.hmpps.adjustments.api.model.AdjustmentDto
 import uk.gov.justice.digital.hmpps.adjustments.api.model.CreateResponseDto
 import uk.gov.justice.digital.hmpps.adjustments.api.respository.AdjustmentRepository
@@ -61,7 +62,7 @@ class AdjustmentControllerIntTest : IntegrationTestBase() {
       .header("Content-Type", MediaType.APPLICATION_JSON_VALUE)
       .exchange()
       .expectStatus().isOk
-      .returnResult(AdjustmentDto::class.java)
+      .returnResult(AdjustmentDetailsDto::class.java)
       .responseBody.blockFirst()!!
 
     assertThat(result).isEqualTo(CREATED_ADJUSTMENT)
@@ -70,7 +71,7 @@ class AdjustmentControllerIntTest : IntegrationTestBase() {
   @Test
   fun findByPerson() {
     val person = "BCDEFG"
-    createAnAdjustment(person)
+    val id = createAnAdjustment(person)
     val result = webTestClient
       .get()
       .uri("/adjustments?person=$person")
@@ -85,7 +86,8 @@ class AdjustmentControllerIntTest : IntegrationTestBase() {
       .responseBody!!
 
     assertThat(result.size).isEqualTo(1)
-    assertThat(result[0]).isEqualTo(CREATED_ADJUSTMENT.copy(person = person))
+    assertThat(result[0].id).isEqualTo(id)
+    assertThat(result[0].adjustment).isEqualTo(CREATED_ADJUSTMENT.copy(person = person))
   }
 
   @Test
@@ -194,7 +196,7 @@ class AdjustmentControllerIntTest : IntegrationTestBase() {
   }
 
   companion object {
-    private val CREATED_ADJUSTMENT = AdjustmentDto(
+    private val CREATED_ADJUSTMENT = AdjustmentDetailsDto(
       bookingId = 1,
       sentenceSequence = 1,
       person = "ABC123",

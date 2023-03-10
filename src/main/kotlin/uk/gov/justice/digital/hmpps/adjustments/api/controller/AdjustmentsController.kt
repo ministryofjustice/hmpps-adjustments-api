@@ -12,6 +12,7 @@ import org.springframework.web.bind.annotation.RequestMapping
 import org.springframework.web.bind.annotation.RequestParam
 import org.springframework.web.bind.annotation.ResponseStatus
 import org.springframework.web.bind.annotation.RestController
+import uk.gov.justice.digital.hmpps.adjustments.api.model.AdjustmentDetailsDto
 import uk.gov.justice.digital.hmpps.adjustments.api.model.AdjustmentDto
 import uk.gov.justice.digital.hmpps.adjustments.api.model.CreateResponseDto
 import uk.gov.justice.digital.hmpps.adjustments.api.service.AdjustmentsService
@@ -25,7 +26,7 @@ class AdjustmentsController(
 
   @PostMapping
   @ResponseStatus(HttpStatus.CREATED)
-  fun create(@RequestBody adjustment: AdjustmentDto): CreateResponseDto {
+  fun create(@RequestBody adjustment: AdjustmentDetailsDto): CreateResponseDto {
     return adjustmentsService.create(adjustment)
   }
 
@@ -34,14 +35,14 @@ class AdjustmentsController(
     return adjustmentsService.findByPerson(person)
   }
   @GetMapping("/{adjustmentId}")
-  fun get(@PathVariable("adjustmentId") adjustmentId: UUID): AdjustmentDto {
+  fun get(@PathVariable("adjustmentId") adjustmentId: UUID): AdjustmentDetailsDto {
     return adjustmentsService.get(adjustmentId)
   }
 
   @PutMapping("/{adjustmentId}")
   fun update(
     @PathVariable("adjustmentId") adjustmentId: UUID,
-    @RequestBody adjustment: AdjustmentDto
+    @RequestBody adjustment: AdjustmentDetailsDto
   ) {
     adjustmentsService.update(adjustmentId, adjustment)
   }
