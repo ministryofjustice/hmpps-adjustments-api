@@ -17,7 +17,7 @@ import uk.gov.justice.digital.hmpps.adjustments.api.legacy.service.LegacyService
 import java.util.UUID
 
 @RestController
-@RequestMapping("/adjustments", produces = [MediaType.APPLICATION_JSON_VALUE], consumes = [LegacyController.LEGACY_CONTENT_TYPE])
+@RequestMapping("/legacy/adjustments", produces = [MediaType.APPLICATION_JSON_VALUE], consumes = [LegacyController.LEGACY_CONTENT_TYPE])
 class LegacyController(
   val legacyService: LegacyService
 ) {

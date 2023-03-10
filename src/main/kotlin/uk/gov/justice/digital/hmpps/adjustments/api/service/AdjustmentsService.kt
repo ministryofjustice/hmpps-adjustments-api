@@ -13,6 +13,7 @@ import uk.gov.justice.digital.hmpps.adjustments.api.entity.AdjustmentSource
 import uk.gov.justice.digital.hmpps.adjustments.api.entity.ChangeType
 import uk.gov.justice.digital.hmpps.adjustments.api.error.ApiValidationException
 import uk.gov.justice.digital.hmpps.adjustments.api.legacy.model.LegacyData
+import uk.gov.justice.digital.hmpps.adjustments.api.model.AdjustmentDetailsDto
 import uk.gov.justice.digital.hmpps.adjustments.api.model.AdjustmentDto
 import uk.gov.justice.digital.hmpps.adjustments.api.model.CreateResponseDto
 import uk.gov.justice.digital.hmpps.adjustments.api.respository.AdjustmentRepository
@@ -31,7 +32,7 @@ class AdjustmentsService(
       ?: throw IllegalStateException("User is not authenticated")
 
   @Transactional
-  fun create(resource: AdjustmentDto): CreateResponseDto {
+  fun create(resource: AdjustmentDetailsDto): CreateResponseDto {
     if (resource.toDate == null && resource.days == null) {
       throw ApiValidationException("resource must have either toDate or days.")
     }
@@ -57,7 +58,7 @@ class AdjustmentsService(
     return CreateResponseDto(adjustmentRepository.save(adjustment).id)
   }
 
-  fun get(adjustmentId: UUID): AdjustmentDto {
+  fun get(adjustmentId: UUID): AdjustmentDetailsDto {
     val adjustment = adjustmentRepository.findById(adjustmentId)
       .map { if (it.deleted) null else it }
       .orElseThrow {
@@ -69,11 +70,11 @@ class AdjustmentsService(
   fun findByPerson(person: String): List<AdjustmentDto> {
     return adjustmentRepository.findByPerson(person)
       .filter { !it.deleted }
-      .map(this::mapToDto)
+      .map { AdjustmentDto(it.id, mapToDto(it)) }
   }
 
   @Transactional
-  fun update(adjustmentId: UUID, resource: AdjustmentDto) {
+  fun update(adjustmentId: UUID, resource: AdjustmentDetailsDto) {
     val adjustment = adjustmentRepository.findById(adjustmentId)
       .orElseThrow {
         EntityNotFoundException("No adjustment found with id $adjustmentId")
@@ -125,9 +126,9 @@ class AdjustmentsService(
     return JacksonUtil.toJsonNode(objectMapper.writeValueAsString(subject))
   }
 
-  private fun mapToDto(adjustment: Adjustment): AdjustmentDto {
+  private fun mapToDto(adjustment: Adjustment): AdjustmentDetailsDto {
     val legacyData = objectMapper.convertValue(adjustment.legacyData, LegacyData::class.java)
-    return AdjustmentDto(
+    return AdjustmentDetailsDto(
       person = adjustment.person,
       days = if (adjustment.toDate == null) adjustment.daysCalculated else adjustment.days,
       fromDate = adjustment.fromDate!!,

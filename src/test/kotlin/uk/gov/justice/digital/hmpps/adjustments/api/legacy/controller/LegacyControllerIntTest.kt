@@ -37,7 +37,7 @@ class LegacyControllerIntTest : IntegrationTestBase() {
     if (!this::CREATED_ID.isInitialized) {
       val result = webTestClient
         .post()
-        .uri("/adjustments")
+        .uri("/legacy/adjustments")
         .headers(
           setAuthorisation()
         )
@@ -76,7 +76,7 @@ class LegacyControllerIntTest : IntegrationTestBase() {
   fun get() {
     val result = webTestClient
       .get()
-      .uri("/adjustments/$CREATED_ID")
+      .uri("/legacy/adjustments/$CREATED_ID")
       .headers(
         setAuthorisation()
       )
@@ -93,7 +93,7 @@ class LegacyControllerIntTest : IntegrationTestBase() {
   fun update() {
     webTestClient
       .put()
-      .uri("/adjustments/$CREATED_ID")
+      .uri("/legacy/adjustments/$CREATED_ID")
       .headers(
         setAuthorisation()
       )
@@ -132,7 +132,7 @@ class LegacyControllerIntTest : IntegrationTestBase() {
 
     val result = webTestClient
       .put()
-      .uri("/adjustments/$CREATED_ID")
+      .uri("/legacy/adjustments/$CREATED_ID")
       .headers(
         setAuthorisation()
       )
@@ -153,7 +153,7 @@ class LegacyControllerIntTest : IntegrationTestBase() {
   fun delete() {
     webTestClient
       .delete()
-      .uri("/adjustments/$CREATED_ID")
+      .uri("/legacy/adjustments/$CREATED_ID")
       .headers(
         setAuthorisation()
       )
@@ -169,7 +169,7 @@ class LegacyControllerIntTest : IntegrationTestBase() {
 
     webTestClient
       .get()
-      .uri("/adjustments/$CREATED_ID")
+      .uri("/legacy/adjustments/$CREATED_ID")
       .headers(
         setAuthorisation()
       )
