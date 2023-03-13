@@ -1,8 +1,12 @@
 package uk.gov.justice.digital.hmpps.adjustments.api.entity
 
 import com.fasterxml.jackson.databind.JsonNode
+import com.vladmihalcea.hibernate.type.basic.PostgreSQLEnumType
+import com.vladmihalcea.hibernate.type.json.JsonType
 import com.vladmihalcea.hibernate.type.json.internal.JacksonUtil
 import org.hibernate.annotations.Type
+import org.hibernate.annotations.TypeDef
+import org.hibernate.annotations.TypeDefs
 import java.time.LocalDateTime
 import java.util.UUID
 import javax.persistence.Column
@@ -17,6 +21,10 @@ import javax.validation.constraints.NotNull
 
 @Entity
 @Table
+@TypeDefs(
+  TypeDef(name = "json", typeClass = JsonType::class),
+  TypeDef(name = "pgsql_enum", typeClass = PostgreSQLEnumType::class)
+)
 class AdjustmentHistory(
 
   @Id
@@ -30,6 +38,8 @@ class AdjustmentHistory(
 
   @NotNull
   @Enumerated(EnumType.STRING)
+  @Column(columnDefinition = "change_types")
+  @Type(type = "pgsql_enum")
   val changeType: ChangeType = ChangeType.CREATE,
 
   @Type(type = "json")
@@ -44,5 +54,7 @@ class AdjustmentHistory(
 
   @NotNull
   @Enumerated(EnumType.STRING)
+  @Column(columnDefinition = "source_systems")
+  @Type(type = "pgsql_enum")
   val changeSource: AdjustmentSource = AdjustmentSource.DPS
 )
