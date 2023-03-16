@@ -60,7 +60,8 @@ class AdjustmentsController(
   )
   fun findByPerson(
     @Parameter(required = true, description = "The noms ID of the person")
-    @RequestParam("person") person: String): List<AdjustmentDto> {
+    @RequestParam("person") person: String
+  ): List<AdjustmentDto> {
     return adjustmentsService.findByPerson(person)
   }
   @GetMapping("/{adjustmentId}")
@@ -77,7 +78,8 @@ class AdjustmentsController(
   )
   fun get(
     @Parameter(required = true, description = "The adjustment UUID")
-    @PathVariable("adjustmentId") adjustmentId: UUID): AdjustmentDetailsDto {
+    @PathVariable("adjustmentId") adjustmentId: UUID
+  ): AdjustmentDetailsDto {
     return adjustmentsService.get(adjustmentId)
   }
 
@@ -115,7 +117,8 @@ class AdjustmentsController(
   )
   fun delete(
     @Parameter(required = true, description = "The adjustment UUID")
-    @PathVariable("adjustmentId") adjustmentId: UUID) {
+    @PathVariable("adjustmentId") adjustmentId: UUID
+  ) {
     adjustmentsService.delete(adjustmentId)
   }
 }

@@ -58,7 +58,8 @@ class LegacyController(
   )
   fun get(
     @Parameter(required = true, description = "The adjustment UUID")
-    @PathVariable("adjustmentId") adjustmentId: UUID): LegacyAdjustment {
+    @PathVariable("adjustmentId") adjustmentId: UUID
+  ): LegacyAdjustment {
     return legacyService.get(adjustmentId)
   }
 
@@ -96,7 +97,8 @@ class LegacyController(
   )
   fun delete(
     @Parameter(required = true, description = "The adjustment UUID")
-    @PathVariable("adjustmentId") adjustmentId: UUID) {
+    @PathVariable("adjustmentId") adjustmentId: UUID
+  ) {
     legacyService.delete(adjustmentId)
   }
 

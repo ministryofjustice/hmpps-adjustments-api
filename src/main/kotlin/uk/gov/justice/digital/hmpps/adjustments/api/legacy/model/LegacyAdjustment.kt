@@ -3,7 +3,6 @@ package uk.gov.justice.digital.hmpps.adjustments.api.legacy.model
 import io.swagger.v3.oas.annotations.media.Schema
 import java.time.LocalDate
 
-
 @Schema(description = "An adjustment structured for synchronising with the NOMIS system")
 data class LegacyAdjustment(
   @Schema(description = "The NOMIS booking ID of the adjustment")
