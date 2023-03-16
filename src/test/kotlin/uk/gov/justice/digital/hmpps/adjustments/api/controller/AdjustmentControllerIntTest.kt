@@ -64,7 +64,7 @@ class AdjustmentControllerIntTest : IntegrationTestBase() {
       .returnResult(AdjustmentDetailsDto::class.java)
       .responseBody.blockFirst()!!
 
-    assertThat(result).isEqualTo(CREATED_ADJUSTMENT)
+    assertThat(result).isEqualTo(CREATED_ADJUSTMENT.copy(days = 4))
   }
 
   @Test
@@ -85,7 +85,7 @@ class AdjustmentControllerIntTest : IntegrationTestBase() {
 
     assertThat(result.size).isEqualTo(1)
     assertThat(result[0].id).isEqualTo(id)
-    assertThat(result[0].adjustment).isEqualTo(CREATED_ADJUSTMENT.copy(person = person))
+    assertThat(result[0].adjustment).isEqualTo(CREATED_ADJUSTMENT.copy(person = person, days = 4))
   }
 
   @Test
