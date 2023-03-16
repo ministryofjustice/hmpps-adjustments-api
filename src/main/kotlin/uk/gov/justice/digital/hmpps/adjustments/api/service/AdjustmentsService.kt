@@ -130,7 +130,7 @@ class AdjustmentsService(
     val legacyData = objectMapper.convertValue(adjustment.legacyData, LegacyData::class.java)
     return AdjustmentDetailsDto(
       person = adjustment.person,
-      days = if (adjustment.toDate == null) adjustment.daysCalculated else adjustment.days,
+      days = adjustment.daysCalculated,
       fromDate = adjustment.fromDate!!,
       toDate = adjustment.toDate,
       adjustmentType = adjustment.adjustmentType,

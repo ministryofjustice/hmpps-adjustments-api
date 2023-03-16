@@ -1,5 +1,10 @@
 package uk.gov.justice.digital.hmpps.adjustments.api.controller
 
+import io.swagger.v3.oas.annotations.Operation
+import io.swagger.v3.oas.annotations.Parameter
+import io.swagger.v3.oas.annotations.responses.ApiResponse
+import io.swagger.v3.oas.annotations.responses.ApiResponses
+import io.swagger.v3.oas.annotations.tags.Tag
 import org.springframework.http.HttpStatus
 import org.springframework.http.MediaType
 import org.springframework.web.bind.annotation.DeleteMapping
@@ -20,27 +25,76 @@ import java.util.UUID
 
 @RestController
 @RequestMapping("/adjustments", produces = [MediaType.APPLICATION_JSON_VALUE])
+@Tag(name = "adjustment-controller", description = "CRUD operations for adjustments.")
 class AdjustmentsController(
   val adjustmentsService: AdjustmentsService
 ) {
 
   @PostMapping
   @ResponseStatus(HttpStatus.CREATED)
+  @Operation(
+    summary = "Create an adjustments",
+    description = "Create an adjustment."
+  )
+  @ApiResponses(
+    value = [
+      ApiResponse(responseCode = "201", description = "Adjustment created"),
+      ApiResponse(responseCode = "401", description = "Unauthorised, requires a valid Oauth2 token")
+    ]
+  )
   fun create(@RequestBody adjustment: AdjustmentDetailsDto): CreateResponseDto {
     return adjustmentsService.create(adjustment)
   }
 
   @GetMapping("", params = ["person"])
-  fun findByPerson(@RequestParam("person") person: String): List<AdjustmentDto> {
+  @Operation(
+    summary = "Get adjustments",
+    description = "Get adjustments for a given person."
+  )
+  @ApiResponses(
+    value = [
+      ApiResponse(responseCode = "200", description = "Adjustment found"),
+      ApiResponse(responseCode = "401", description = "Unauthorised, requires a valid Oauth2 token"),
+      ApiResponse(responseCode = "404", description = "Adjustment not found"),
+    ]
+  )
+  fun findByPerson(
+    @Parameter(required = true, description = "The noms ID of the person")
+    @RequestParam("person") person: String): List<AdjustmentDto> {
     return adjustmentsService.findByPerson(person)
   }
   @GetMapping("/{adjustmentId}")
-  fun get(@PathVariable("adjustmentId") adjustmentId: UUID): AdjustmentDetailsDto {
+  @Operation(
+    summary = "Get an adjustments",
+    description = "Get details of an adjustment"
+  )
+  @ApiResponses(
+    value = [
+      ApiResponse(responseCode = "200", description = "Adjustment found"),
+      ApiResponse(responseCode = "401", description = "Unauthorised, requires a valid Oauth2 token"),
+      ApiResponse(responseCode = "404", description = "Adjustment not found"),
+    ]
+  )
+  fun get(
+    @Parameter(required = true, description = "The adjustment UUID")
+    @PathVariable("adjustmentId") adjustmentId: UUID): AdjustmentDetailsDto {
     return adjustmentsService.get(adjustmentId)
   }
 
   @PutMapping("/{adjustmentId}")
+  @Operation(
+    summary = "Update an adjustments",
+    description = "Update an adjustment."
+  )
+  @ApiResponses(
+    value = [
+      ApiResponse(responseCode = "200", description = "Adjustment update"),
+      ApiResponse(responseCode = "401", description = "Unauthorised, requires a valid Oauth2 token"),
+      ApiResponse(responseCode = "404", description = "Adjustment not found"),
+    ]
+  )
   fun update(
+    @Parameter(required = true, description = "The adjustment UUID")
     @PathVariable("adjustmentId") adjustmentId: UUID,
     @RequestBody adjustment: AdjustmentDetailsDto
   ) {
@@ -48,7 +102,20 @@ class AdjustmentsController(
   }
 
   @DeleteMapping("/{adjustmentId}")
-  fun delete(@PathVariable("adjustmentId") adjustmentId: UUID) {
+  @Operation(
+    summary = "Delete an adjustments",
+    description = "Delete an adjustment."
+  )
+  @ApiResponses(
+    value = [
+      ApiResponse(responseCode = "200", description = "Adjustment deleted"),
+      ApiResponse(responseCode = "401", description = "Unauthorised, requires a valid Oauth2 token"),
+      ApiResponse(responseCode = "404", description = "Adjustment not found"),
+    ]
+  )
+  fun delete(
+    @Parameter(required = true, description = "The adjustment UUID")
+    @PathVariable("adjustmentId") adjustmentId: UUID) {
     adjustmentsService.delete(adjustmentId)
   }
 }
