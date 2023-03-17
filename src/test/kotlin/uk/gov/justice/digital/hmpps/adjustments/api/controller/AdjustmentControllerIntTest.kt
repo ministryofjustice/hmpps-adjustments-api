@@ -55,9 +55,8 @@ class AdjustmentControllerIntTest : SqsIntegrationTestBase() {
 
   @Test
   fun get() {
-    val id = createAnAdjustment().let {
+    val id = createAnAdjustment().also {
       cleanQueue()
-      it
     }
     val result = webTestClient
       .get()
@@ -77,9 +76,8 @@ class AdjustmentControllerIntTest : SqsIntegrationTestBase() {
   @Test
   fun findByPerson() {
     val person = "BCDEFG"
-    val id = createAnAdjustment(person).let {
+    val id = createAnAdjustment(person).also {
       cleanQueue()
-      it
     }
     val result = webTestClient
       .get()
@@ -102,9 +100,8 @@ class AdjustmentControllerIntTest : SqsIntegrationTestBase() {
 
   @Test
   fun update() {
-    val id = createAnAdjustment().let {
+    val id = createAnAdjustment().also {
       cleanQueue()
-      it
     }
     webTestClient
       .put()
@@ -147,9 +144,8 @@ class AdjustmentControllerIntTest : SqsIntegrationTestBase() {
 
   @Test
   fun `update with different adjustment type`() {
-    val id = createAnAdjustment().let {
+    val id = createAnAdjustment().also {
       cleanQueue()
-      it
     }
 
     val result = webTestClient
@@ -173,9 +169,8 @@ class AdjustmentControllerIntTest : SqsIntegrationTestBase() {
 
   @Test
   fun delete() {
-    val id = createAnAdjustment().let {
+    val id = createAnAdjustment().also {
       cleanQueue()
-      it
     }
     webTestClient
       .delete()

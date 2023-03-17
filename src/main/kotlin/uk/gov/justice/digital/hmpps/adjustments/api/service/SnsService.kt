@@ -75,9 +75,9 @@ data class HMPPSDomainEvent(
 }
 
 enum class EventType(val value: String) {
-  ADJUSTMENT_CREATED("adjustments.adjustment.inserted"),
-  ADJUSTMENT_UPDATED("adjustments.adjustment.updated"),
-  ADJUSTMENT_DELETED("adjustments.adjustment.deleted")
+  ADJUSTMENT_CREATED("release-date-adjustments.adjustment.inserted"),
+  ADJUSTMENT_UPDATED("release-date-adjustments.adjustment.updated"),
+  ADJUSTMENT_DELETED("release-date-adjustments.adjustment.deleted")
 }
 
 fun Instant.toOffsetDateFormat(): String =
