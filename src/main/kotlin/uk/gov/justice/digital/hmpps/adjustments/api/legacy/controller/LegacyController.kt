@@ -44,9 +44,8 @@ class LegacyController(
     ]
   )
   fun create(@RequestBody adjustment: LegacyAdjustment): LegacyAdjustmentCreatedResponse {
-    return legacyService.create(adjustment).let {
+    return legacyService.create(adjustment).also {
       eventService.create(it.adjustmentId, adjustment.offenderId, AdjustmentSource.NOMIS)
-      it
     }
   }
 
@@ -103,7 +102,7 @@ class LegacyController(
     @PathVariable("adjustmentId") adjustmentId: UUID,
     @RequestBody adjustment: LegacyAdjustment
   ) {
-    legacyService.update(adjustmentId, adjustment).let {
+    legacyService.update(adjustmentId, adjustment).also {
       eventService.update(adjustmentId, adjustment.offenderId, AdjustmentSource.NOMIS)
     }
   }
@@ -124,7 +123,7 @@ class LegacyController(
     @Parameter(required = true, description = "The adjustment UUID")
     @PathVariable("adjustmentId") adjustmentId: UUID
   ) {
-    legacyService.get(adjustmentId).let {
+    legacyService.get(adjustmentId).also {
       legacyService.delete(adjustmentId)
       eventService.delete(adjustmentId, it.offenderId, AdjustmentSource.NOMIS)
     }

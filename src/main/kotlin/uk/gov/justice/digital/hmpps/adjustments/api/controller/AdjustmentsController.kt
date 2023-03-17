@@ -46,9 +46,8 @@ class AdjustmentsController(
     ]
   )
   fun create(@RequestBody adjustment: AdjustmentDetailsDto): CreateResponseDto {
-    return adjustmentsService.create(adjustment).let {
+    return adjustmentsService.create(adjustment).also {
       eventService.create(it.adjustmentId, adjustment.person, AdjustmentSource.DPS)
-      it
     }
   }
 
@@ -106,7 +105,7 @@ class AdjustmentsController(
     @PathVariable("adjustmentId") adjustmentId: UUID,
     @RequestBody adjustment: AdjustmentDetailsDto
   ) {
-    adjustmentsService.update(adjustmentId, adjustment).let {
+    adjustmentsService.update(adjustmentId, adjustment).also {
       eventService.update(adjustmentId, adjustment.person, AdjustmentSource.DPS)
     }
   }
@@ -127,7 +126,7 @@ class AdjustmentsController(
     @Parameter(required = true, description = "The adjustment UUID")
     @PathVariable("adjustmentId") adjustmentId: UUID
   ) {
-    adjustmentsService.get(adjustmentId).let {
+    adjustmentsService.get(adjustmentId).also {
       adjustmentsService.delete(adjustmentId)
       eventService.delete(adjustmentId, it.person, AdjustmentSource.DPS)
     }
