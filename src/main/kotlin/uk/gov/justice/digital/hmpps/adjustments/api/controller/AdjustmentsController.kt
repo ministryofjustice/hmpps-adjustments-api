@@ -106,7 +106,9 @@ class AdjustmentsController(
     @PathVariable("adjustmentId") adjustmentId: UUID,
     @RequestBody adjustment: AdjustmentDetailsDto
   ) {
-    adjustmentsService.update(adjustmentId, adjustment)
+    adjustmentsService.update(adjustmentId, adjustment).let {
+      eventService.update(adjustmentId, adjustment.person, AdjustmentSource.DPS)
+    }
   }
 
   @DeleteMapping("/{adjustmentId}")
@@ -125,6 +127,9 @@ class AdjustmentsController(
     @Parameter(required = true, description = "The adjustment UUID")
     @PathVariable("adjustmentId") adjustmentId: UUID
   ) {
-    adjustmentsService.delete(adjustmentId)
+    adjustmentsService.get(adjustmentId).let {
+      adjustmentsService.delete(adjustmentId)
+      eventService.delete(adjustmentId, it.person, AdjustmentSource.DPS)
+    }
   }
 }

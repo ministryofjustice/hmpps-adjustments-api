@@ -71,6 +71,11 @@ server:
   error:
     include-message: always
 
+hmpps:
+  sqs:
+    reactiveApi: true
+    queueAdminRole: ROLE_ADJUSTMENTS_API_QUEUE_ADMIN # TODO Where does this come from?
+
 management:
   endpoints:
     web:

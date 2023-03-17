@@ -11,14 +11,14 @@ import uk.gov.justice.digital.hmpps.adjustments.api.entity.AdjustmentHistory
 import uk.gov.justice.digital.hmpps.adjustments.api.entity.AdjustmentSource
 import uk.gov.justice.digital.hmpps.adjustments.api.entity.AdjustmentType
 import uk.gov.justice.digital.hmpps.adjustments.api.entity.ChangeType
-import uk.gov.justice.digital.hmpps.adjustments.api.integration.IntegrationTestBase
+import uk.gov.justice.digital.hmpps.adjustments.api.integration.SqsIntegrationTestBase
 import uk.gov.justice.digital.hmpps.adjustments.api.respository.AdjustmentRepository
 import java.time.LocalDate
 import java.time.LocalDateTime
 import javax.transaction.Transactional
 
 @Transactional
-class AdjustmentRepositoryTest : IntegrationTestBase() {
+class AdjustmentRepositoryTest : SqsIntegrationTestBase() {
 
   @Autowired
   lateinit var adjustmentRepository: AdjustmentRepository

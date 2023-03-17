@@ -52,6 +52,17 @@ class LegacyController(
 
   @PostMapping("/migration")
   @ResponseStatus(HttpStatus.CREATED)
+  @Operation(
+    summary = "Create an adjustment from the migration job",
+    description = "Synchronise a creation from NOMIS into adjustments API. This endpoint is used for initial migration " +
+      "of data from NOMIS without raising any events."
+  )
+  @ApiResponses(
+    value = [
+      ApiResponse(responseCode = "201", description = "Adjustment created"),
+      ApiResponse(responseCode = "401", description = "Unauthorised, requires a valid Oauth2 token")
+    ]
+  )
   fun migration(@RequestBody adjustment: LegacyAdjustment): LegacyAdjustmentCreatedResponse {
     return legacyService.create(adjustment)
   }
@@ -93,7 +104,7 @@ class LegacyController(
     @RequestBody adjustment: LegacyAdjustment
   ) {
     legacyService.update(adjustmentId, adjustment).let {
-      eventService.create(adjustmentId, adjustment.offenderId, AdjustmentSource.NOMIS)
+      eventService.update(adjustmentId, adjustment.offenderId, AdjustmentSource.NOMIS)
     }
   }
 

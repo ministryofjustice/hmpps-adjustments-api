@@ -1,6 +1,5 @@
 package uk.gov.justice.digital.hmpps.adjustments.api.legacy.controller
 
-import com.fasterxml.jackson.databind.ObjectMapper
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
@@ -10,45 +9,41 @@ import uk.gov.justice.digital.hmpps.adjustments.api.config.ErrorResponse
 import uk.gov.justice.digital.hmpps.adjustments.api.entity.AdjustmentSource
 import uk.gov.justice.digital.hmpps.adjustments.api.entity.AdjustmentType
 import uk.gov.justice.digital.hmpps.adjustments.api.entity.ChangeType
-import uk.gov.justice.digital.hmpps.adjustments.api.integration.IntegrationTestBase
+import uk.gov.justice.digital.hmpps.adjustments.api.integration.SqsIntegrationTestBase
 import uk.gov.justice.digital.hmpps.adjustments.api.legacy.model.LegacyAdjustment
 import uk.gov.justice.digital.hmpps.adjustments.api.legacy.model.LegacyAdjustmentCreatedResponse
 import uk.gov.justice.digital.hmpps.adjustments.api.legacy.model.LegacyAdjustmentType
 import uk.gov.justice.digital.hmpps.adjustments.api.legacy.model.LegacyData
 import uk.gov.justice.digital.hmpps.adjustments.api.respository.AdjustmentRepository
+import uk.gov.justice.digital.hmpps.adjustments.api.service.EventType
 import java.time.LocalDate
 import java.util.UUID
 import javax.transaction.Transactional
 
 @Transactional
 @Rollback
-class LegacyControllerIntTest : IntegrationTestBase() {
+class LegacyControllerIntTest : SqsIntegrationTestBase() {
 
   @Autowired
   private lateinit var adjustmentRepository: AdjustmentRepository
-
-  @Autowired
-  private lateinit var objectMapper: ObjectMapper
 
   private lateinit var CREATED_ID: UUID
 
   @BeforeEach
   fun setup() {
-    if (!this::CREATED_ID.isInitialized) {
-      val result = webTestClient
-        .post()
-        .uri("/legacy/adjustments")
-        .headers(
-          setAuthorisation()
-        )
-        .header("Content-Type", LegacyController.LEGACY_CONTENT_TYPE)
-        .bodyValue(CREATED_ADJUSTMENT)
-        .exchange()
-        .expectStatus().isCreated
-        .returnResult(LegacyAdjustmentCreatedResponse::class.java)
-        .responseBody.blockFirst()!!
-      CREATED_ID = result.adjustmentId
-    }
+    val result = webTestClient
+      .post()
+      .uri("/legacy/adjustments")
+      .headers(
+        setAuthorisation()
+      )
+      .header("Content-Type", LegacyController.LEGACY_CONTENT_TYPE)
+      .bodyValue(CREATED_ADJUSTMENT)
+      .exchange()
+      .expectStatus().isCreated
+      .returnResult(LegacyAdjustmentCreatedResponse::class.java)
+      .responseBody.blockFirst()!!
+    CREATED_ID = result.adjustmentId
   }
 
   @Test
@@ -70,10 +65,39 @@ class LegacyControllerIntTest : IntegrationTestBase() {
 
     val legacyData = objectMapper.convertValue(adjustment.legacyData, LegacyData::class.java)
     assertThat(legacyData).isEqualTo(LegacyData(bookingId = 1, sentenceSequence = 1, comment = "Created", type = LegacyAdjustmentType.UR, active = true))
+
+    assertThat(getNumberOfMessagesCurrentlyOnQueue()).isEqualTo(1)
+    val latestMessage = getLatestMessage()!!.messages[0].body
+    assertThat(latestMessage).contains(adjustment.id.toString())
+    assertThat(latestMessage).contains(EventType.ADJUSTMENT_CREATED.value)
+    assertThat(latestMessage).contains(AdjustmentSource.NOMIS.name)
+  }
+
+  @Test
+  fun migration() {
+    cleanQueue()
+    val result = webTestClient
+      .post()
+      .uri("/legacy/adjustments/migration")
+      .headers(
+        setAuthorisation()
+      )
+      .header("Content-Type", LegacyController.LEGACY_CONTENT_TYPE)
+      .bodyValue(CREATED_ADJUSTMENT)
+      .exchange()
+      .expectStatus().isCreated
+      .returnResult(LegacyAdjustmentCreatedResponse::class.java)
+      .responseBody.blockFirst()!!
+
+    val adjustment = adjustmentRepository.findById(result.adjustmentId).get()
+    assertThat(adjustment).isNotNull
+
+    assertThat(getNumberOfMessagesCurrentlyOnQueue()).isEqualTo(0)
   }
 
   @Test
   fun get() {
+    cleanQueue()
     val result = webTestClient
       .get()
       .uri("/legacy/adjustments/$CREATED_ID")
@@ -87,10 +111,12 @@ class LegacyControllerIntTest : IntegrationTestBase() {
       .responseBody.blockFirst()!!
 
     assertThat(result).isEqualTo(CREATED_ADJUSTMENT)
+    assertThat(getNumberOfMessagesCurrentlyOnQueue()).isEqualTo(0)
   }
 
   @Test
   fun update() {
+    cleanQueue()
     webTestClient
       .put()
       .uri("/legacy/adjustments/$CREATED_ID")
@@ -125,11 +151,17 @@ class LegacyControllerIntTest : IntegrationTestBase() {
 
     val legacyData = objectMapper.convertValue(adjustment.legacyData, LegacyData::class.java)
     assertThat(legacyData).isEqualTo(LegacyData(bookingId = 1, sentenceSequence = 1, comment = "Updated", type = LegacyAdjustmentType.UR, active = true))
+
+    assertThat(getNumberOfMessagesCurrentlyOnQueue()).isEqualTo(1)
+    val latestMessage = getLatestMessage()!!.messages[0].body
+    assertThat(latestMessage).contains(adjustment.id.toString())
+    assertThat(latestMessage).contains(EventType.ADJUSTMENT_UPDATED.value)
+    assertThat(latestMessage).contains(AdjustmentSource.NOMIS.name)
   }
 
   @Test
   fun `update with different adjustment type`() {
-
+    cleanQueue()
     val result = webTestClient
       .put()
       .uri("/legacy/adjustments/$CREATED_ID")
@@ -147,10 +179,12 @@ class LegacyControllerIntTest : IntegrationTestBase() {
       .returnResult(ErrorResponse::class.java)
       .responseBody.blockFirst()!!
     assertThat(result.userMessage).isEqualTo("The provided adjustment type UAL doesn't match the persisted type UR")
+    assertThat(getNumberOfMessagesCurrentlyOnQueue()).isEqualTo(0)
   }
 
   @Test
   fun delete() {
+    cleanQueue()
     webTestClient
       .delete()
       .uri("/legacy/adjustments/$CREATED_ID")
@@ -167,6 +201,11 @@ class LegacyControllerIntTest : IntegrationTestBase() {
     assertThat(adjustment.adjustmentHistory.size).isEqualTo(2)
     assertThat(adjustment.adjustmentHistory[1].changeType).isEqualTo(ChangeType.DELETE)
 
+    assertThat(getNumberOfMessagesCurrentlyOnQueue()).isEqualTo(1)
+    val latestMessage = getLatestMessage()!!.messages[0].body
+    assertThat(latestMessage).contains(adjustment.id.toString())
+    assertThat(latestMessage).contains(EventType.ADJUSTMENT_DELETED.value)
+    assertThat(latestMessage).contains(AdjustmentSource.NOMIS.name)
     webTestClient
       .get()
       .uri("/legacy/adjustments/$CREATED_ID")

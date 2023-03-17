@@ -43,6 +43,7 @@ dependencies {
   testImplementation("org.mockito:mockito-inline:4.8.0")
   testImplementation("org.junit.jupiter:junit-jupiter:5.9.0")
   testImplementation("com.h2database:h2")
+  testImplementation("org.testcontainers:localstack:1.17.6")
 }
 
 java {

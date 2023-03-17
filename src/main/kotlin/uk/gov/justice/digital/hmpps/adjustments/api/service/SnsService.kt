@@ -8,7 +8,6 @@ import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Service
 import uk.gov.justice.hmpps.sqs.HmppsQueueService
 import java.time.Instant
-import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
@@ -76,11 +75,10 @@ data class HMPPSDomainEvent(
 }
 
 enum class EventType(val value: String) {
-  ADJUSTMENT_CREATED("adjustments.inserted"),
-  ADJUSTMENT_UPDATED("adjustments.updated"),
-  ADJUSTMENT_DELETED("adjustments.deleted")
+  ADJUSTMENT_CREATED("adjustments.adjustment.inserted"),
+  ADJUSTMENT_UPDATED("adjustments.adjustment.updated"),
+  ADJUSTMENT_DELETED("adjustments.adjustment.deleted")
 }
-
 
 fun Instant.toOffsetDateFormat(): String =
   atZone(ZoneId.of("Europe/London")).toOffsetDateTime().format(DateTimeFormatter.ISO_OFFSET_DATE_TIME)

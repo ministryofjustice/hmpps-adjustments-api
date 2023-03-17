@@ -49,3 +49,17 @@ management.endpoint:
 hmpps:
   auth:
     url: http://localhost:8090/auth
+
+
+hmpps.sqs:
+  reactiveApi: true
+  provider: localstack
+  queues:
+    adjustments:
+      queueName: adjustments-test-event-queue
+      dlqName: adjustments-test-event-dlq
+      subscribeTopicId: domainevents
+      subscribeFilter: '{"eventType":[ "adjustments.adjustment.inserted", "adjustments.adjustment.updated", "adjustments.adjustment.deleted" ] }'
+  topics:
+    domainevents:
+      arn: arn:aws:sns:eu-west-2:000000000000:11111111-2222-3333-4444-555555555555
