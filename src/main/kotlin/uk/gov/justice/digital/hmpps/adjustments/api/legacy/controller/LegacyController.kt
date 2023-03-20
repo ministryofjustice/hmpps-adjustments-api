@@ -16,16 +16,19 @@ import org.springframework.web.bind.annotation.RequestBody
 import org.springframework.web.bind.annotation.RequestMapping
 import org.springframework.web.bind.annotation.ResponseStatus
 import org.springframework.web.bind.annotation.RestController
+import uk.gov.justice.digital.hmpps.adjustments.api.entity.AdjustmentSource
 import uk.gov.justice.digital.hmpps.adjustments.api.legacy.model.LegacyAdjustment
 import uk.gov.justice.digital.hmpps.adjustments.api.legacy.model.LegacyAdjustmentCreatedResponse
 import uk.gov.justice.digital.hmpps.adjustments.api.legacy.service.LegacyService
+import uk.gov.justice.digital.hmpps.adjustments.api.service.AdjustmentsEventService
 import java.util.UUID
 
 @RestController
 @RequestMapping("/legacy/adjustments", produces = [MediaType.APPLICATION_JSON_VALUE], consumes = [LegacyController.LEGACY_CONTENT_TYPE])
 @Tag(name = "legacy-controller", description = "CRUD operations for syncing data from NOMIS into adjustments api database.")
 class LegacyController(
-  val legacyService: LegacyService
+  val legacyService: LegacyService,
+  val eventService: AdjustmentsEventService
 ) {
 
   @PostMapping
@@ -41,6 +44,25 @@ class LegacyController(
     ]
   )
   fun create(@RequestBody adjustment: LegacyAdjustment): LegacyAdjustmentCreatedResponse {
+    return legacyService.create(adjustment).also {
+      eventService.create(it.adjustmentId, adjustment.offenderId, AdjustmentSource.NOMIS)
+    }
+  }
+
+  @PostMapping("/migration")
+  @ResponseStatus(HttpStatus.CREATED)
+  @Operation(
+    summary = "Create an adjustment from the migration job",
+    description = "Synchronise a creation from NOMIS into adjustments API. This endpoint is used for initial migration " +
+      "of data from NOMIS without raising any events."
+  )
+  @ApiResponses(
+    value = [
+      ApiResponse(responseCode = "201", description = "Adjustment created"),
+      ApiResponse(responseCode = "401", description = "Unauthorised, requires a valid Oauth2 token")
+    ]
+  )
+  fun migration(@RequestBody adjustment: LegacyAdjustment): LegacyAdjustmentCreatedResponse {
     return legacyService.create(adjustment)
   }
 
@@ -80,7 +102,9 @@ class LegacyController(
     @PathVariable("adjustmentId") adjustmentId: UUID,
     @RequestBody adjustment: LegacyAdjustment
   ) {
-    legacyService.update(adjustmentId, adjustment)
+    legacyService.update(adjustmentId, adjustment).also {
+      eventService.update(adjustmentId, adjustment.offenderId, AdjustmentSource.NOMIS)
+    }
   }
 
   @DeleteMapping("/{adjustmentId}")
@@ -99,7 +123,10 @@ class LegacyController(
     @Parameter(required = true, description = "The adjustment UUID")
     @PathVariable("adjustmentId") adjustmentId: UUID
   ) {
-    legacyService.delete(adjustmentId)
+    legacyService.get(adjustmentId).also {
+      legacyService.delete(adjustmentId)
+      eventService.delete(adjustmentId, it.offenderId, AdjustmentSource.NOMIS)
+    }
   }
 
   companion object {

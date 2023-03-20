@@ -17,9 +17,11 @@ import org.springframework.web.bind.annotation.RequestMapping
 import org.springframework.web.bind.annotation.RequestParam
 import org.springframework.web.bind.annotation.ResponseStatus
 import org.springframework.web.bind.annotation.RestController
+import uk.gov.justice.digital.hmpps.adjustments.api.entity.AdjustmentSource
 import uk.gov.justice.digital.hmpps.adjustments.api.model.AdjustmentDetailsDto
 import uk.gov.justice.digital.hmpps.adjustments.api.model.AdjustmentDto
 import uk.gov.justice.digital.hmpps.adjustments.api.model.CreateResponseDto
+import uk.gov.justice.digital.hmpps.adjustments.api.service.AdjustmentsEventService
 import uk.gov.justice.digital.hmpps.adjustments.api.service.AdjustmentsService
 import java.util.UUID
 
@@ -27,7 +29,8 @@ import java.util.UUID
 @RequestMapping("/adjustments", produces = [MediaType.APPLICATION_JSON_VALUE])
 @Tag(name = "adjustment-controller", description = "CRUD operations for adjustments.")
 class AdjustmentsController(
-  val adjustmentsService: AdjustmentsService
+  val adjustmentsService: AdjustmentsService,
+  val eventService: AdjustmentsEventService
 ) {
 
   @PostMapping
@@ -43,7 +46,9 @@ class AdjustmentsController(
     ]
   )
   fun create(@RequestBody adjustment: AdjustmentDetailsDto): CreateResponseDto {
-    return adjustmentsService.create(adjustment)
+    return adjustmentsService.create(adjustment).also {
+      eventService.create(it.adjustmentId, adjustment.person, AdjustmentSource.DPS)
+    }
   }
 
   @GetMapping("", params = ["person"])
@@ -100,7 +105,9 @@ class AdjustmentsController(
     @PathVariable("adjustmentId") adjustmentId: UUID,
     @RequestBody adjustment: AdjustmentDetailsDto
   ) {
-    adjustmentsService.update(adjustmentId, adjustment)
+    adjustmentsService.update(adjustmentId, adjustment).also {
+      eventService.update(adjustmentId, adjustment.person, AdjustmentSource.DPS)
+    }
   }
 
   @DeleteMapping("/{adjustmentId}")
@@ -119,6 +126,9 @@ class AdjustmentsController(
     @Parameter(required = true, description = "The adjustment UUID")
     @PathVariable("adjustmentId") adjustmentId: UUID
   ) {
-    adjustmentsService.delete(adjustmentId)
+    adjustmentsService.get(adjustmentId).also {
+      adjustmentsService.delete(adjustmentId)
+      eventService.delete(adjustmentId, it.person, AdjustmentSource.DPS)
+    }
   }
 }

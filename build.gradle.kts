@@ -21,6 +21,8 @@ dependencies {
   // Enable kotlin reflect
   implementation("org.jetbrains.kotlin:kotlin-reflect:1.6.20")
 
+  implementation("uk.gov.justice.service.hmpps:hmpps-sqs-spring-boot-starter:1.2.0")
+
   // Database dependencies
   runtimeOnly("org.flywaydb:flyway-core")
   runtimeOnly("org.postgresql:postgresql:42.5.1")
@@ -41,6 +43,7 @@ dependencies {
   testImplementation("org.mockito:mockito-inline:4.8.0")
   testImplementation("org.junit.jupiter:junit-jupiter:5.9.0")
   testImplementation("com.h2database:h2")
+  testImplementation("org.testcontainers:localstack:1.17.6")
 }
 
 java {

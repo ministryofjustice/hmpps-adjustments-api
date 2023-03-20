@@ -22,6 +22,7 @@ import java.util.UUID
 import javax.persistence.EntityNotFoundException
 
 @Service
+@Transactional(readOnly = true)
 class AdjustmentsService(
   val adjustmentRepository: AdjustmentRepository,
   val objectMapper: ObjectMapper

@@ -1,6 +1,5 @@
 package uk.gov.justice.digital.hmpps.adjustments.api.controller
 
-import com.fasterxml.jackson.databind.ObjectMapper
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
@@ -10,24 +9,22 @@ import uk.gov.justice.digital.hmpps.adjustments.api.config.ErrorResponse
 import uk.gov.justice.digital.hmpps.adjustments.api.entity.AdjustmentSource
 import uk.gov.justice.digital.hmpps.adjustments.api.entity.AdjustmentType
 import uk.gov.justice.digital.hmpps.adjustments.api.entity.ChangeType
-import uk.gov.justice.digital.hmpps.adjustments.api.integration.IntegrationTestBase
+import uk.gov.justice.digital.hmpps.adjustments.api.integration.SqsIntegrationTestBase
 import uk.gov.justice.digital.hmpps.adjustments.api.legacy.model.LegacyData
 import uk.gov.justice.digital.hmpps.adjustments.api.model.AdjustmentDetailsDto
 import uk.gov.justice.digital.hmpps.adjustments.api.model.AdjustmentDto
 import uk.gov.justice.digital.hmpps.adjustments.api.model.CreateResponseDto
 import uk.gov.justice.digital.hmpps.adjustments.api.respository.AdjustmentRepository
+import uk.gov.justice.digital.hmpps.adjustments.api.service.EventType
 import java.time.LocalDate
 import java.util.UUID
 import javax.transaction.Transactional
 
 @Transactional
-class AdjustmentControllerIntTest : IntegrationTestBase() {
+class AdjustmentControllerIntTest : SqsIntegrationTestBase() {
 
   @Autowired
   private lateinit var adjustmentRepository: AdjustmentRepository
-
-  @Autowired
-  private lateinit var objectMapper: ObjectMapper
 
   @Test
   fun create() {
@@ -48,11 +45,19 @@ class AdjustmentControllerIntTest : IntegrationTestBase() {
 
     val legacyData = objectMapper.convertValue(adjustment.legacyData, LegacyData::class.java)
     assertThat(legacyData).isEqualTo(LegacyData(bookingId = 1, sentenceSequence = 1, comment = null, type = null, active = true))
+
+    assertThat(getNumberOfMessagesCurrentlyOnQueue()).isEqualTo(1)
+    val latestMessage = getLatestMessage()!!.messages[0].body
+    assertThat(latestMessage).contains(adjustment.id.toString())
+    assertThat(latestMessage).contains(EventType.ADJUSTMENT_CREATED.value)
+    assertThat(latestMessage).contains(AdjustmentSource.DPS.name)
   }
 
   @Test
   fun get() {
-    val id = createAnAdjustment()
+    val id = createAnAdjustment().also {
+      cleanQueue()
+    }
     val result = webTestClient
       .get()
       .uri("/adjustments/$id")
@@ -65,12 +70,15 @@ class AdjustmentControllerIntTest : IntegrationTestBase() {
       .responseBody.blockFirst()!!
 
     assertThat(result).isEqualTo(CREATED_ADJUSTMENT.copy(days = 4))
+    assertThat(getNumberOfMessagesCurrentlyOnQueue()).isEqualTo(0)
   }
 
   @Test
   fun findByPerson() {
     val person = "BCDEFG"
-    val id = createAnAdjustment(person)
+    val id = createAnAdjustment(person).also {
+      cleanQueue()
+    }
     val result = webTestClient
       .get()
       .uri("/adjustments?person=$person")
@@ -86,11 +94,15 @@ class AdjustmentControllerIntTest : IntegrationTestBase() {
     assertThat(result.size).isEqualTo(1)
     assertThat(result[0].id).isEqualTo(id)
     assertThat(result[0].adjustment).isEqualTo(CREATED_ADJUSTMENT.copy(person = person, days = 4))
+
+    assertThat(getNumberOfMessagesCurrentlyOnQueue()).isEqualTo(0)
   }
 
   @Test
   fun update() {
-    val id = createAnAdjustment()
+    val id = createAnAdjustment().also {
+      cleanQueue()
+    }
     webTestClient
       .put()
       .uri("/adjustments/$id")
@@ -122,11 +134,19 @@ class AdjustmentControllerIntTest : IntegrationTestBase() {
 
     val legacyData = objectMapper.convertValue(adjustment.legacyData, LegacyData::class.java)
     assertThat(legacyData).isEqualTo(LegacyData(bookingId = 1, sentenceSequence = 1, comment = null, type = null, active = true))
+
+    assertThat(getNumberOfMessagesCurrentlyOnQueue()).isEqualTo(1)
+    val latestMessage = getLatestMessage()!!.messages[0].body
+    assertThat(latestMessage).contains(adjustment.id.toString())
+    assertThat(latestMessage).contains(EventType.ADJUSTMENT_UPDATED.value)
+    assertThat(latestMessage).contains(AdjustmentSource.DPS.name)
   }
 
   @Test
   fun `update with different adjustment type`() {
-    val id = createAnAdjustment()
+    val id = createAnAdjustment().also {
+      cleanQueue()
+    }
 
     val result = webTestClient
       .put()
@@ -144,11 +164,14 @@ class AdjustmentControllerIntTest : IntegrationTestBase() {
       .returnResult(ErrorResponse::class.java)
       .responseBody.blockFirst()!!
     assertThat(result.userMessage).isEqualTo("The provided adjustment type UNLAWFULLY_AT_LARGE doesn't match the persisted type REMAND")
+    assertThat(getNumberOfMessagesCurrentlyOnQueue()).isEqualTo(0)
   }
 
   @Test
   fun delete() {
-    val id = createAnAdjustment()
+    val id = createAnAdjustment().also {
+      cleanQueue()
+    }
     webTestClient
       .delete()
       .uri("/adjustments/$id")
@@ -172,8 +195,13 @@ class AdjustmentControllerIntTest : IntegrationTestBase() {
       )
       .exchange()
       .expectStatus().isNotFound
-  }
 
+    assertThat(getNumberOfMessagesCurrentlyOnQueue()).isEqualTo(1)
+    val latestMessage = getLatestMessage()!!.messages[0].body
+    assertThat(latestMessage).contains(adjustment.id.toString())
+    assertThat(latestMessage).contains(EventType.ADJUSTMENT_DELETED.value)
+    assertThat(latestMessage).contains(AdjustmentSource.DPS.name)
+  }
   private fun createAnAdjustment(person: String = "ABC123"): UUID {
     return webTestClient
       .post()
