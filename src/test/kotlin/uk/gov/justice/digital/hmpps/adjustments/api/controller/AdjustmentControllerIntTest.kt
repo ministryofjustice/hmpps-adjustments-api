@@ -99,7 +99,7 @@ class AdjustmentControllerIntTest : SqsIntegrationTestBase() {
   }
   @Test
   fun findByPersonAndSource() {
-    val person = "BCDEFG"
+    val person = "HIJKLM"
     val id = createAnAdjustment(person).also {
       cleanQueue()
     }
