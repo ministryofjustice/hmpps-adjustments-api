@@ -97,6 +97,44 @@ class AdjustmentControllerIntTest : SqsIntegrationTestBase() {
 
     assertThat(getNumberOfMessagesCurrentlyOnQueue()).isEqualTo(0)
   }
+  @Test
+  fun findByPersonAndSource() {
+    val person = "BCDEFG"
+    val id = createAnAdjustment(person).also {
+      cleanQueue()
+    }
+    val dpsResult = webTestClient
+      .get()
+      .uri("/adjustments?person=$person&source=${AdjustmentSource.DPS}")
+      .headers(
+        setAuthorisation()
+      )
+      .exchange()
+      .expectStatus().isOk
+      .expectBodyList<AdjustmentDto>()
+      .returnResult()
+      .responseBody!!
+
+    assertThat(dpsResult.size).isEqualTo(1)
+    assertThat(dpsResult[0].id).isEqualTo(id)
+
+    val nomisResult = webTestClient
+      .get()
+      .uri("/adjustments?person=$person&source=${AdjustmentSource.NOMIS}")
+      .headers(
+        setAuthorisation()
+      )
+      .exchange()
+      .expectStatus().isOk
+      .expectBodyList<AdjustmentDto>()
+      .returnResult()
+      .responseBody!!
+
+    assertThat(nomisResult.size).isEqualTo(0)
+
+    assertThat(getNumberOfMessagesCurrentlyOnQueue()).isEqualTo(0)
+
+  }
 
   @Test
   fun update() {
