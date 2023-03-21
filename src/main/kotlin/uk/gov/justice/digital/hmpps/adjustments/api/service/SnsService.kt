@@ -49,7 +49,7 @@ class SnsService(hmppsQueueService: HmppsQueueService, private val objectMapper:
 
 data class AdditionalInformation(
   val id: UUID? = null,
-  val nomsNumber: String? = null,
+  val offenderNo: String? = null,
   val source: String? = null
 )
 
