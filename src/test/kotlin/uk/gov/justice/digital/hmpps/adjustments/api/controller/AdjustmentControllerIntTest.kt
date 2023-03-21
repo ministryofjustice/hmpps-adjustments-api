@@ -133,7 +133,6 @@ class AdjustmentControllerIntTest : SqsIntegrationTestBase() {
     assertThat(nomisResult.size).isEqualTo(0)
 
     assertThat(getNumberOfMessagesCurrentlyOnQueue()).isEqualTo(0)
-
   }
 
   @Test

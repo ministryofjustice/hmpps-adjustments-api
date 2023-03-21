@@ -77,7 +77,7 @@ class AdjustmentsService(
   fun findByPersonAndSource(person: String, source: AdjustmentSource): List<AdjustmentDto> {
     return adjustmentRepository.findByPerson(person)
       .filter { !it.deleted }
-      .filter { it.source == source}
+      .filter { it.source == source }
       .map { AdjustmentDto(it.id, mapToDto(it)) }
   }
 
