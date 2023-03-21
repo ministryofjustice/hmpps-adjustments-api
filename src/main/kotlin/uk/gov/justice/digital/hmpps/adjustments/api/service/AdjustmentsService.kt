@@ -74,6 +74,13 @@ class AdjustmentsService(
       .map { AdjustmentDto(it.id, mapToDto(it)) }
   }
 
+  fun findByPersonAndSource(person: String, source: AdjustmentSource): List<AdjustmentDto> {
+    return adjustmentRepository.findByPerson(person)
+      .filter { !it.deleted }
+      .filter { it.source == source }
+      .map { AdjustmentDto(it.id, mapToDto(it)) }
+  }
+
   @Transactional
   fun update(adjustmentId: UUID, resource: AdjustmentDetailsDto) {
     val adjustment = adjustmentRepository.findById(adjustmentId)
