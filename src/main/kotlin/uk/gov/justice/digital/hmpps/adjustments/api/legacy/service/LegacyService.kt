@@ -29,7 +29,7 @@ class LegacyService(
   @Transactional
   fun create(resource: LegacyAdjustment): LegacyAdjustmentCreatedResponse {
     val adjustment = Adjustment(
-      person = resource.offenderId,
+      person = resource.offenderNo,
       daysCalculated = resource.adjustmentDays,
       days = resource.adjustmentDays,
       fromDate = resource.adjustmentFromDate,
@@ -57,7 +57,7 @@ class LegacyService(
       }!!
     val legacyData = objectMapper.convertValue(adjustment.legacyData, LegacyData::class.java)
     return LegacyAdjustment(
-      offenderId = adjustment.person,
+      offenderNo = adjustment.person,
       adjustmentDays = adjustment.daysCalculated,
       adjustmentFromDate = adjustment.fromDate,
       adjustmentDate = adjustment.toDate,
