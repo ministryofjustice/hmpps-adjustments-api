@@ -9,8 +9,8 @@ data class LegacyAdjustment(
   val bookingId: Long,
   @Schema(description = "The NOMIS sentence sequence of the adjustment")
   val sentenceSequence: Int?,
-  @Schema(description = "The NOMIS ID of the person this adjustment applies to")
-  val offenderId: String,
+  @Schema(description = "The NOMIS offender number aka nomsId, prisonerId of the person this adjustment applies to")
+  val offenderNo: String,
   @Schema(description = "The NOMIS adjustment type")
   val adjustmentType: LegacyAdjustmentType,
   @Schema(description = "The NOMIS date of adjustment")
