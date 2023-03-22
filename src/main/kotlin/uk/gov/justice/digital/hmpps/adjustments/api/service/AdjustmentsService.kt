@@ -139,7 +139,7 @@ class AdjustmentsService(
     return AdjustmentDetailsDto(
       person = adjustment.person,
       days = adjustment.days ?: adjustment.daysCalculated,
-      fromDate = adjustment.fromDate!!,
+      fromDate = adjustment.fromDate,
       toDate = adjustment.toDate,
       adjustmentType = adjustment.adjustmentType,
       sentenceSequence = legacyData.sentenceSequence,

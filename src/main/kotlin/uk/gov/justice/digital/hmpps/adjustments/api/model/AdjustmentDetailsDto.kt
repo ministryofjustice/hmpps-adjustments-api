@@ -17,7 +17,7 @@ data class AdjustmentDetailsDto(
   @Schema(description = "The end date of the adjustment")
   val toDate: LocalDate?,
   @Schema(description = "The start date of the adjustment")
-  val fromDate: LocalDate,
+  val fromDate: LocalDate?,
   @Schema(description = "The number of adjustment days")
   val days: Int?
 )
