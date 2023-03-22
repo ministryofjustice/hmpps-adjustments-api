@@ -148,7 +148,7 @@ class AdjustmentControllerIntTest : SqsIntegrationTestBase() {
       )
       .bodyValue(
         CREATED_ADJUSTMENT.copy(
-          fromDate = CREATED_ADJUSTMENT.fromDate.minusYears(1),
+          fromDate = CREATED_ADJUSTMENT.fromDate!!.minusYears(1),
           toDate = CREATED_ADJUSTMENT.toDate!!.minusYears(1),
         )
       )

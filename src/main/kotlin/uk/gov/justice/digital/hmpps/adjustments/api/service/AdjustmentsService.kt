@@ -46,7 +46,7 @@ class AdjustmentsService(
       toDate = resource.toDate,
       source = AdjustmentSource.DPS,
       adjustmentType = resource.adjustmentType,
-      legacyData = objectToJson(LegacyData(resource.bookingId, resource.sentenceSequence, null, null, true)),
+      legacyData = objectToJson(LegacyData(resource.bookingId, resource.sentenceSequence, null, null, null, true)),
       adjustmentHistory = listOf(
         AdjustmentHistory(
           changeByUsername = getCurrentAuthentication().principal,
@@ -99,7 +99,7 @@ class AdjustmentsService(
       fromDate = resource.fromDate
       toDate = resource.toDate
       source = AdjustmentSource.DPS
-      legacyData = objectToJson(LegacyData(resource.bookingId, resource.sentenceSequence, null, persistedLegacyData.type, true))
+      legacyData = objectToJson(LegacyData(resource.bookingId, resource.sentenceSequence, persistedLegacyData.postedDate, null, persistedLegacyData.type, true))
       adjustmentHistory += AdjustmentHistory(
         changeByUsername = getCurrentAuthentication().principal,
         changeType = ChangeType.UPDATE,
@@ -139,7 +139,7 @@ class AdjustmentsService(
     return AdjustmentDetailsDto(
       person = adjustment.person,
       days = adjustment.days ?: adjustment.daysCalculated,
-      fromDate = adjustment.fromDate!!,
+      fromDate = adjustment.fromDate,
       toDate = adjustment.toDate,
       adjustmentType = adjustment.adjustmentType,
       sentenceSequence = legacyData.sentenceSequence,

@@ -33,10 +33,10 @@ class LegacyService(
       daysCalculated = resource.adjustmentDays,
       days = resource.adjustmentDays,
       fromDate = resource.adjustmentFromDate,
-      toDate = resource.adjustmentDate,
+      toDate = resource.adjustmentFromDate?.plusDays(resource.adjustmentDays.toLong() - 1),
       source = AdjustmentSource.NOMIS,
       adjustmentType = transform(resource.adjustmentType),
-      legacyData = objectToJson(LegacyData(resource.bookingId, resource.sentenceSequence, resource.comment, resource.adjustmentType, resource.active)),
+      legacyData = objectToJson(LegacyData(resource.bookingId, resource.sentenceSequence, resource.adjustmentDate, resource.comment, resource.adjustmentType, resource.active)),
       adjustmentHistory = listOf(
         AdjustmentHistory(
           changeByUsername = "NOMIS",
@@ -60,7 +60,7 @@ class LegacyService(
       offenderNo = adjustment.person,
       adjustmentDays = adjustment.daysCalculated,
       adjustmentFromDate = adjustment.fromDate,
-      adjustmentDate = adjustment.toDate,
+      adjustmentDate = legacyData.postedDate,
       adjustmentType = transform(adjustment.adjustmentType, legacyData),
       sentenceSequence = legacyData.sentenceSequence,
       bookingId = legacyData.bookingId,
@@ -85,9 +85,9 @@ class LegacyService(
       daysCalculated = resource.adjustmentDays
       days = resource.adjustmentDays
       fromDate = resource.adjustmentFromDate
-      toDate = resource.adjustmentDate
+      toDate = resource.adjustmentFromDate?.plusDays(resource.adjustmentDays.toLong() - 1)
       source = AdjustmentSource.NOMIS
-      legacyData = objectToJson(LegacyData(resource.bookingId, resource.sentenceSequence, resource.comment, resource.adjustmentType, resource.active))
+      legacyData = objectToJson(LegacyData(resource.bookingId, resource.sentenceSequence, resource.adjustmentDate, resource.comment, resource.adjustmentType, resource.active))
       adjustmentHistory += AdjustmentHistory(
         changeByUsername = "NOMIS",
         changeType = ChangeType.UPDATE,
