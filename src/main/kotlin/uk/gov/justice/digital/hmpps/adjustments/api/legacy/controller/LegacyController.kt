@@ -44,7 +44,7 @@ class LegacyController(
     ]
   )
   fun create(@RequestBody adjustment: LegacyAdjustment): LegacyAdjustmentCreatedResponse {
-    return legacyService.create(adjustment).also {
+    return legacyService.create(adjustment, migration = false).also {
       eventService.create(it.adjustmentId, adjustment.offenderNo, AdjustmentSource.NOMIS)
     }
   }
@@ -63,7 +63,7 @@ class LegacyController(
     ]
   )
   fun migration(@RequestBody adjustment: LegacyAdjustment): LegacyAdjustmentCreatedResponse {
-    return legacyService.create(adjustment)
+    return legacyService.create(adjustment, migration = true)
   }
 
   @GetMapping("/{adjustmentId}")
