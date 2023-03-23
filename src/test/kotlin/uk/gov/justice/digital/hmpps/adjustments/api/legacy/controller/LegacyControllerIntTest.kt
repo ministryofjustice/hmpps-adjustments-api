@@ -64,7 +64,7 @@ class LegacyControllerIntTest : SqsIntegrationTestBase() {
     assertThat(adjustment.daysCalculated).isEqualTo(3)
 
     val legacyData = objectMapper.convertValue(adjustment.legacyData, LegacyData::class.java)
-    assertThat(legacyData).isEqualTo(LegacyData(bookingId = 1, sentenceSequence = 1, postedDate = LocalDate.now(), comment = "Created", type = LegacyAdjustmentType.UR, active = true))
+    assertThat(legacyData).isEqualTo(LegacyData(bookingId = 1, sentenceSequence = 1, postedDate = LocalDate.now(), comment = "Created", type = LegacyAdjustmentType.UR, active = true, migration = false))
 
     assertThat(getNumberOfMessagesCurrentlyOnQueue()).isEqualTo(1)
     val latestMessage = getLatestMessage()!!.messages[0].body
@@ -91,6 +91,9 @@ class LegacyControllerIntTest : SqsIntegrationTestBase() {
 
     val adjustment = adjustmentRepository.findById(result.adjustmentId).get()
     assertThat(adjustment).isNotNull
+
+    val legacyData = objectMapper.convertValue(adjustment.legacyData, LegacyData::class.java)
+    assertThat(legacyData.migration).isTrue
 
     assertThat(getNumberOfMessagesCurrentlyOnQueue()).isEqualTo(0)
   }
@@ -150,7 +153,7 @@ class LegacyControllerIntTest : SqsIntegrationTestBase() {
     assertThat(adjustment.daysCalculated).isEqualTo(5)
 
     val legacyData = objectMapper.convertValue(adjustment.legacyData, LegacyData::class.java)
-    assertThat(legacyData).isEqualTo(LegacyData(bookingId = 1, sentenceSequence = 1, postedDate = LocalDate.now(), comment = "Updated", type = LegacyAdjustmentType.UR, active = true))
+    assertThat(legacyData).isEqualTo(LegacyData(bookingId = 1, sentenceSequence = 1, postedDate = LocalDate.now(), comment = "Updated", type = LegacyAdjustmentType.UR, active = true, migration = false))
 
     assertThat(getNumberOfMessagesCurrentlyOnQueue()).isEqualTo(1)
     val latestMessage = getLatestMessage()!!.messages[0].body
