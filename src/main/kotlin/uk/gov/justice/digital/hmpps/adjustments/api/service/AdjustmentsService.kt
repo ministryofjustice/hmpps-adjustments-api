@@ -17,6 +17,7 @@ import uk.gov.justice.digital.hmpps.adjustments.api.model.AdjustmentDetailsDto
 import uk.gov.justice.digital.hmpps.adjustments.api.model.AdjustmentDto
 import uk.gov.justice.digital.hmpps.adjustments.api.model.CreateResponseDto
 import uk.gov.justice.digital.hmpps.adjustments.api.respository.AdjustmentRepository
+import java.time.LocalDate
 import java.time.temporal.ChronoUnit
 import java.util.UUID
 import javax.persistence.EntityNotFoundException
@@ -46,7 +47,7 @@ class AdjustmentsService(
       toDate = resource.toDate,
       source = AdjustmentSource.DPS,
       adjustmentType = resource.adjustmentType,
-      legacyData = objectToJson(LegacyData(resource.bookingId, resource.sentenceSequence, null, null, null, true)),
+      legacyData = objectToJson(LegacyData(resource.bookingId, resource.sentenceSequence, LocalDate.now(), null, null, true)),
       adjustmentHistory = listOf(
         AdjustmentHistory(
           changeByUsername = getCurrentAuthentication().principal,
