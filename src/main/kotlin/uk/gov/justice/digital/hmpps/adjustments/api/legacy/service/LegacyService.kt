@@ -75,11 +75,6 @@ class LegacyService(
       .orElseThrow {
         EntityNotFoundException("No adjustment found with id $adjustmentId")
       }
-    val persistedLegacyData = objectMapper.convertValue(adjustment.legacyData, LegacyData::class.java)
-    val persistedLegacyAdjustmentType = transform(adjustment.adjustmentType, persistedLegacyData)
-    if (persistedLegacyAdjustmentType != resource.adjustmentType) {
-      throw ApiValidationException("The provided adjustment type ${resource.adjustmentType} doesn't match the persisted type $persistedLegacyAdjustmentType")
-    }
     val change = objectToJson(adjustment.copy(adjustmentHistory = emptyList()))
     adjustment.apply {
       daysCalculated = resource.adjustmentDays
