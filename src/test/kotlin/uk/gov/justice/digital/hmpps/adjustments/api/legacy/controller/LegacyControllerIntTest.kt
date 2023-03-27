@@ -164,7 +164,7 @@ class LegacyControllerIntTest : SqsIntegrationTestBase() {
     assertThat(latestMessage).contains(EventType.ADJUSTMENT_UPDATED.value)
     assertThat(latestMessage).contains(AdjustmentSource.NOMIS.name)
   }
-  
+
   @Test
   fun delete() {
     cleanQueue()
