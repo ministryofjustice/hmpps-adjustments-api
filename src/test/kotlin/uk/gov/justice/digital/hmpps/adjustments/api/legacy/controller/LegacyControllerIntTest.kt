@@ -7,7 +7,6 @@ import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.test.annotation.Rollback
-import uk.gov.justice.digital.hmpps.adjustments.api.config.ErrorResponse
 import uk.gov.justice.digital.hmpps.adjustments.api.entity.AdjustmentSource
 import uk.gov.justice.digital.hmpps.adjustments.api.entity.AdjustmentType
 import uk.gov.justice.digital.hmpps.adjustments.api.entity.ChangeType
@@ -133,6 +132,7 @@ class LegacyControllerIntTest : SqsIntegrationTestBase() {
         CREATED_ADJUSTMENT.copy(
           adjustmentFromDate = CREATED_ADJUSTMENT.adjustmentFromDate!!.minusYears(1),
           adjustmentDays = 5,
+          adjustmentType = LegacyAdjustmentType.RX,
           comment = "Updated"
         )
       )
@@ -151,11 +151,12 @@ class LegacyControllerIntTest : SqsIntegrationTestBase() {
 
     assertThat(adjustment.fromDate).isEqualTo(LocalDate.now().minusDays(5).minusYears(1))
     assertThat(adjustment.toDate).isEqualTo(LocalDate.now().minusDays(1).minusYears(1))
+    assertThat(adjustment.adjustmentType).isEqualTo(AdjustmentType.REMAND)
     assertThat(adjustment.days).isEqualTo(5)
     assertThat(adjustment.daysCalculated).isEqualTo(5)
 
     val legacyData = objectMapper.convertValue(adjustment.legacyData, LegacyData::class.java)
-    assertThat(legacyData).isEqualTo(LegacyData(bookingId = 1, sentenceSequence = 1, postedDate = LocalDate.now(), comment = "Updated", type = LegacyAdjustmentType.UR, active = true, migration = false))
+    assertThat(legacyData).isEqualTo(LegacyData(bookingId = 1, sentenceSequence = 1, postedDate = LocalDate.now(), comment = "Updated", type = LegacyAdjustmentType.RX, active = true, migration = false))
 
     awaitAtMost30Secs untilCallTo { getNumberOfMessagesCurrentlyOnQueue() } matches { it == 1 }
     val latestMessage = getLatestMessage()!!.messages[0].body
@@ -163,30 +164,7 @@ class LegacyControllerIntTest : SqsIntegrationTestBase() {
     assertThat(latestMessage).contains(EventType.ADJUSTMENT_UPDATED.value)
     assertThat(latestMessage).contains(AdjustmentSource.NOMIS.name)
   }
-
-  @Test
-  fun `update with different adjustment type`() {
-    cleanQueue()
-    val result = webTestClient
-      .put()
-      .uri("/legacy/adjustments/$CREATED_ID")
-      .headers(
-        setAuthorisation()
-      )
-      .header("Content-Type", LegacyController.LEGACY_CONTENT_TYPE)
-      .bodyValue(
-        CREATED_ADJUSTMENT.copy(
-          adjustmentType = LegacyAdjustmentType.UAL
-        )
-      )
-      .exchange()
-      .expectStatus().isBadRequest
-      .returnResult(ErrorResponse::class.java)
-      .responseBody.blockFirst()!!
-    assertThat(result.userMessage).isEqualTo("The provided adjustment type UAL doesn't match the persisted type UR")
-    awaitAtMost30Secs untilCallTo { getNumberOfMessagesCurrentlyOnQueue() } matches { it == 0 }
-  }
-
+  
   @Test
   fun delete() {
     cleanQueue()
