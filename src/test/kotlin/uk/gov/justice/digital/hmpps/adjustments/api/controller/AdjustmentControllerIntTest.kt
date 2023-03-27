@@ -1,6 +1,8 @@
 package uk.gov.justice.digital.hmpps.adjustments.api.controller
 
 import org.assertj.core.api.Assertions.assertThat
+import org.awaitility.kotlin.matches
+import org.awaitility.kotlin.untilCallTo
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.http.MediaType
@@ -46,7 +48,7 @@ class AdjustmentControllerIntTest : SqsIntegrationTestBase() {
     val legacyData = objectMapper.convertValue(adjustment.legacyData, LegacyData::class.java)
     assertThat(legacyData).isEqualTo(LegacyData(bookingId = 1, sentenceSequence = 1, postedDate = LocalDate.now(), comment = null, type = null, active = true))
 
-    assertThat(getNumberOfMessagesCurrentlyOnQueue()).isEqualTo(1)
+    awaitAtMost30Secs untilCallTo { getNumberOfMessagesCurrentlyOnQueue() } matches { it == 1 }
     val latestMessage = getLatestMessage()!!.messages[0].body
     assertThat(latestMessage).contains(adjustment.id.toString())
     assertThat(latestMessage).contains(EventType.ADJUSTMENT_CREATED.value)
@@ -70,7 +72,7 @@ class AdjustmentControllerIntTest : SqsIntegrationTestBase() {
       .responseBody.blockFirst()!!
 
     assertThat(result).isEqualTo(CREATED_ADJUSTMENT.copy(days = 4))
-    assertThat(getNumberOfMessagesCurrentlyOnQueue()).isEqualTo(0)
+    awaitAtMost30Secs untilCallTo { getNumberOfMessagesCurrentlyOnQueue() } matches { it == 0 }
   }
 
   @Test
@@ -95,7 +97,7 @@ class AdjustmentControllerIntTest : SqsIntegrationTestBase() {
     assertThat(result[0].id).isEqualTo(id)
     assertThat(result[0].adjustment).isEqualTo(CREATED_ADJUSTMENT.copy(person = person, days = 4))
 
-    assertThat(getNumberOfMessagesCurrentlyOnQueue()).isEqualTo(0)
+    awaitAtMost30Secs untilCallTo { getNumberOfMessagesCurrentlyOnQueue() } matches { it == 0 }
   }
   @Test
   fun findByPersonAndSource() {
@@ -132,7 +134,7 @@ class AdjustmentControllerIntTest : SqsIntegrationTestBase() {
 
     assertThat(nomisResult.size).isEqualTo(0)
 
-    assertThat(getNumberOfMessagesCurrentlyOnQueue()).isEqualTo(0)
+    awaitAtMost30Secs untilCallTo { getNumberOfMessagesCurrentlyOnQueue() } matches { it == 0 }
   }
 
   @Test
@@ -172,7 +174,7 @@ class AdjustmentControllerIntTest : SqsIntegrationTestBase() {
     val legacyData = objectMapper.convertValue(adjustment.legacyData, LegacyData::class.java)
     assertThat(legacyData).isEqualTo(LegacyData(bookingId = 1, sentenceSequence = 1, postedDate = LocalDate.now(), comment = null, type = null, active = true))
 
-    assertThat(getNumberOfMessagesCurrentlyOnQueue()).isEqualTo(1)
+    awaitAtMost30Secs untilCallTo { getNumberOfMessagesCurrentlyOnQueue() } matches { it == 1 }
     val latestMessage = getLatestMessage()!!.messages[0].body
     assertThat(latestMessage).contains(adjustment.id.toString())
     assertThat(latestMessage).contains(EventType.ADJUSTMENT_UPDATED.value)
@@ -201,7 +203,7 @@ class AdjustmentControllerIntTest : SqsIntegrationTestBase() {
       .returnResult(ErrorResponse::class.java)
       .responseBody.blockFirst()!!
     assertThat(result.userMessage).isEqualTo("The provided adjustment type UNLAWFULLY_AT_LARGE doesn't match the persisted type REMAND")
-    assertThat(getNumberOfMessagesCurrentlyOnQueue()).isEqualTo(0)
+    awaitAtMost30Secs untilCallTo { getNumberOfMessagesCurrentlyOnQueue() } matches { it == 0 }
   }
 
   @Test
@@ -233,7 +235,7 @@ class AdjustmentControllerIntTest : SqsIntegrationTestBase() {
       .exchange()
       .expectStatus().isNotFound
 
-    assertThat(getNumberOfMessagesCurrentlyOnQueue()).isEqualTo(1)
+    awaitAtMost30Secs untilCallTo { getNumberOfMessagesCurrentlyOnQueue() } matches { it == 1 }
     val latestMessage = getLatestMessage()!!.messages[0].body
     assertThat(latestMessage).contains(adjustment.id.toString())
     assertThat(latestMessage).contains(EventType.ADJUSTMENT_DELETED.value)
