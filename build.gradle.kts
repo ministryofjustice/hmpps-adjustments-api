@@ -34,6 +34,7 @@ dependencies {
   implementation("org.springdoc:springdoc-openapi-kotlin:1.6.13")
 
   // Test dependencies
+  testImplementation("org.awaitility:awaitility-kotlin")
   testImplementation("com.github.tomakehurst:wiremock-standalone:2.27.2")
   testImplementation("org.springframework.security:spring-security-test")
   testImplementation("org.awaitility:awaitility-kotlin:4.2.0")

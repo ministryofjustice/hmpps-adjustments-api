@@ -1,6 +1,8 @@
 package uk.gov.justice.digital.hmpps.adjustments.api.legacy.controller
 
 import org.assertj.core.api.Assertions.assertThat
+import org.awaitility.kotlin.matches
+import org.awaitility.kotlin.untilCallTo
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
@@ -66,7 +68,7 @@ class LegacyControllerIntTest : SqsIntegrationTestBase() {
     val legacyData = objectMapper.convertValue(adjustment.legacyData, LegacyData::class.java)
     assertThat(legacyData).isEqualTo(LegacyData(bookingId = 1, sentenceSequence = 1, postedDate = LocalDate.now(), comment = "Created", type = LegacyAdjustmentType.UR, active = true, migration = false))
 
-    assertThat(getNumberOfMessagesCurrentlyOnQueue()).isEqualTo(1)
+    awaitAtMost30Secs untilCallTo { getNumberOfMessagesCurrentlyOnQueue() } matches { it == 1 }
     val latestMessage = getLatestMessage()!!.messages[0].body
     assertThat(latestMessage).contains(adjustment.id.toString())
     assertThat(latestMessage).contains(EventType.ADJUSTMENT_CREATED.value)
@@ -95,7 +97,7 @@ class LegacyControllerIntTest : SqsIntegrationTestBase() {
     val legacyData = objectMapper.convertValue(adjustment.legacyData, LegacyData::class.java)
     assertThat(legacyData.migration).isTrue
 
-    assertThat(getNumberOfMessagesCurrentlyOnQueue()).isEqualTo(0)
+    awaitAtMost30Secs untilCallTo { getNumberOfMessagesCurrentlyOnQueue() } matches { it == 0 }
   }
 
   @Test
@@ -114,7 +116,7 @@ class LegacyControllerIntTest : SqsIntegrationTestBase() {
       .responseBody.blockFirst()!!
 
     assertThat(result).isEqualTo(CREATED_ADJUSTMENT)
-    assertThat(getNumberOfMessagesCurrentlyOnQueue()).isEqualTo(0)
+    awaitAtMost30Secs untilCallTo { getNumberOfMessagesCurrentlyOnQueue() } matches { it == 0 }
   }
 
   @Test
@@ -155,7 +157,7 @@ class LegacyControllerIntTest : SqsIntegrationTestBase() {
     val legacyData = objectMapper.convertValue(adjustment.legacyData, LegacyData::class.java)
     assertThat(legacyData).isEqualTo(LegacyData(bookingId = 1, sentenceSequence = 1, postedDate = LocalDate.now(), comment = "Updated", type = LegacyAdjustmentType.UR, active = true, migration = false))
 
-    assertThat(getNumberOfMessagesCurrentlyOnQueue()).isEqualTo(1)
+    awaitAtMost30Secs untilCallTo { getNumberOfMessagesCurrentlyOnQueue() } matches { it == 1 }
     val latestMessage = getLatestMessage()!!.messages[0].body
     assertThat(latestMessage).contains(adjustment.id.toString())
     assertThat(latestMessage).contains(EventType.ADJUSTMENT_UPDATED.value)
@@ -182,7 +184,7 @@ class LegacyControllerIntTest : SqsIntegrationTestBase() {
       .returnResult(ErrorResponse::class.java)
       .responseBody.blockFirst()!!
     assertThat(result.userMessage).isEqualTo("The provided adjustment type UAL doesn't match the persisted type UR")
-    assertThat(getNumberOfMessagesCurrentlyOnQueue()).isEqualTo(0)
+    awaitAtMost30Secs untilCallTo { getNumberOfMessagesCurrentlyOnQueue() } matches { it == 0 }
   }
 
   @Test
@@ -204,7 +206,7 @@ class LegacyControllerIntTest : SqsIntegrationTestBase() {
     assertThat(adjustment.adjustmentHistory.size).isEqualTo(2)
     assertThat(adjustment.adjustmentHistory[1].changeType).isEqualTo(ChangeType.DELETE)
 
-    assertThat(getNumberOfMessagesCurrentlyOnQueue()).isEqualTo(1)
+    awaitAtMost30Secs untilCallTo { getNumberOfMessagesCurrentlyOnQueue() } matches { it == 1 }
     val latestMessage = getLatestMessage()!!.messages[0].body
     assertThat(latestMessage).contains(adjustment.id.toString())
     assertThat(latestMessage).contains(EventType.ADJUSTMENT_DELETED.value)
