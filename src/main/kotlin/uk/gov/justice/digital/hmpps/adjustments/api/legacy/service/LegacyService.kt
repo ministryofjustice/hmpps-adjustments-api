@@ -101,7 +101,6 @@ class LegacyService(
     val change = objectToJson(adjustment.copy(adjustmentHistory = emptyList()))
     adjustment.apply {
       deleted = true
-      source = AdjustmentSource.NOMIS
       adjustmentHistory += AdjustmentHistory(
         changeByUsername = "NOMIS",
         changeType = ChangeType.DELETE,
