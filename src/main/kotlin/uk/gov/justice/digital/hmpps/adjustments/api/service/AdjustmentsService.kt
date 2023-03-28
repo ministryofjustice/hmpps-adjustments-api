@@ -120,7 +120,6 @@ class AdjustmentsService(
     val change = objectToJson(adjustment.copy(adjustmentHistory = emptyList()))
     adjustment.apply {
       deleted = true
-      source = AdjustmentSource.DPS
       adjustmentHistory += AdjustmentHistory(
         changeByUsername = getCurrentAuthentication().principal,
         changeType = ChangeType.DELETE,
