@@ -1,13 +1,9 @@
 package uk.gov.justice.digital.hmpps.adjustments.api.legacy.controller
 
 import org.assertj.core.api.Assertions.assertThat
-import org.awaitility.kotlin.matches
-import org.awaitility.kotlin.untilCallTo
-import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.test.annotation.Rollback
-import uk.gov.justice.digital.hmpps.adjustments.api.controller.AdjustmentControllerIntTest
 import uk.gov.justice.digital.hmpps.adjustments.api.entity.AdjustmentSource
 import uk.gov.justice.digital.hmpps.adjustments.api.entity.AdjustmentType
 import uk.gov.justice.digital.hmpps.adjustments.api.entity.ChangeType
@@ -18,9 +14,7 @@ import uk.gov.justice.digital.hmpps.adjustments.api.legacy.model.LegacyAdjustmen
 import uk.gov.justice.digital.hmpps.adjustments.api.legacy.model.LegacyData
 import uk.gov.justice.digital.hmpps.adjustments.api.model.AdjustmentDetailsDto
 import uk.gov.justice.digital.hmpps.adjustments.api.respository.AdjustmentRepository
-import uk.gov.justice.digital.hmpps.adjustments.api.service.EventType
 import java.time.LocalDate
-import java.util.UUID
 import javax.transaction.Transactional
 
 /*
@@ -32,7 +26,6 @@ class LegacyAndAdjustmentsControllerIntTest : SqsIntegrationTestBase() {
 
   @Autowired
   private lateinit var adjustmentRepository: AdjustmentRepository
-
 
   @Test
   fun `Create an adjustments from NOMIS and update it from DPS`() {
@@ -123,7 +116,6 @@ class LegacyAndAdjustmentsControllerIntTest : SqsIntegrationTestBase() {
 
     assertThat(getResult.adjustmentDays).isEqualTo(8)
   }
-
 
   @Test
   fun `Create an adjustments from NOMIS with minimal data and delete it from DPS`() {
