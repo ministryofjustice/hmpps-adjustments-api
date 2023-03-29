@@ -93,9 +93,9 @@ class AdjustmentsService(
     }
     val persistedLegacyData = objectMapper.convertValue(adjustment.legacyData, LegacyData::class.java)
     val change = objectToJson(adjustment.copy(adjustmentHistory = emptyList()))
-    var daysCalculated: Int? = if (resource.toDate != null) (ChronoUnit.DAYS.between(resource.fromDate, resource.toDate) + 1).toInt() else null
+    val calculated: Int? = if (resource.toDate != null) (ChronoUnit.DAYS.between(resource.fromDate, resource.toDate) + 1).toInt() else null
     adjustment.apply {
-      daysCalculated = resource.days ?: daysCalculated!!
+      daysCalculated = resource.days ?: calculated!!
       days = resource.days
       fromDate = resource.fromDate
       toDate = resource.toDate
