@@ -57,7 +57,7 @@ class LegacyService(
     val legacyData = objectMapper.convertValue(adjustment.legacyData, LegacyData::class.java)
     return LegacyAdjustment(
       offenderNo = adjustment.person,
-      adjustmentDays = adjustment.daysCalculated,
+      adjustmentDays = adjustment.days ?: adjustment.daysCalculated,
       adjustmentFromDate = adjustment.fromDate,
       adjustmentDate = legacyData.postedDate,
       adjustmentType = transform(adjustment.adjustmentType, legacyData),
