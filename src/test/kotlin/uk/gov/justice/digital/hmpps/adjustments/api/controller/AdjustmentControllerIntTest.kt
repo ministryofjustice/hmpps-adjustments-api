@@ -1,5 +1,6 @@
 package uk.gov.justice.digital.hmpps.adjustments.api.controller
 
+import jakarta.transaction.Transactional
 import org.assertj.core.api.Assertions.assertThat
 import org.awaitility.kotlin.matches
 import org.awaitility.kotlin.untilCallTo
@@ -20,7 +21,6 @@ import uk.gov.justice.digital.hmpps.adjustments.api.respository.AdjustmentReposi
 import uk.gov.justice.digital.hmpps.adjustments.api.service.EventType
 import java.time.LocalDate
 import java.util.UUID
-import javax.transaction.Transactional
 
 @Transactional
 class AdjustmentControllerIntTest : SqsIntegrationTestBase() {
@@ -64,7 +64,7 @@ class AdjustmentControllerIntTest : SqsIntegrationTestBase() {
       .get()
       .uri("/adjustments/$id")
       .headers(
-        setAuthorisation()
+        setAuthorisation(),
       )
       .exchange()
       .expectStatus().isOk
@@ -85,7 +85,7 @@ class AdjustmentControllerIntTest : SqsIntegrationTestBase() {
       .get()
       .uri("/adjustments?person=$person")
       .headers(
-        setAuthorisation()
+        setAuthorisation(),
       )
       .exchange()
       .expectStatus().isOk
@@ -99,6 +99,7 @@ class AdjustmentControllerIntTest : SqsIntegrationTestBase() {
 
     awaitAtMost30Secs untilCallTo { getNumberOfMessagesCurrentlyOnQueue() } matches { it == 0 }
   }
+
   @Test
   fun findByPersonAndSource() {
     val person = "HIJKLM"
@@ -109,7 +110,7 @@ class AdjustmentControllerIntTest : SqsIntegrationTestBase() {
       .get()
       .uri("/adjustments?person=$person&source=${AdjustmentSource.DPS}")
       .headers(
-        setAuthorisation()
+        setAuthorisation(),
       )
       .exchange()
       .expectStatus().isOk
@@ -124,7 +125,7 @@ class AdjustmentControllerIntTest : SqsIntegrationTestBase() {
       .get()
       .uri("/adjustments?person=$person&source=${AdjustmentSource.NOMIS}")
       .headers(
-        setAuthorisation()
+        setAuthorisation(),
       )
       .exchange()
       .expectStatus().isOk
@@ -146,13 +147,13 @@ class AdjustmentControllerIntTest : SqsIntegrationTestBase() {
       .put()
       .uri("/adjustments/$id")
       .headers(
-        setAuthorisation()
+        setAuthorisation(),
       )
       .bodyValue(
         CREATED_ADJUSTMENT.copy(
           fromDate = CREATED_ADJUSTMENT.fromDate!!.minusYears(1),
           toDate = CREATED_ADJUSTMENT.toDate!!.minusYears(1),
-        )
+        ),
       )
       .exchange()
       .expectStatus().isOk
@@ -191,12 +192,12 @@ class AdjustmentControllerIntTest : SqsIntegrationTestBase() {
       .put()
       .uri("/adjustments/$id")
       .headers(
-        setAuthorisation()
+        setAuthorisation(),
       )
       .bodyValue(
         CREATED_ADJUSTMENT.copy(
-          adjustmentType = AdjustmentType.UNLAWFULLY_AT_LARGE
-        )
+          adjustmentType = AdjustmentType.UNLAWFULLY_AT_LARGE,
+        ),
       )
       .exchange()
       .expectStatus().isBadRequest
@@ -215,7 +216,7 @@ class AdjustmentControllerIntTest : SqsIntegrationTestBase() {
       .delete()
       .uri("/adjustments/$id")
       .headers(
-        setAuthorisation()
+        setAuthorisation(),
       )
       .exchange()
       .expectStatus().isOk
@@ -230,7 +231,7 @@ class AdjustmentControllerIntTest : SqsIntegrationTestBase() {
       .get()
       .uri("/adjustments/$id")
       .headers(
-        setAuthorisation()
+        setAuthorisation(),
       )
       .exchange()
       .expectStatus().isNotFound
@@ -246,7 +247,7 @@ class AdjustmentControllerIntTest : SqsIntegrationTestBase() {
       .post()
       .uri("/adjustments")
       .headers(
-        setAuthorisation()
+        setAuthorisation(),
       )
       .contentType(MediaType.APPLICATION_JSON)
       .bodyValue(CREATED_ADJUSTMENT.copy(person = person))
@@ -264,7 +265,7 @@ class AdjustmentControllerIntTest : SqsIntegrationTestBase() {
       adjustmentType = AdjustmentType.REMAND,
       fromDate = LocalDate.now().minusDays(5),
       toDate = LocalDate.now().minusDays(2),
-      days = null
+      days = null,
     )
   }
 }

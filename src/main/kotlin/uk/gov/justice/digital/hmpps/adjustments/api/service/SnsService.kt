@@ -29,7 +29,7 @@ class SnsService(hmppsQueueService: HmppsQueueService, private val objectMapper:
         additionalInformation,
         occurredAt.atZone(ZoneId.systemDefault()).toInstant(),
         description,
-      )
+      ),
     )
   }
 
@@ -39,10 +39,10 @@ class SnsService(hmppsQueueService: HmppsQueueService, private val objectMapper:
       PublishRequest(domaineventsTopic.arn, objectMapper.writeValueAsString(payload))
         .withMessageAttributes(
           mapOf(
-            "eventType" to MessageAttributeValue().withDataType("String").withStringValue(payload.eventType)
-          )
+            "eventType" to MessageAttributeValue().withDataType("String").withStringValue(payload.eventType),
+          ),
         )
-        .also { log.info("Published event $payload to outbound topic") }
+        .also { log.info("Published event $payload to outbound topic") },
     )
   }
 }
@@ -50,7 +50,7 @@ class SnsService(hmppsQueueService: HmppsQueueService, private val objectMapper:
 data class AdditionalInformation(
   val id: UUID? = null,
   val offenderNo: String? = null,
-  val source: String? = null
+  val source: String? = null,
 )
 
 data class HMPPSDomainEvent(
@@ -58,26 +58,26 @@ data class HMPPSDomainEvent(
   val additionalInformation: AdditionalInformation,
   val version: String,
   val occurredAt: String,
-  val description: String
+  val description: String,
 ) {
   constructor(
     eventType: String,
     additionalInformation: AdditionalInformation,
     occurredAt: Instant,
-    description: String
+    description: String,
   ) : this(
     eventType,
     additionalInformation,
     "1.0",
     occurredAt.toOffsetDateFormat(),
-    description
+    description,
   )
 }
 
 enum class EventType(val value: String) {
   ADJUSTMENT_CREATED("release-date-adjustments.adjustment.inserted"),
   ADJUSTMENT_UPDATED("release-date-adjustments.adjustment.updated"),
-  ADJUSTMENT_DELETED("release-date-adjustments.adjustment.deleted")
+  ADJUSTMENT_DELETED("release-date-adjustments.adjustment.deleted"),
 }
 
 fun Instant.toOffsetDateFormat(): String =

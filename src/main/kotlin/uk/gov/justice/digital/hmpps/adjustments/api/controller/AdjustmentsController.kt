@@ -30,20 +30,20 @@ import java.util.UUID
 @Tag(name = "adjustment-controller", description = "CRUD operations for adjustments.")
 class AdjustmentsController(
   val adjustmentsService: AdjustmentsService,
-  val eventService: AdjustmentsEventService
+  val eventService: AdjustmentsEventService,
 ) {
 
   @PostMapping
   @ResponseStatus(HttpStatus.CREATED)
   @Operation(
     summary = "Create an adjustments",
-    description = "Create an adjustment."
+    description = "Create an adjustment.",
   )
   @ApiResponses(
     value = [
       ApiResponse(responseCode = "201", description = "Adjustment created"),
-      ApiResponse(responseCode = "401", description = "Unauthorised, requires a valid Oauth2 token")
-    ]
+      ApiResponse(responseCode = "401", description = "Unauthorised, requires a valid Oauth2 token"),
+    ],
   )
   fun create(@RequestBody adjustment: AdjustmentDetailsDto): CreateResponseDto {
     return adjustmentsService.create(adjustment).also {
@@ -54,18 +54,19 @@ class AdjustmentsController(
   @GetMapping("", params = ["person"])
   @Operation(
     summary = "Get adjustments by person",
-    description = "Get adjustments for a given person."
+    description = "Get adjustments for a given person.",
   )
   @ApiResponses(
     value = [
       ApiResponse(responseCode = "200", description = "Adjustment found"),
       ApiResponse(responseCode = "401", description = "Unauthorised, requires a valid Oauth2 token"),
       ApiResponse(responseCode = "404", description = "Adjustment not found"),
-    ]
+    ],
   )
   fun findByPerson(
     @Parameter(required = true, description = "The noms ID of the person")
-    @RequestParam("person") person: String,
+    @RequestParam("person")
+    person: String,
   ): List<AdjustmentDto> {
     return adjustmentsService.findByPerson(person)
   }
@@ -73,38 +74,42 @@ class AdjustmentsController(
   @GetMapping("", params = ["person", "source"])
   @Operation(
     summary = "Get adjustments by person and source",
-    description = "Get adjustments for a given person and adjustment source."
+    description = "Get adjustments for a given person and adjustment source.",
   )
   @ApiResponses(
     value = [
       ApiResponse(responseCode = "200", description = "Adjustment found"),
       ApiResponse(responseCode = "401", description = "Unauthorised, requires a valid Oauth2 token"),
       ApiResponse(responseCode = "404", description = "Adjustment not found"),
-    ]
+    ],
   )
   fun findByPersonAndSource(
     @Parameter(required = true, description = "The noms ID of the person")
-    @RequestParam("person") person: String,
+    @RequestParam("person")
+    person: String,
     @Parameter(required = true, description = "The noms ID of the person")
-    @RequestParam("source") source: AdjustmentSource,
+    @RequestParam("source")
+    source: AdjustmentSource,
   ): List<AdjustmentDto> {
     return adjustmentsService.findByPersonAndSource(person, source)
   }
+
   @GetMapping("/{adjustmentId}")
   @Operation(
     summary = "Get an adjustments",
-    description = "Get details of an adjustment"
+    description = "Get details of an adjustment",
   )
   @ApiResponses(
     value = [
       ApiResponse(responseCode = "200", description = "Adjustment found"),
       ApiResponse(responseCode = "401", description = "Unauthorised, requires a valid Oauth2 token"),
       ApiResponse(responseCode = "404", description = "Adjustment not found"),
-    ]
+    ],
   )
   fun get(
     @Parameter(required = true, description = "The adjustment UUID")
-    @PathVariable("adjustmentId") adjustmentId: UUID
+    @PathVariable("adjustmentId")
+    adjustmentId: UUID,
   ): AdjustmentDetailsDto {
     return adjustmentsService.get(adjustmentId)
   }
@@ -112,19 +117,20 @@ class AdjustmentsController(
   @PutMapping("/{adjustmentId}")
   @Operation(
     summary = "Update an adjustments",
-    description = "Update an adjustment."
+    description = "Update an adjustment.",
   )
   @ApiResponses(
     value = [
       ApiResponse(responseCode = "200", description = "Adjustment update"),
       ApiResponse(responseCode = "401", description = "Unauthorised, requires a valid Oauth2 token"),
       ApiResponse(responseCode = "404", description = "Adjustment not found"),
-    ]
+    ],
   )
   fun update(
     @Parameter(required = true, description = "The adjustment UUID")
-    @PathVariable("adjustmentId") adjustmentId: UUID,
-    @RequestBody adjustment: AdjustmentDetailsDto
+    @PathVariable("adjustmentId")
+    adjustmentId: UUID,
+    @RequestBody adjustment: AdjustmentDetailsDto,
   ) {
     adjustmentsService.update(adjustmentId, adjustment).also {
       eventService.update(adjustmentId, adjustment.person, AdjustmentSource.DPS)
@@ -134,18 +140,19 @@ class AdjustmentsController(
   @DeleteMapping("/{adjustmentId}")
   @Operation(
     summary = "Delete an adjustments",
-    description = "Delete an adjustment."
+    description = "Delete an adjustment.",
   )
   @ApiResponses(
     value = [
       ApiResponse(responseCode = "200", description = "Adjustment deleted"),
       ApiResponse(responseCode = "401", description = "Unauthorised, requires a valid Oauth2 token"),
       ApiResponse(responseCode = "404", description = "Adjustment not found"),
-    ]
+    ],
   )
   fun delete(
     @Parameter(required = true, description = "The adjustment UUID")
-    @PathVariable("adjustmentId") adjustmentId: UUID
+    @PathVariable("adjustmentId")
+    adjustmentId: UUID,
   ) {
     adjustmentsService.get(adjustmentId).also {
       adjustmentsService.delete(adjustmentId)

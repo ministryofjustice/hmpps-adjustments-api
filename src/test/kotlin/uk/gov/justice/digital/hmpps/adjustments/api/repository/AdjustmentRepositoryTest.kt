@@ -1,7 +1,8 @@
 package uk.gov.justice.digital.hmpps.adjustments.api.repository
 
 import com.google.common.collect.Lists
-import com.vladmihalcea.hibernate.type.json.internal.JacksonUtil
+import io.hypersistence.utils.hibernate.type.json.internal.JacksonUtil
+import jakarta.transaction.Transactional
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
@@ -15,7 +16,6 @@ import uk.gov.justice.digital.hmpps.adjustments.api.integration.SqsIntegrationTe
 import uk.gov.justice.digital.hmpps.adjustments.api.respository.AdjustmentRepository
 import java.time.LocalDate
 import java.time.LocalDateTime
-import javax.transaction.Transactional
 
 @Transactional
 class AdjustmentRepositoryTest : SqsIntegrationTestBase() {
@@ -39,9 +39,9 @@ class AdjustmentRepositoryTest : SqsIntegrationTestBase() {
           changeType = ChangeType.CREATE,
           changeAt = LocalDateTime.now(),
           changeByUsername = "Someone",
-          change = JacksonUtil.toJsonNode("{\"something\":false}")
-        )
-      )
+          change = JacksonUtil.toJsonNode("{\"something\":false}"),
+        ),
+      ),
     )
 
     val created = adjustmentRepository.save(adjustment)
@@ -58,7 +58,7 @@ class AdjustmentRepositoryTest : SqsIntegrationTestBase() {
       person = "123ABC",
       fromDate = null,
       toDate = LocalDate.now().plusDays(5),
-      source = AdjustmentSource.DPS
+      source = AdjustmentSource.DPS,
     )
 
     try {

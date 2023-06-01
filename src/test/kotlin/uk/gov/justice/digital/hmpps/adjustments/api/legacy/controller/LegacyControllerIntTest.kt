@@ -1,5 +1,6 @@
 package uk.gov.justice.digital.hmpps.adjustments.api.legacy.controller
 
+import jakarta.transaction.Transactional
 import org.assertj.core.api.Assertions.assertThat
 import org.awaitility.kotlin.matches
 import org.awaitility.kotlin.untilCallTo
@@ -19,7 +20,6 @@ import uk.gov.justice.digital.hmpps.adjustments.api.respository.AdjustmentReposi
 import uk.gov.justice.digital.hmpps.adjustments.api.service.EventType
 import java.time.LocalDate
 import java.util.UUID
-import javax.transaction.Transactional
 
 @Transactional
 @Rollback
@@ -36,7 +36,7 @@ class LegacyControllerIntTest : SqsIntegrationTestBase() {
       .post()
       .uri("/legacy/adjustments")
       .headers(
-        setAuthorisation()
+        setAuthorisation(),
       )
       .header("Content-Type", LegacyController.LEGACY_CONTENT_TYPE)
       .bodyValue(CREATED_ADJUSTMENT)
@@ -81,7 +81,7 @@ class LegacyControllerIntTest : SqsIntegrationTestBase() {
       .post()
       .uri("/legacy/adjustments/migration")
       .headers(
-        setAuthorisation()
+        setAuthorisation(),
       )
       .header("Content-Type", LegacyController.LEGACY_CONTENT_TYPE)
       .bodyValue(CREATED_ADJUSTMENT)
@@ -106,7 +106,7 @@ class LegacyControllerIntTest : SqsIntegrationTestBase() {
       .get()
       .uri("/legacy/adjustments/$CREATED_ID")
       .headers(
-        setAuthorisation()
+        setAuthorisation(),
       )
       .header("Content-Type", LegacyController.LEGACY_CONTENT_TYPE)
       .exchange()
@@ -125,7 +125,7 @@ class LegacyControllerIntTest : SqsIntegrationTestBase() {
       .put()
       .uri("/legacy/adjustments/$CREATED_ID")
       .headers(
-        setAuthorisation()
+        setAuthorisation(),
       )
       .header("Content-Type", LegacyController.LEGACY_CONTENT_TYPE)
       .bodyValue(
@@ -133,8 +133,8 @@ class LegacyControllerIntTest : SqsIntegrationTestBase() {
           adjustmentFromDate = CREATED_ADJUSTMENT.adjustmentFromDate!!.minusYears(1),
           adjustmentDays = 5,
           adjustmentType = LegacyAdjustmentType.RX,
-          comment = "Updated"
-        )
+          comment = "Updated",
+        ),
       )
       .exchange()
       .expectStatus().isOk
@@ -172,7 +172,7 @@ class LegacyControllerIntTest : SqsIntegrationTestBase() {
       .delete()
       .uri("/legacy/adjustments/$CREATED_ID")
       .headers(
-        setAuthorisation()
+        setAuthorisation(),
       )
       .header("Content-Type", LegacyController.LEGACY_CONTENT_TYPE)
       .exchange()
@@ -193,7 +193,7 @@ class LegacyControllerIntTest : SqsIntegrationTestBase() {
       .get()
       .uri("/legacy/adjustments/$CREATED_ID")
       .headers(
-        setAuthorisation()
+        setAuthorisation(),
       )
       .header("Content-Type", LegacyController.LEGACY_CONTENT_TYPE)
       .exchange()
@@ -210,7 +210,7 @@ class LegacyControllerIntTest : SqsIntegrationTestBase() {
       adjustmentFromDate = LocalDate.now().minusDays(5),
       adjustmentDays = 3,
       comment = "Created",
-      active = true
+      active = true,
     )
   }
 }

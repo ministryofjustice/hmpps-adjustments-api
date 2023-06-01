@@ -10,5 +10,5 @@ enum class LegacyAdjustmentType {
   RST,
   RX, // remand
   S240A, // tagged bail
-  UR // unused remand
+  UR, // unused remand
 }

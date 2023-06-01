@@ -22,5 +22,5 @@ data class LegacyAdjustment(
   @Schema(description = "The NOMIS comment for this adjustment")
   val comment: String?,
   @Schema(description = "The NOMIS active or inactive flag")
-  val active: Boolean
+  val active: Boolean,
 )
