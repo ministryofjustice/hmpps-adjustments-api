@@ -7,7 +7,7 @@ import java.util.UUID
 
 @Service
 class AdjustmentsEventService(
-  private val snsService: SnsService
+  private val snsService: SnsService,
 ) {
 
   fun create(id: UUID, person: String, source: AdjustmentSource) {
@@ -18,8 +18,8 @@ class AdjustmentsEventService(
       AdditionalInformation(
         id,
         person,
-        source.toString()
-      )
+        source.toString(),
+      ),
     )
   }
 
@@ -31,8 +31,8 @@ class AdjustmentsEventService(
       AdditionalInformation(
         id,
         person,
-        source.toString()
-      )
+        source.toString(),
+      ),
     )
   }
 
@@ -44,8 +44,8 @@ class AdjustmentsEventService(
       AdditionalInformation(
         id,
         person,
-        source.toString()
-      )
+        source.toString(),
+      ),
     )
   }
 }

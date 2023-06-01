@@ -28,20 +28,20 @@ import java.util.UUID
 @Tag(name = "legacy-controller", description = "CRUD operations for syncing data from NOMIS into adjustments api database.")
 class LegacyController(
   val legacyService: LegacyService,
-  val eventService: AdjustmentsEventService
+  val eventService: AdjustmentsEventService,
 ) {
 
   @PostMapping
   @ResponseStatus(HttpStatus.CREATED)
   @Operation(
     summary = "Create an adjustments",
-    description = "Synchronise a creation from NOMIS into adjustments API."
+    description = "Synchronise a creation from NOMIS into adjustments API.",
   )
   @ApiResponses(
     value = [
       ApiResponse(responseCode = "201", description = "Adjustment created"),
-      ApiResponse(responseCode = "401", description = "Unauthorised, requires a valid Oauth2 token")
-    ]
+      ApiResponse(responseCode = "401", description = "Unauthorised, requires a valid Oauth2 token"),
+    ],
   )
   fun create(@RequestBody adjustment: LegacyAdjustment): LegacyAdjustmentCreatedResponse {
     return legacyService.create(adjustment, migration = false).also {
@@ -54,13 +54,13 @@ class LegacyController(
   @Operation(
     summary = "Create an adjustment from the migration job",
     description = "Synchronise a creation from NOMIS into adjustments API. This endpoint is used for initial migration " +
-      "of data from NOMIS without raising any events."
+      "of data from NOMIS without raising any events.",
   )
   @ApiResponses(
     value = [
       ApiResponse(responseCode = "201", description = "Adjustment created"),
-      ApiResponse(responseCode = "401", description = "Unauthorised, requires a valid Oauth2 token")
-    ]
+      ApiResponse(responseCode = "401", description = "Unauthorised, requires a valid Oauth2 token"),
+    ],
   )
   fun migration(@RequestBody adjustment: LegacyAdjustment): LegacyAdjustmentCreatedResponse {
     return legacyService.create(adjustment, migration = true)
@@ -69,18 +69,19 @@ class LegacyController(
   @GetMapping("/{adjustmentId}")
   @Operation(
     summary = "Get an adjustments",
-    description = "Get details of an adjustment in the NOMIS system format."
+    description = "Get details of an adjustment in the NOMIS system format.",
   )
   @ApiResponses(
     value = [
       ApiResponse(responseCode = "200", description = "Adjustment found"),
       ApiResponse(responseCode = "401", description = "Unauthorised, requires a valid Oauth2 token"),
       ApiResponse(responseCode = "404", description = "Adjustment not found"),
-    ]
+    ],
   )
   fun get(
     @Parameter(required = true, description = "The adjustment UUID")
-    @PathVariable("adjustmentId") adjustmentId: UUID
+    @PathVariable("adjustmentId")
+    adjustmentId: UUID,
   ): LegacyAdjustment {
     return legacyService.get(adjustmentId)
   }
@@ -88,19 +89,20 @@ class LegacyController(
   @PutMapping("/{adjustmentId}")
   @Operation(
     summary = "Update an adjustments",
-    description = "Synchronise an update from NOMIS into adjustments API."
+    description = "Synchronise an update from NOMIS into adjustments API.",
   )
   @ApiResponses(
     value = [
       ApiResponse(responseCode = "200", description = "Adjustment update"),
       ApiResponse(responseCode = "401", description = "Unauthorised, requires a valid Oauth2 token"),
       ApiResponse(responseCode = "404", description = "Adjustment not found"),
-    ]
+    ],
   )
   fun update(
     @Parameter(required = true, description = "The adjustment UUID")
-    @PathVariable("adjustmentId") adjustmentId: UUID,
-    @RequestBody adjustment: LegacyAdjustment
+    @PathVariable("adjustmentId")
+    adjustmentId: UUID,
+    @RequestBody adjustment: LegacyAdjustment,
   ) {
     legacyService.update(adjustmentId, adjustment).also {
       eventService.update(adjustmentId, adjustment.offenderNo, AdjustmentSource.NOMIS)
@@ -110,18 +112,19 @@ class LegacyController(
   @DeleteMapping("/{adjustmentId}")
   @Operation(
     summary = "Delete an adjustments",
-    description = "Synchronise a deletion from NOMIS into adjustments API."
+    description = "Synchronise a deletion from NOMIS into adjustments API.",
   )
   @ApiResponses(
     value = [
       ApiResponse(responseCode = "200", description = "Adjustment deleted"),
       ApiResponse(responseCode = "401", description = "Unauthorised, requires a valid Oauth2 token"),
       ApiResponse(responseCode = "404", description = "Adjustment not found"),
-    ]
+    ],
   )
   fun delete(
     @Parameter(required = true, description = "The adjustment UUID")
-    @PathVariable("adjustmentId") adjustmentId: UUID
+    @PathVariable("adjustmentId")
+    adjustmentId: UUID,
   ) {
     legacyService.get(adjustmentId).also {
       legacyService.delete(adjustmentId)

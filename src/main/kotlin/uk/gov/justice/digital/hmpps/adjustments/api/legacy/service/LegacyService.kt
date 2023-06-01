@@ -2,7 +2,8 @@ package uk.gov.justice.digital.hmpps.adjustments.api.legacy.service
 
 import com.fasterxml.jackson.databind.JsonNode
 import com.fasterxml.jackson.databind.ObjectMapper
-import com.vladmihalcea.hibernate.type.json.internal.JacksonUtil
+import io.hypersistence.utils.hibernate.type.json.internal.JacksonUtil
+import jakarta.persistence.EntityNotFoundException
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import uk.gov.justice.digital.hmpps.adjustments.api.entity.Adjustment
@@ -16,13 +17,12 @@ import uk.gov.justice.digital.hmpps.adjustments.api.legacy.model.LegacyAdjustmen
 import uk.gov.justice.digital.hmpps.adjustments.api.legacy.model.LegacyData
 import uk.gov.justice.digital.hmpps.adjustments.api.respository.AdjustmentRepository
 import java.util.UUID
-import javax.persistence.EntityNotFoundException
 
 @Service
 @Transactional(readOnly = true)
 class LegacyService(
   val adjustmentRepository: AdjustmentRepository,
-  val objectMapper: ObjectMapper
+  val objectMapper: ObjectMapper,
 ) {
 
   @Transactional
@@ -40,9 +40,9 @@ class LegacyService(
         AdjustmentHistory(
           changeByUsername = "NOMIS",
           changeType = ChangeType.CREATE,
-          changeSource = AdjustmentSource.NOMIS
-        )
-      )
+          changeSource = AdjustmentSource.NOMIS,
+        ),
+      ),
     )
 
     return LegacyAdjustmentCreatedResponse(adjustmentRepository.save(adjustment).id)
@@ -64,7 +64,7 @@ class LegacyService(
       sentenceSequence = legacyData.sentenceSequence,
       bookingId = legacyData.bookingId,
       active = legacyData.active,
-      comment = legacyData.comment
+      comment = legacyData.comment,
     )
   }
 
@@ -87,7 +87,7 @@ class LegacyService(
         changeType = ChangeType.UPDATE,
         change = change,
         changeSource = AdjustmentSource.NOMIS,
-        adjustment = adjustment
+        adjustment = adjustment,
       )
     }
   }
@@ -106,7 +106,7 @@ class LegacyService(
         changeType = ChangeType.DELETE,
         changeSource = AdjustmentSource.NOMIS,
         change = change,
-        adjustment = adjustment
+        adjustment = adjustment,
       )
     }
   }

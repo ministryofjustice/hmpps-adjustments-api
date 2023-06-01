@@ -1,5 +1,6 @@
 package uk.gov.justice.digital.hmpps.adjustments.api.legacy.controller
 
+import jakarta.transaction.Transactional
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
@@ -15,7 +16,6 @@ import uk.gov.justice.digital.hmpps.adjustments.api.legacy.model.LegacyData
 import uk.gov.justice.digital.hmpps.adjustments.api.model.AdjustmentDetailsDto
 import uk.gov.justice.digital.hmpps.adjustments.api.respository.AdjustmentRepository
 import java.time.LocalDate
-import javax.transaction.Transactional
 
 /*
 This is testing the sync between NOMIS and our service.
@@ -33,7 +33,7 @@ class LegacyAndAdjustmentsControllerIntTest : SqsIntegrationTestBase() {
       .post()
       .uri("/legacy/adjustments")
       .headers(
-        setAuthorisation()
+        setAuthorisation(),
       )
       .header("Content-Type", LegacyController.LEGACY_CONTENT_TYPE)
       .bodyValue(LEGACY_ADJUSTMENT)
@@ -48,7 +48,7 @@ class LegacyAndAdjustmentsControllerIntTest : SqsIntegrationTestBase() {
       .put()
       .uri("/adjustments/$id")
       .headers(
-        setAuthorisation()
+        setAuthorisation(),
       )
       .bodyValue(ADJUSTMENT)
       .exchange()
@@ -81,7 +81,7 @@ class LegacyAndAdjustmentsControllerIntTest : SqsIntegrationTestBase() {
       .post()
       .uri("/legacy/adjustments")
       .headers(
-        setAuthorisation()
+        setAuthorisation(),
       )
       .header("Content-Type", LegacyController.LEGACY_CONTENT_TYPE)
       .bodyValue(LEGACY_ADJUSTMENT.copy(adjustmentFromDate = null))
@@ -96,7 +96,7 @@ class LegacyAndAdjustmentsControllerIntTest : SqsIntegrationTestBase() {
       .put()
       .uri("/adjustments/$id")
       .headers(
-        setAuthorisation()
+        setAuthorisation(),
       )
       .bodyValue(ADJUSTMENT)
       .exchange()
@@ -106,7 +106,7 @@ class LegacyAndAdjustmentsControllerIntTest : SqsIntegrationTestBase() {
       .get()
       .uri("/legacy/adjustments/$id")
       .headers(
-        setAuthorisation()
+        setAuthorisation(),
       )
       .header("Content-Type", LegacyController.LEGACY_CONTENT_TYPE)
       .exchange()
@@ -123,7 +123,7 @@ class LegacyAndAdjustmentsControllerIntTest : SqsIntegrationTestBase() {
       .post()
       .uri("/legacy/adjustments")
       .headers(
-        setAuthorisation()
+        setAuthorisation(),
       )
       .header("Content-Type", LegacyController.LEGACY_CONTENT_TYPE)
       .bodyValue(LEGACY_ADJUSTMENT.copy(adjustmentFromDate = null))
@@ -138,7 +138,7 @@ class LegacyAndAdjustmentsControllerIntTest : SqsIntegrationTestBase() {
       .delete()
       .uri("/adjustments/$id")
       .headers(
-        setAuthorisation()
+        setAuthorisation(),
       )
       .exchange()
       .expectStatus().isOk
@@ -154,7 +154,7 @@ class LegacyAndAdjustmentsControllerIntTest : SqsIntegrationTestBase() {
       adjustmentFromDate = LocalDate.now().minusDays(5),
       adjustmentDays = 3,
       comment = "Created",
-      active = true
+      active = true,
     )
 
     private val ADJUSTMENT = AdjustmentDetailsDto(
@@ -164,7 +164,7 @@ class LegacyAndAdjustmentsControllerIntTest : SqsIntegrationTestBase() {
       adjustmentType = AdjustmentType.REMAND,
       fromDate = LocalDate.now().minusDays(5),
       toDate = LocalDate.now().plusDays(2),
-      days = null
+      days = null,
     )
   }
 }

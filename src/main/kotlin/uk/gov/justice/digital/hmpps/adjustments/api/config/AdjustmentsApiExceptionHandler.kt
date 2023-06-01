@@ -1,5 +1,7 @@
 package uk.gov.justice.digital.hmpps.adjustments.api.config
 
+import jakarta.persistence.EntityNotFoundException
+import jakarta.validation.ValidationException
 import org.slf4j.LoggerFactory
 import org.springframework.http.HttpStatus
 import org.springframework.http.ResponseEntity
@@ -10,8 +12,6 @@ import org.springframework.web.bind.annotation.RestControllerAdvice
 import org.springframework.web.client.RestClientException
 import org.springframework.web.client.RestClientResponseException
 import uk.gov.justice.digital.hmpps.adjustments.api.error.ApiValidationException
-import javax.persistence.EntityNotFoundException
-import javax.validation.ValidationException
 
 @RestControllerAdvice
 class AdjustmentsApiExceptionHandler {
@@ -25,8 +25,8 @@ class AdjustmentsApiExceptionHandler {
         ErrorResponse(
           status = HttpStatus.FORBIDDEN.value(),
           userMessage = "Authentication problem. Check token and roles - ${e.message}",
-          developerMessage = e.message
-        )
+          developerMessage = e.message,
+        ),
       )
   }
 
@@ -39,8 +39,8 @@ class AdjustmentsApiExceptionHandler {
         ErrorResponse(
           status = HttpStatus.UNAUTHORIZED.value(),
           userMessage = "Authentication problem. Check token and roles - ${e.message}",
-          developerMessage = e.message
-        )
+          developerMessage = e.message,
+        ),
       )
   }
 
@@ -53,8 +53,8 @@ class AdjustmentsApiExceptionHandler {
         ErrorResponse(
           status = e.rawStatusCode,
           userMessage = "Rest client exception ${e.message}",
-          developerMessage = e.message
-        )
+          developerMessage = e.message,
+        ),
       )
   }
 
@@ -67,8 +67,8 @@ class AdjustmentsApiExceptionHandler {
         ErrorResponse(
           status = HttpStatus.INTERNAL_SERVER_ERROR.value(),
           userMessage = "Rest client exception ${e.message}",
-          developerMessage = e.message
-        )
+          developerMessage = e.message,
+        ),
       )
   }
 
@@ -81,8 +81,8 @@ class AdjustmentsApiExceptionHandler {
         ErrorResponse(
           status = HttpStatus.NOT_FOUND.value(),
           userMessage = "Not found: ${e.message}",
-          developerMessage = e.message
-        )
+          developerMessage = e.message,
+        ),
       )
   }
 
@@ -95,8 +95,8 @@ class AdjustmentsApiExceptionHandler {
         ErrorResponse(
           status = HttpStatus.BAD_REQUEST.value(),
           userMessage = "Validation failure: ${e.message}",
-          developerMessage = e.message
-        )
+          developerMessage = e.message,
+        ),
       )
   }
 
@@ -109,8 +109,8 @@ class AdjustmentsApiExceptionHandler {
         ErrorResponse(
           status = HttpStatus.BAD_REQUEST.value(),
           userMessage = e.message,
-          developerMessage = e.message
-        )
+          developerMessage = e.message,
+        ),
       )
   }
 
@@ -123,8 +123,8 @@ class AdjustmentsApiExceptionHandler {
         ErrorResponse(
           status = HttpStatus.INTERNAL_SERVER_ERROR,
           userMessage = "Unexpected error: ${e.message}",
-          developerMessage = e.message
-        )
+          developerMessage = e.message,
+        ),
       )
   }
 
@@ -138,14 +138,14 @@ data class ErrorResponse(
   val errorCode: Int? = null,
   val userMessage: String? = null,
   val developerMessage: String? = null,
-  val moreInfo: String? = null
+  val moreInfo: String? = null,
 ) {
   constructor(
     status: HttpStatus,
     errorCode: Int? = null,
     userMessage: String? = null,
     developerMessage: String? = null,
-    moreInfo: String? = null
+    moreInfo: String? = null,
   ) :
     this(status.value(), errorCode, userMessage, developerMessage, moreInfo)
 }

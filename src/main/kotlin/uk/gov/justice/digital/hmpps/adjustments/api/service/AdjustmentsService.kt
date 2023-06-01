@@ -2,7 +2,8 @@ package uk.gov.justice.digital.hmpps.adjustments.api.service
 
 import com.fasterxml.jackson.databind.JsonNode
 import com.fasterxml.jackson.databind.ObjectMapper
-import com.vladmihalcea.hibernate.type.json.internal.JacksonUtil
+import io.hypersistence.utils.hibernate.type.json.internal.JacksonUtil
+import jakarta.persistence.EntityNotFoundException
 import org.springframework.security.core.context.SecurityContextHolder
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
@@ -20,13 +21,12 @@ import uk.gov.justice.digital.hmpps.adjustments.api.respository.AdjustmentReposi
 import java.time.LocalDate
 import java.time.temporal.ChronoUnit
 import java.util.UUID
-import javax.persistence.EntityNotFoundException
 
 @Service
 @Transactional(readOnly = true)
 class AdjustmentsService(
   val adjustmentRepository: AdjustmentRepository,
-  val objectMapper: ObjectMapper
+  val objectMapper: ObjectMapper,
 ) {
 
   fun getCurrentAuthentication(): AuthAwareAuthenticationToken =
@@ -52,9 +52,9 @@ class AdjustmentsService(
         AdjustmentHistory(
           changeByUsername = getCurrentAuthentication().principal,
           changeType = ChangeType.CREATE,
-          changeSource = AdjustmentSource.DPS
-        )
-      )
+          changeSource = AdjustmentSource.DPS,
+        ),
+      ),
     )
 
     return CreateResponseDto(adjustmentRepository.save(adjustment).id)
@@ -106,7 +106,7 @@ class AdjustmentsService(
         changeType = ChangeType.UPDATE,
         change = change,
         changeSource = AdjustmentSource.DPS,
-        adjustment = adjustment
+        adjustment = adjustment,
       )
     }
   }
@@ -125,7 +125,7 @@ class AdjustmentsService(
         changeType = ChangeType.DELETE,
         changeSource = AdjustmentSource.DPS,
         change = change,
-        adjustment = adjustment
+        adjustment = adjustment,
       )
     }
   }
@@ -143,7 +143,7 @@ class AdjustmentsService(
       toDate = adjustment.toDate,
       adjustmentType = adjustment.adjustmentType,
       sentenceSequence = legacyData.sentenceSequence,
-      bookingId = legacyData.bookingId
+      bookingId = legacyData.bookingId,
     )
   }
 }

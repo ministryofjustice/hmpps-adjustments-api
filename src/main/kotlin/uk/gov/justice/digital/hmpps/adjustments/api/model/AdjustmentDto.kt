@@ -8,5 +8,5 @@ data class AdjustmentDto(
   @Schema(description = "The ID of the adjustment")
   val id: UUID,
   @Schema(description = "The details of the adjustment")
-  val adjustment: AdjustmentDetailsDto
+  val adjustment: AdjustmentDetailsDto,
 )
