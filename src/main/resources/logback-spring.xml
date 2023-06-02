@@ -38,7 +38,7 @@
     </logger>
 
     <root level="INFO">
-        <appender-ref ref="logAppender"/>
+        <appender-ref ref="consoleAppender"/>
     </root>
 
 </configuration>
