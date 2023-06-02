@@ -1,4 +1,4 @@
-package uk.gov.justice.digital.hmpps.calculatereleasedatesapi.config
+package uk.gov.justice.digital.hmpps.adjustments.api.config
 
 import com.microsoft.applicationinsights.TelemetryClient
 import org.slf4j.LoggerFactory

@@ -13,6 +13,7 @@ import jakarta.persistence.ManyToOne
 import jakarta.persistence.Table
 import jakarta.validation.constraints.NotNull
 import org.hibernate.annotations.Type
+import uk.gov.justice.digital.hmpps.adjustments.api.config.PostgreSQLEnumType
 import java.time.LocalDateTime
 import java.util.UUID
 
@@ -32,6 +33,7 @@ class AdjustmentHistory(
   @NotNull
   @Enumerated(EnumType.STRING)
   @Column(columnDefinition = "change_types")
+  @Type(PostgreSQLEnumType::class)
   val changeType: ChangeType = ChangeType.CREATE,
 
   @Type(value = JsonType::class)
@@ -46,5 +48,7 @@ class AdjustmentHistory(
 
   @NotNull
   @Enumerated(EnumType.STRING)
+  @Column(columnDefinition = "source_systems")
+  @Type(PostgreSQLEnumType::class)
   val changeSource: AdjustmentSource = AdjustmentSource.DPS,
 )
