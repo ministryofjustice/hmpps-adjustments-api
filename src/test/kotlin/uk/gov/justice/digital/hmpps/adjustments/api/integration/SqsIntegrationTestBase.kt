@@ -48,8 +48,10 @@ class SqsIntegrationTestBase : IntegrationTestBase() {
 
   @BeforeEach
   fun cleanQueue() {
-    adjustmentsQueue.sqsClient.purgeQueue(PurgeQueueRequest.builder().queueUrl(adjustmentsQueue.queueUrl).build())
-    await untilCallTo { adjustmentsQueue.sqsClient.countMessagesOnQueue(adjustmentsQueue.queueUrl).get() } matches { it == 0 }
+    await untilCallTo {
+      adjustmentsQueue.sqsClient.purgeQueue(PurgeQueueRequest.builder().queueUrl(adjustmentsQueue.queueUrl).build())
+      adjustmentsQueue.sqsClient.countMessagesOnQueue(adjustmentsQueue.queueUrl).get()
+    } matches { it == 0 }
   }
 
   companion object {
