@@ -1,10 +1,10 @@
 package uk.gov.justice.digital.hmpps.adjustments.api.integration
 
-import com.amazonaws.services.sqs.model.PurgeQueueRequest
-import com.amazonaws.services.sqs.model.ReceiveMessageResult
 import com.fasterxml.jackson.databind.ObjectMapper
 import org.awaitility.core.ConditionFactory
 import org.awaitility.kotlin.await
+import org.awaitility.kotlin.matches
+import org.awaitility.kotlin.untilCallTo
 import org.junit.jupiter.api.BeforeEach
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.context.SpringBootTest
@@ -12,11 +12,15 @@ import org.springframework.boot.test.mock.mockito.SpyBean
 import org.springframework.test.context.ActiveProfiles
 import org.springframework.test.context.DynamicPropertyRegistry
 import org.springframework.test.context.DynamicPropertySource
+import software.amazon.awssdk.services.sqs.model.PurgeQueueRequest
+import software.amazon.awssdk.services.sqs.model.ReceiveMessageRequest
+import software.amazon.awssdk.services.sqs.model.ReceiveMessageResponse
 import uk.gov.justice.hmpps.sqs.HmppsQueue
 import uk.gov.justice.hmpps.sqs.HmppsQueueService
 import uk.gov.justice.hmpps.sqs.HmppsSqsProperties
 import uk.gov.justice.hmpps.sqs.MissingQueueException
 import uk.gov.justice.hmpps.sqs.MissingTopicException
+import uk.gov.justice.hmpps.sqs.countMessagesOnQueue
 import java.time.Duration
 
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
@@ -44,7 +48,10 @@ class SqsIntegrationTestBase : IntegrationTestBase() {
 
   @BeforeEach
   fun cleanQueue() {
-    adjustmentsQueue.sqsClient.purgeQueue(PurgeQueueRequest(adjustmentsQueue.queueUrl))
+    await untilCallTo {
+      adjustmentsQueue.sqsClient.purgeQueue(PurgeQueueRequest.builder().queueUrl(adjustmentsQueue.queueUrl).build())
+      adjustmentsQueue.sqsClient.countMessagesOnQueue(adjustmentsQueue.queueUrl).get()
+    } matches { it == 0 }
   }
 
   companion object {
@@ -61,11 +68,10 @@ class SqsIntegrationTestBase : IntegrationTestBase() {
   protected fun jsonString(any: Any) = objectMapper.writeValueAsString(any) as String
 
   fun getNumberOfMessagesCurrentlyOnQueue(): Int? {
-    val queueAttributes = adjustmentsQueue.sqsClient.getQueueAttributes(adjustmentsQueue.queueUrl, listOf("ApproximateNumberOfMessages"))
-    return queueAttributes.attributes["ApproximateNumberOfMessages"]?.toInt()
+    return adjustmentsQueue.sqsClient.countMessagesOnQueue(adjustmentsQueue.queueUrl).get()
   }
 
-  fun getLatestMessage(): ReceiveMessageResult? {
-    return adjustmentsQueue.sqsClient.receiveMessage(adjustmentsQueue.queueUrl)
+  fun getLatestMessage(): ReceiveMessageResponse? {
+    return adjustmentsQueue.sqsClient.receiveMessage(ReceiveMessageRequest.builder().queueUrl(adjustmentsQueue.queueUrl).build()).get()
   }
 }

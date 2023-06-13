@@ -68,7 +68,7 @@ class LegacyControllerIntTest : SqsIntegrationTestBase() {
     assertThat(legacyData).isEqualTo(LegacyData(bookingId = 1, sentenceSequence = 1, postedDate = LocalDate.now(), comment = "Created", type = LegacyAdjustmentType.UR, active = true, migration = false))
 
     awaitAtMost30Secs untilCallTo { getNumberOfMessagesCurrentlyOnQueue() } matches { it == 1 }
-    val latestMessage = getLatestMessage()!!.messages[0].body
+    val latestMessage: String = getLatestMessage()!!.messages()[0].body()
     assertThat(latestMessage).contains(adjustment.id.toString())
     assertThat(latestMessage).contains(EventType.ADJUSTMENT_CREATED.value)
     assertThat(latestMessage).contains(AdjustmentSource.NOMIS.name)
@@ -159,7 +159,7 @@ class LegacyControllerIntTest : SqsIntegrationTestBase() {
     assertThat(legacyData).isEqualTo(LegacyData(bookingId = 1, sentenceSequence = 1, postedDate = LocalDate.now(), comment = "Updated", type = LegacyAdjustmentType.RX, active = true, migration = false))
 
     awaitAtMost30Secs untilCallTo { getNumberOfMessagesCurrentlyOnQueue() } matches { it == 1 }
-    val latestMessage = getLatestMessage()!!.messages[0].body
+    val latestMessage: String = getLatestMessage()!!.messages()[0].body()
     assertThat(latestMessage).contains(adjustment.id.toString())
     assertThat(latestMessage).contains(EventType.ADJUSTMENT_UPDATED.value)
     assertThat(latestMessage).contains(AdjustmentSource.NOMIS.name)
@@ -185,7 +185,7 @@ class LegacyControllerIntTest : SqsIntegrationTestBase() {
     assertThat(adjustment.adjustmentHistory[1].changeType).isEqualTo(ChangeType.DELETE)
 
     awaitAtMost30Secs untilCallTo { getNumberOfMessagesCurrentlyOnQueue() } matches { it == 1 }
-    val latestMessage = getLatestMessage()!!.messages[0].body
+    val latestMessage: String = getLatestMessage()!!.messages()[0].body()
     assertThat(latestMessage).contains(adjustment.id.toString())
     assertThat(latestMessage).contains(EventType.ADJUSTMENT_DELETED.value)
     assertThat(latestMessage).contains(AdjustmentSource.NOMIS.name)
