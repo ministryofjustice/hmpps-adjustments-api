@@ -8,12 +8,15 @@ import org.springframework.security.core.context.SecurityContextHolder
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import uk.gov.justice.digital.hmpps.adjustments.api.config.AuthAwareAuthenticationToken
+import uk.gov.justice.digital.hmpps.adjustments.api.entity.AdditionalDaysAwarded
 import uk.gov.justice.digital.hmpps.adjustments.api.entity.Adjustment
 import uk.gov.justice.digital.hmpps.adjustments.api.entity.AdjustmentHistory
 import uk.gov.justice.digital.hmpps.adjustments.api.entity.AdjustmentSource
+import uk.gov.justice.digital.hmpps.adjustments.api.entity.AdjustmentType
 import uk.gov.justice.digital.hmpps.adjustments.api.entity.ChangeType
 import uk.gov.justice.digital.hmpps.adjustments.api.error.ApiValidationException
 import uk.gov.justice.digital.hmpps.adjustments.api.legacy.model.LegacyData
+import uk.gov.justice.digital.hmpps.adjustments.api.model.AdditionalDaysAwardedDto
 import uk.gov.justice.digital.hmpps.adjustments.api.model.AdjustmentDetailsDto
 import uk.gov.justice.digital.hmpps.adjustments.api.model.AdjustmentDto
 import uk.gov.justice.digital.hmpps.adjustments.api.model.CreateResponseDto
@@ -48,6 +51,7 @@ class AdjustmentsService(
       source = AdjustmentSource.DPS,
       adjustmentType = resource.adjustmentType,
       legacyData = objectToJson(LegacyData(resource.bookingId, resource.sentenceSequence, LocalDate.now(), null, null, true)),
+      additionalDaysAwarded = additionalDaysAwarded(resource),
       adjustmentHistory = listOf(
         AdjustmentHistory(
           changeByUsername = getCurrentAuthentication().principal,
@@ -58,6 +62,18 @@ class AdjustmentsService(
     )
 
     return CreateResponseDto(adjustmentRepository.save(adjustment).id)
+  }
+
+  private fun additionalDaysAwarded(resource: AdjustmentDetailsDto, adjustment: Adjustment? = null): AdditionalDaysAwarded? {
+    if (resource.adjustmentType == AdjustmentType.ADDITIONAL_DAYS_AWARDED) {
+      val additionalDaysAwarded = if (adjustment != null) adjustment.additionalDaysAwarded!! else AdditionalDaysAwarded()
+      additionalDaysAwarded.apply {
+        adjudicationId = resource.additionalDaysAwarded!!.adjudicationId
+        consecutive = resource.additionalDaysAwarded.consecutive
+      }
+      return additionalDaysAwarded
+    }
+    return null
   }
 
   fun get(adjustmentId: UUID): AdjustmentDetailsDto {
@@ -92,7 +108,7 @@ class AdjustmentsService(
       throw ApiValidationException("The provided adjustment type ${resource.adjustmentType} doesn't match the persisted type ${adjustment.adjustmentType}")
     }
     val persistedLegacyData = objectMapper.convertValue(adjustment.legacyData, LegacyData::class.java)
-    val change = objectToJson(adjustment.copy(adjustmentHistory = emptyList()))
+    val change = objectToJson(adjustment)
     val calculated: Int? = if (resource.toDate != null) (ChronoUnit.DAYS.between(resource.fromDate, resource.toDate) + 1).toInt() else null
     adjustment.apply {
       daysCalculated = resource.days ?: calculated!!
@@ -101,6 +117,7 @@ class AdjustmentsService(
       toDate = resource.toDate
       source = AdjustmentSource.DPS
       legacyData = objectToJson(LegacyData(resource.bookingId, resource.sentenceSequence, persistedLegacyData.postedDate, null, persistedLegacyData.type, true))
+      additionalDaysAwarded = additionalDaysAwarded(resource, this)
       adjustmentHistory += AdjustmentHistory(
         changeByUsername = getCurrentAuthentication().principal,
         changeType = ChangeType.UPDATE,
@@ -117,7 +134,7 @@ class AdjustmentsService(
       .orElseThrow {
         EntityNotFoundException("No adjustment found with id $adjustmentId")
       }
-    val change = objectToJson(adjustment.copy(adjustmentHistory = emptyList()))
+    val change = objectToJson(adjustment)
     adjustment.apply {
       deleted = true
       adjustmentHistory += AdjustmentHistory(
@@ -144,6 +161,17 @@ class AdjustmentsService(
       adjustmentType = adjustment.adjustmentType,
       sentenceSequence = legacyData.sentenceSequence,
       bookingId = legacyData.bookingId,
+      additionalDaysAwarded = additionalDaysAwardedToDto(adjustment),
     )
+  }
+
+  private fun additionalDaysAwardedToDto(adjustment: Adjustment): AdditionalDaysAwardedDto? {
+    if (adjustment.additionalDaysAwarded != null) {
+      return AdditionalDaysAwardedDto(
+        adjudicationId = adjustment.additionalDaysAwarded!!.adjudicationId,
+        consecutive = adjustment.additionalDaysAwarded!!.consecutive,
+      )
+    }
+    return null
   }
 }

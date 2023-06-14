@@ -74,7 +74,7 @@ class LegacyService(
       .orElseThrow {
         EntityNotFoundException("No adjustment found with id $adjustmentId")
       }
-    val change = objectToJson(adjustment.copy(adjustmentHistory = emptyList()))
+    val change = objectToJson(adjustment)
     adjustment.apply {
       daysCalculated = resource.adjustmentDays
       days = resource.adjustmentDays
@@ -98,7 +98,7 @@ class LegacyService(
       .orElseThrow {
         EntityNotFoundException("No adjustment found with id $adjustmentId")
       }
-    val change = objectToJson(adjustment.copy(adjustmentHistory = emptyList()))
+    val change = objectToJson(adjustment)
     adjustment.apply {
       deleted = true
       adjustmentHistory += AdjustmentHistory(

@@ -14,6 +14,7 @@ import uk.gov.justice.digital.hmpps.adjustments.api.entity.AdjustmentType
 import uk.gov.justice.digital.hmpps.adjustments.api.entity.ChangeType
 import uk.gov.justice.digital.hmpps.adjustments.api.integration.SqsIntegrationTestBase
 import uk.gov.justice.digital.hmpps.adjustments.api.legacy.model.LegacyData
+import uk.gov.justice.digital.hmpps.adjustments.api.model.AdditionalDaysAwardedDto
 import uk.gov.justice.digital.hmpps.adjustments.api.model.AdjustmentDetailsDto
 import uk.gov.justice.digital.hmpps.adjustments.api.model.AdjustmentDto
 import uk.gov.justice.digital.hmpps.adjustments.api.model.CreateResponseDto
@@ -242,6 +243,70 @@ class AdjustmentControllerIntTest : SqsIntegrationTestBase() {
     assertThat(latestMessage).contains(EventType.ADJUSTMENT_DELETED.value)
     assertThat(latestMessage).contains(AdjustmentSource.DPS.name)
   }
+
+  @Test
+  fun adaAdjustments() {
+    val adjustmentId = webTestClient
+      .post()
+      .uri("/adjustments")
+      .headers(
+        setAuthorisation(),
+      )
+      .contentType(MediaType.APPLICATION_JSON)
+      .bodyValue(
+        CREATED_ADJUSTMENT.copy(
+          person = "ADA123",
+          adjustmentType = AdjustmentType.ADDITIONAL_DAYS_AWARDED,
+          additionalDaysAwarded = AdditionalDaysAwardedDto(
+            adjudicationId = "987654321",
+            consecutive = true,
+          ),
+        ),
+      )
+      .exchange()
+      .expectStatus().isCreated
+      .returnResult(CreateResponseDto::class.java)
+      .responseBody.blockFirst()!!.adjustmentId
+
+    val adjustment = adjustmentRepository.findById(adjustmentId).get()
+
+    assertThat(adjustment.additionalDaysAwarded).isNotNull
+    assertThat(adjustment.additionalDaysAwarded!!.adjudicationId).isEqualTo("987654321")
+    assertThat(adjustment.additionalDaysAwarded!!.consecutive).isEqualTo(true)
+
+    val updateDto = CREATED_ADJUSTMENT.copy(
+      person = "ADA123",
+      adjustmentType = AdjustmentType.ADDITIONAL_DAYS_AWARDED,
+      additionalDaysAwarded = AdditionalDaysAwardedDto(
+        adjudicationId = "123456789",
+        consecutive = false,
+      ),
+    )
+    webTestClient
+      .put()
+      .uri("/adjustments/$adjustmentId")
+      .headers(
+        setAuthorisation(),
+      )
+      .bodyValue(
+        updateDto,
+      )
+      .exchange()
+      .expectStatus().isOk
+
+    val result = webTestClient
+      .get()
+      .uri("/adjustments/$adjustmentId")
+      .headers(
+        setAuthorisation(),
+      )
+      .exchange()
+      .expectStatus().isOk
+      .returnResult(AdjustmentDetailsDto::class.java)
+      .responseBody.blockFirst()!!
+
+    assertThat(result).isEqualTo(updateDto.copy(days = 4))
+  }
   private fun createAnAdjustment(person: String = "ABC123"): UUID {
     return webTestClient
       .post()
@@ -266,6 +331,7 @@ class AdjustmentControllerIntTest : SqsIntegrationTestBase() {
       fromDate = LocalDate.now().minusDays(5),
       toDate = LocalDate.now().minusDays(2),
       days = null,
+      additionalDaysAwarded = null,
     )
   }
 }

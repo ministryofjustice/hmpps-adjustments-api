@@ -1,5 +1,6 @@
 package uk.gov.justice.digital.hmpps.adjustments.api.entity
 
+import com.fasterxml.jackson.annotation.JsonIgnore
 import com.fasterxml.jackson.databind.JsonNode
 import io.hypersistence.utils.hibernate.type.json.JsonType
 import jakarta.persistence.CascadeType
@@ -9,6 +10,7 @@ import jakarta.persistence.EnumType
 import jakarta.persistence.Enumerated
 import jakarta.persistence.Id
 import jakarta.persistence.OneToMany
+import jakarta.persistence.OneToOne
 import jakarta.persistence.Table
 import jakarta.validation.constraints.NotNull
 import org.hibernate.annotations.Type
@@ -48,6 +50,7 @@ data class Adjustment(
   var deleted: Boolean = false,
 
   @OneToMany(mappedBy = "adjustment", cascade = [CascadeType.ALL])
+  @JsonIgnore
   var adjustmentHistory: List<AdjustmentHistory> = ArrayList(),
 
   @NotNull
@@ -56,9 +59,12 @@ data class Adjustment(
   @Type(PostgreSQLEnumType::class)
   var source: AdjustmentSource = AdjustmentSource.DPS,
 
+  @OneToOne(mappedBy = "adjustment", cascade = [CascadeType.ALL])
+  var additionalDaysAwarded: AdditionalDaysAwarded? = null,
 ) {
 
   init {
     adjustmentHistory.forEach { it.adjustment = this }
+    additionalDaysAwarded?.adjustment = this
   }
 }
