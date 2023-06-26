@@ -6,6 +6,7 @@ import org.awaitility.kotlin.matches
 import org.awaitility.kotlin.untilCallTo
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
+import org.springframework.core.ParameterizedTypeReference
 import org.springframework.http.MediaType
 import org.springframework.test.web.reactive.server.expectBodyList
 import uk.gov.justice.digital.hmpps.adjustments.api.config.ErrorResponse
@@ -17,8 +18,11 @@ import uk.gov.justice.digital.hmpps.adjustments.api.legacy.model.LegacyData
 import uk.gov.justice.digital.hmpps.adjustments.api.model.AdjustmentDetailsDto
 import uk.gov.justice.digital.hmpps.adjustments.api.model.AdjustmentDto
 import uk.gov.justice.digital.hmpps.adjustments.api.model.CreateResponseDto
+import uk.gov.justice.digital.hmpps.adjustments.api.model.ValidationCode
+import uk.gov.justice.digital.hmpps.adjustments.api.model.ValidationMessage
 import uk.gov.justice.digital.hmpps.adjustments.api.respository.AdjustmentRepository
 import uk.gov.justice.digital.hmpps.adjustments.api.service.EventType
+import uk.gov.justice.digital.hmpps.adjustments.api.wiremock.PrisonApiExtension
 import java.time.LocalDate
 import java.util.UUID
 
@@ -255,6 +259,34 @@ class AdjustmentControllerIntTest : SqsIntegrationTestBase() {
       .expectStatus().isCreated
       .returnResult(CreateResponseDto::class.java)
       .responseBody.blockFirst()!!.adjustmentId
+  }
+
+  @Test
+  fun validate() {
+    val validationMessages = webTestClient
+      .post()
+      .uri("/adjustments/validate")
+      .headers(
+        setAuthorisation(),
+      )
+      .bodyValue(
+        CREATED_ADJUSTMENT.copy(
+          fromDate = LocalDate.now().plusYears(1),
+          toDate = null,
+          days = 25,
+          bookingId = PrisonApiExtension.BOOKING_ID,
+          adjustmentType = AdjustmentType.RESTORATION_OF_ADDITIONAL_DAYS_AWARDED,
+        ),
+      )
+      .exchange()
+      .expectStatus().isOk
+      .expectHeader().contentType(MediaType.APPLICATION_JSON)
+      .expectBody(object : ParameterizedTypeReference<List<ValidationMessage>>() {})
+      .returnResult().responseBody!!
+
+    assertThat(validationMessages.size).isEqualTo(2)
+    assertThat(validationMessages[0]).isEqualTo(ValidationMessage(ValidationCode.MORE_RADAS_THAN_ADAS))
+    assertThat(validationMessages[1]).isEqualTo(ValidationMessage(ValidationCode.RADA_DATE_CANNOT_BE_FUTURE))
   }
 
   companion object {
