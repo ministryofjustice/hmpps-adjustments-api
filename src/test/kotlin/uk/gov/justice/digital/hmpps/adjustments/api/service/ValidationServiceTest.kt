@@ -63,6 +63,7 @@ class ValidationServiceTest {
         ),
       )
       assertThat(result).isEqualTo(listOf(ValidationMessage(ValidationCode.RADA_REDUCES_BY_MORE_THAN_HALF)))
+      assertThat(result[0].message).isEqualTo("Are you sure, as this reduction is more than 50% of the total additional days awarded?")
     }
 
     @Test
