@@ -75,7 +75,7 @@ class AdjustmentControllerIntTest : SqsIntegrationTestBase() {
       .returnResult(AdjustmentDetailsDto::class.java)
       .responseBody.blockFirst()!!
 
-    assertThat(result).isEqualTo(CREATED_ADJUSTMENT.copy(days = 4))
+    assertThat(result).isEqualTo(CREATED_ADJUSTMENT.copy(days = 4, lastUpdatedBy = "Test User", status = "Active"))
     awaitAtMost30Secs untilCallTo { getNumberOfMessagesCurrentlyOnQueue() } matches { it == 0 }
   }
 
@@ -99,7 +99,7 @@ class AdjustmentControllerIntTest : SqsIntegrationTestBase() {
 
     assertThat(result.size).isEqualTo(1)
     assertThat(result[0].id).isEqualTo(id)
-    assertThat(result[0].adjustment).isEqualTo(CREATED_ADJUSTMENT.copy(person = person, days = 4))
+    assertThat(result[0].adjustment).isEqualTo(CREATED_ADJUSTMENT.copy(person = person, days = 4, lastUpdatedBy = "Test User", status = "Active"))
 
     awaitAtMost30Secs untilCallTo { getNumberOfMessagesCurrentlyOnQueue() } matches { it == 0 }
   }

@@ -144,6 +144,8 @@ class AdjustmentsService(
       adjustmentType = adjustment.adjustmentType,
       sentenceSequence = legacyData.sentenceSequence,
       bookingId = legacyData.bookingId,
+      lastUpdatedBy = adjustment.adjustmentHistory.last().changeByUsername,
+      status = if (legacyData.active) "Active" else "Inactive"
     )
   }
 }
