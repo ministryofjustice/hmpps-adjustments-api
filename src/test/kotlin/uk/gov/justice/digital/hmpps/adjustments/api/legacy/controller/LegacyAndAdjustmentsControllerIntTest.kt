@@ -13,7 +13,7 @@ import uk.gov.justice.digital.hmpps.adjustments.api.legacy.model.LegacyAdjustmen
 import uk.gov.justice.digital.hmpps.adjustments.api.legacy.model.LegacyAdjustmentCreatedResponse
 import uk.gov.justice.digital.hmpps.adjustments.api.legacy.model.LegacyAdjustmentType
 import uk.gov.justice.digital.hmpps.adjustments.api.legacy.model.LegacyData
-import uk.gov.justice.digital.hmpps.adjustments.api.model.AdjustmentDetailsDto
+import uk.gov.justice.digital.hmpps.adjustments.api.model.AdjustmentDto
 import uk.gov.justice.digital.hmpps.adjustments.api.respository.AdjustmentRepository
 import java.time.LocalDate
 
@@ -157,7 +157,8 @@ class LegacyAndAdjustmentsControllerIntTest : SqsIntegrationTestBase() {
       active = true,
     )
 
-    private val ADJUSTMENT = AdjustmentDetailsDto(
+    private val ADJUSTMENT = AdjustmentDto(
+      id = null,
       bookingId = 1,
       sentenceSequence = 1,
       person = "ABC123",
