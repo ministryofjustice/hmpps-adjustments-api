@@ -31,6 +31,7 @@ class ValidationServiceTest {
     fromDate = LocalDate.now().minusDays(5),
     toDate = null,
     days = 50,
+    additionalDaysAwarded = null,
   )
 
   private val EXISTING_RADA = EXISTING_ADA.copy(
