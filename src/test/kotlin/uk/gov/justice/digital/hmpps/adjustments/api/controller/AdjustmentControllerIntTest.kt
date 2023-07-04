@@ -309,7 +309,7 @@ class AdjustmentControllerIntTest : SqsIntegrationTestBase() {
       .returnResult(AdjustmentDetailsDto::class.java)
       .responseBody.blockFirst()!!
 
-    assertThat(result).isEqualTo(updateDto.copy(days = 4))
+    assertThat(result).isEqualTo(updateDto.copy(days = 4, status = "Active", lastUpdatedBy = "Test User"))
   }
   private fun createAnAdjustment(person: String = "ABC123"): UUID {
     return webTestClient
