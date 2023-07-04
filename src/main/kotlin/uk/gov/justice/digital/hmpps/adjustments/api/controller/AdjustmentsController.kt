@@ -174,7 +174,7 @@ class AdjustmentsController(
       ApiResponse(responseCode = "401", description = "Unauthorised, requires a valid Oauth2 token"),
     ],
   )
-  fun validate(@RequestBody adjustment: AdjustmentDetailsDto): List<ValidationMessage> {
+  fun validate(@RequestBody adjustment: AdjustmentDto): List<ValidationMessage> {
     return validationService.validate(adjustment)
   }
 }

@@ -23,7 +23,9 @@ class ValidationServiceTest {
   private val BOOKING_ID = 1L
   private val PERSON = "ABC123"
   private val START_OF_SENTENCE_ENVELOPE = LocalDate.of(2022, 1, 1)
-  private val EXISTING_ADA = AdjustmentDetailsDto(
+  private val EXISTING_ADA = AdjustmentDto(
+    id = UUID.randomUUID(),
+    adjustment = AdjustmentDetailsDto(
     bookingId = BOOKING_ID,
     sentenceSequence = null,
     person = PERSON,
@@ -32,23 +34,27 @@ class ValidationServiceTest {
     toDate = null,
     days = 50,
     additionalDaysAwarded = null,
+    )
   )
 
   private val EXISTING_RADA = EXISTING_ADA.copy(
-    adjustmentType = AdjustmentType.RESTORATION_OF_ADDITIONAL_DAYS_AWARDED,
-    days = 20,
+    id = UUID.randomUUID(),
+    adjustment = EXISTING_ADA.adjustment.copy(
+      adjustmentType = AdjustmentType.RESTORATION_OF_ADDITIONAL_DAYS_AWARDED,
+      days = 20
+    )
   )
 
   @BeforeEach
   fun init() {
     whenever(prisonService.getStartOfSentenceEnvelope(BOOKING_ID)).thenReturn(START_OF_SENTENCE_ENVELOPE)
-    whenever(adjustmentService.findByPerson(PERSON)).thenReturn(listOf(AdjustmentDto(UUID.randomUUID(), EXISTING_ADA), AdjustmentDto(UUID.randomUUID(), EXISTING_RADA)))
+    whenever(adjustmentService.findByPerson(PERSON)).thenReturn(listOf(EXISTING_ADA, EXISTING_RADA))
   }
 
   @Nested
   inner class RadaTests {
 
-    val VALID_RADA = EXISTING_RADA.copy(days = 4)
+    val VALID_RADA = EXISTING_RADA.copy(id = null, adjustment = EXISTING_RADA.adjustment.copy(days = 4))
 
     @Test
     fun `RADA days valid`() {
@@ -60,7 +66,9 @@ class ValidationServiceTest {
     fun `RADA reduce ADAs by more than 50 percent`() {
       val result = validationService.validate(
         VALID_RADA.copy(
-          days = 10,
+          adjustment = VALID_RADA.adjustment.copy(
+            days = 10,
+          )
         ),
       )
       assertThat(result).isEqualTo(listOf(ValidationMessage(ValidationCode.RADA_REDUCES_BY_MORE_THAN_HALF)))
@@ -71,7 +79,9 @@ class ValidationServiceTest {
     fun `RADA reduce ADAs by more ADAs`() {
       val result = validationService.validate(
         VALID_RADA.copy(
+          adjustment = VALID_RADA.adjustment.copy(
           days = 40,
+          )
         ),
       )
       assertThat(result).isEqualTo(listOf(ValidationMessage(ValidationCode.MORE_RADAS_THAN_ADAS)))
@@ -81,7 +91,9 @@ class ValidationServiceTest {
     fun `Future dated radas`() {
       val result = validationService.validate(
         VALID_RADA.copy(
+          adjustment = VALID_RADA.adjustment.copy(
           fromDate = LocalDate.now().plusDays(1),
+          )
         ),
       )
       assertThat(result).isEqualTo(listOf(ValidationMessage(ValidationCode.RADA_DATE_CANNOT_BE_FUTURE)))
@@ -91,7 +103,9 @@ class ValidationServiceTest {
     fun `Rada before sentence envelope start`() {
       val result = validationService.validate(
         VALID_RADA.copy(
+          adjustment = VALID_RADA.adjustment.copy(
           fromDate = START_OF_SENTENCE_ENVELOPE.minusDays(1),
+          )
         ),
       )
       assertThat(result).isEqualTo(
@@ -102,6 +116,23 @@ class ValidationServiceTest {
           ),
         ),
       )
+    }
+
+    @Test
+    fun `RADA update existing RADA so that days are less than 50 percent`() {
+      val result = validationService.validate(EXISTING_RADA.copy(adjustment = EXISTING_RADA.adjustment.copy(days = 24)))
+      assertThat(result).isEmpty()
+    }
+
+    @Test
+    fun `RADA update existing RADA so that days are more than 50 percent`() {
+      val result = validationService.validate(EXISTING_RADA.copy(adjustment = EXISTING_RADA.adjustment.copy(days = 26)))
+      assertThat(result).isEqualTo(listOf(ValidationMessage(ValidationCode.RADA_REDUCES_BY_MORE_THAN_HALF)))
+    }
+    @Test
+    fun `RADA update existing RADA so that days are more than ADAs`() {
+      val result = validationService.validate(EXISTING_RADA.copy(adjustment = EXISTING_RADA.adjustment.copy(days = 51)))
+      assertThat(result).isEqualTo(listOf(ValidationMessage(ValidationCode.MORE_RADAS_THAN_ADAS)))
     }
   }
 }

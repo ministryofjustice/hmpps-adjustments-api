@@ -335,13 +335,15 @@ class AdjustmentControllerIntTest : SqsIntegrationTestBase() {
         setAuthorisation(),
       )
       .bodyValue(
-        CREATED_ADJUSTMENT.copy(
+        AdjustmentDto(
+          id = null,
+          adjustment = CREATED_ADJUSTMENT.copy(
           fromDate = LocalDate.now().plusYears(1),
           toDate = null,
           days = 25,
           bookingId = PrisonApiExtension.BOOKING_ID,
           adjustmentType = AdjustmentType.RESTORATION_OF_ADDITIONAL_DAYS_AWARDED,
-        ),
+        )),
       )
       .exchange()
       .expectStatus().isOk

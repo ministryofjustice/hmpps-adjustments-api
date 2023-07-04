@@ -6,7 +6,7 @@ import java.util.UUID
 @Schema(description = "The adjustment and its identifier")
 data class AdjustmentDto(
   @Schema(description = "The ID of the adjustment")
-  val id: UUID,
+  val id: UUID?,
   @Schema(description = "The details of the adjustment")
   val adjustment: AdjustmentDetailsDto,
 )
