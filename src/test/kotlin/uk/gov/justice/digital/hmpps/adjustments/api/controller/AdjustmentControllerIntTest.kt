@@ -16,7 +16,6 @@ import uk.gov.justice.digital.hmpps.adjustments.api.entity.ChangeType
 import uk.gov.justice.digital.hmpps.adjustments.api.integration.SqsIntegrationTestBase
 import uk.gov.justice.digital.hmpps.adjustments.api.legacy.model.LegacyData
 import uk.gov.justice.digital.hmpps.adjustments.api.model.AdditionalDaysAwardedDto
-import uk.gov.justice.digital.hmpps.adjustments.api.model.AdjustmentDetailsDto
 import uk.gov.justice.digital.hmpps.adjustments.api.model.AdjustmentDto
 import uk.gov.justice.digital.hmpps.adjustments.api.model.CreateResponseDto
 import uk.gov.justice.digital.hmpps.adjustments.api.model.ValidationCode
@@ -73,10 +72,10 @@ class AdjustmentControllerIntTest : SqsIntegrationTestBase() {
       )
       .exchange()
       .expectStatus().isOk
-      .returnResult(AdjustmentDetailsDto::class.java)
+      .returnResult(AdjustmentDto::class.java)
       .responseBody.blockFirst()!!
 
-    assertThat(result).isEqualTo(CREATED_ADJUSTMENT.copy(days = 4, lastUpdatedBy = "Test User", status = "Active"))
+    assertThat(result).isEqualTo(CREATED_ADJUSTMENT.copy(id = id, days = 4, lastUpdatedBy = "Test User", status = "Active"))
     awaitAtMost30Secs untilCallTo { getNumberOfMessagesCurrentlyOnQueue() } matches { it == 0 }
   }
 
@@ -99,8 +98,7 @@ class AdjustmentControllerIntTest : SqsIntegrationTestBase() {
       .responseBody!!
 
     assertThat(result.size).isEqualTo(1)
-    assertThat(result[0].id).isEqualTo(id)
-    assertThat(result[0].adjustment).isEqualTo(CREATED_ADJUSTMENT.copy(person = person, days = 4, lastUpdatedBy = "Test User", status = "Active"))
+    assertThat(result[0]).isEqualTo(CREATED_ADJUSTMENT.copy(id = id, person = person, days = 4, lastUpdatedBy = "Test User", status = "Active"))
 
     awaitAtMost30Secs untilCallTo { getNumberOfMessagesCurrentlyOnQueue() } matches { it == 0 }
   }
@@ -279,6 +277,7 @@ class AdjustmentControllerIntTest : SqsIntegrationTestBase() {
     assertThat(adjustment.additionalDaysAwarded!!.consecutive).isEqualTo(true)
 
     val updateDto = CREATED_ADJUSTMENT.copy(
+      id = adjustmentId,
       person = "ADA123",
       adjustmentType = AdjustmentType.ADDITIONAL_DAYS_AWARDED,
       additionalDaysAwarded = AdditionalDaysAwardedDto(
@@ -306,10 +305,10 @@ class AdjustmentControllerIntTest : SqsIntegrationTestBase() {
       )
       .exchange()
       .expectStatus().isOk
-      .returnResult(AdjustmentDetailsDto::class.java)
+      .returnResult(AdjustmentDto::class.java)
       .responseBody.blockFirst()!!
 
-    assertThat(result).isEqualTo(updateDto.copy(days = 4, status = "Active", lastUpdatedBy = "Test User"))
+    assertThat(result).isEqualTo(updateDto.copy(id = adjustmentId, days = 4, status = "Active", lastUpdatedBy = "Test User"))
   }
   private fun createAnAdjustment(person: String = "ABC123"): UUID {
     return webTestClient
@@ -355,7 +354,8 @@ class AdjustmentControllerIntTest : SqsIntegrationTestBase() {
   }
 
   companion object {
-    private val CREATED_ADJUSTMENT = AdjustmentDetailsDto(
+    private val CREATED_ADJUSTMENT = AdjustmentDto(
+      id = null,
       bookingId = 1,
       sentenceSequence = 1,
       person = "ABC123",

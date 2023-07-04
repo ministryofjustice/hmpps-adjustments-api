@@ -17,7 +17,6 @@ import uk.gov.justice.digital.hmpps.adjustments.api.entity.ChangeType
 import uk.gov.justice.digital.hmpps.adjustments.api.error.ApiValidationException
 import uk.gov.justice.digital.hmpps.adjustments.api.legacy.model.LegacyData
 import uk.gov.justice.digital.hmpps.adjustments.api.model.AdditionalDaysAwardedDto
-import uk.gov.justice.digital.hmpps.adjustments.api.model.AdjustmentDetailsDto
 import uk.gov.justice.digital.hmpps.adjustments.api.model.AdjustmentDto
 import uk.gov.justice.digital.hmpps.adjustments.api.model.CreateResponseDto
 import uk.gov.justice.digital.hmpps.adjustments.api.respository.AdjustmentRepository
@@ -37,7 +36,7 @@ class AdjustmentsService(
       ?: throw IllegalStateException("User is not authenticated")
 
   @Transactional
-  fun create(resource: AdjustmentDetailsDto): CreateResponseDto {
+  fun create(resource: AdjustmentDto): CreateResponseDto {
     if (resource.toDate == null && resource.days == null) {
       throw ApiValidationException("resource must have either toDate or days.")
     }
@@ -64,7 +63,7 @@ class AdjustmentsService(
     return CreateResponseDto(adjustmentRepository.save(adjustment).id)
   }
 
-  private fun additionalDaysAwarded(resource: AdjustmentDetailsDto, adjustment: Adjustment? = null): AdditionalDaysAwarded? {
+  private fun additionalDaysAwarded(resource: AdjustmentDto, adjustment: Adjustment? = null): AdditionalDaysAwarded? {
     if (resource.adjustmentType == AdjustmentType.ADDITIONAL_DAYS_AWARDED) {
       val additionalDaysAwarded = if (adjustment != null) adjustment.additionalDaysAwarded!! else AdditionalDaysAwarded()
       additionalDaysAwarded.apply {
@@ -76,7 +75,7 @@ class AdjustmentsService(
     return null
   }
 
-  fun get(adjustmentId: UUID): AdjustmentDetailsDto {
+  fun get(adjustmentId: UUID): AdjustmentDto {
     val adjustment = adjustmentRepository.findById(adjustmentId)
       .map { if (it.deleted) null else it }
       .orElseThrow {
@@ -88,18 +87,18 @@ class AdjustmentsService(
   fun findByPerson(person: String): List<AdjustmentDto> {
     return adjustmentRepository.findByPerson(person)
       .filter { !it.deleted }
-      .map { AdjustmentDto(it.id, mapToDto(it)) }
+      .map { mapToDto(it) }
   }
 
   fun findByPersonAndSource(person: String, source: AdjustmentSource): List<AdjustmentDto> {
     return adjustmentRepository.findByPerson(person)
       .filter { !it.deleted }
       .filter { it.source == source }
-      .map { AdjustmentDto(it.id, mapToDto(it)) }
+      .map { mapToDto(it) }
   }
 
   @Transactional
-  fun update(adjustmentId: UUID, resource: AdjustmentDetailsDto) {
+  fun update(adjustmentId: UUID, resource: AdjustmentDto) {
     val adjustment = adjustmentRepository.findById(adjustmentId)
       .orElseThrow {
         EntityNotFoundException("No adjustment found with id $adjustmentId")
@@ -151,9 +150,10 @@ class AdjustmentsService(
     return JacksonUtil.toJsonNode(objectMapper.writeValueAsString(subject))
   }
 
-  private fun mapToDto(adjustment: Adjustment): AdjustmentDetailsDto {
+  private fun mapToDto(adjustment: Adjustment): AdjustmentDto {
     val legacyData = objectMapper.convertValue(adjustment.legacyData, LegacyData::class.java)
-    return AdjustmentDetailsDto(
+    return AdjustmentDto(
+      id = adjustment.id,
       person = adjustment.person,
       days = adjustment.days ?: adjustment.daysCalculated,
       fromDate = adjustment.fromDate,

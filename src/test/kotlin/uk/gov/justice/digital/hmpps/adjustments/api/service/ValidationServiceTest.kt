@@ -7,7 +7,6 @@ import org.junit.jupiter.api.Test
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.whenever
 import uk.gov.justice.digital.hmpps.adjustments.api.entity.AdjustmentType
-import uk.gov.justice.digital.hmpps.adjustments.api.model.AdjustmentDetailsDto
 import uk.gov.justice.digital.hmpps.adjustments.api.model.AdjustmentDto
 import uk.gov.justice.digital.hmpps.adjustments.api.model.ValidationCode
 import uk.gov.justice.digital.hmpps.adjustments.api.model.ValidationMessage
@@ -23,7 +22,8 @@ class ValidationServiceTest {
   private val BOOKING_ID = 1L
   private val PERSON = "ABC123"
   private val START_OF_SENTENCE_ENVELOPE = LocalDate.of(2022, 1, 1)
-  private val EXISTING_ADA = AdjustmentDetailsDto(
+  private val EXISTING_ADA = AdjustmentDto(
+    id = UUID.randomUUID(),
     bookingId = BOOKING_ID,
     sentenceSequence = null,
     person = PERSON,
@@ -35,6 +35,7 @@ class ValidationServiceTest {
   )
 
   private val EXISTING_RADA = EXISTING_ADA.copy(
+    id = UUID.randomUUID(),
     adjustmentType = AdjustmentType.RESTORATION_OF_ADDITIONAL_DAYS_AWARDED,
     days = 20,
   )
@@ -42,24 +43,24 @@ class ValidationServiceTest {
   @BeforeEach
   fun init() {
     whenever(prisonService.getStartOfSentenceEnvelope(BOOKING_ID)).thenReturn(START_OF_SENTENCE_ENVELOPE)
-    whenever(adjustmentService.findByPerson(PERSON)).thenReturn(listOf(AdjustmentDto(UUID.randomUUID(), EXISTING_ADA), AdjustmentDto(UUID.randomUUID(), EXISTING_RADA)))
+    whenever(adjustmentService.findByPerson(PERSON)).thenReturn(listOf(EXISTING_ADA, EXISTING_RADA))
   }
 
   @Nested
   inner class RadaTests {
 
-    val VALID_RADA = EXISTING_RADA.copy(days = 4)
+    val VALID_NEW_RADA = EXISTING_RADA.copy(id = null, days = 4)
 
     @Test
     fun `RADA days valid`() {
-      val result = validationService.validate(VALID_RADA)
+      val result = validationService.validate(VALID_NEW_RADA)
       assertThat(result).isEmpty()
     }
 
     @Test
     fun `RADA reduce ADAs by more than 50 percent`() {
       val result = validationService.validate(
-        VALID_RADA.copy(
+        VALID_NEW_RADA.copy(
           days = 10,
         ),
       )
@@ -70,7 +71,7 @@ class ValidationServiceTest {
     @Test
     fun `RADA reduce ADAs by more ADAs`() {
       val result = validationService.validate(
-        VALID_RADA.copy(
+        VALID_NEW_RADA.copy(
           days = 40,
         ),
       )
@@ -80,7 +81,7 @@ class ValidationServiceTest {
     @Test
     fun `Future dated radas`() {
       val result = validationService.validate(
-        VALID_RADA.copy(
+        VALID_NEW_RADA.copy(
           fromDate = LocalDate.now().plusDays(1),
         ),
       )
@@ -90,8 +91,9 @@ class ValidationServiceTest {
     @Test
     fun `Rada before sentence envelope start`() {
       val result = validationService.validate(
-        VALID_RADA.copy(
+        VALID_NEW_RADA.copy(
           fromDate = START_OF_SENTENCE_ENVELOPE.minusDays(1),
+
         ),
       )
       assertThat(result).isEqualTo(
@@ -102,6 +104,24 @@ class ValidationServiceTest {
           ),
         ),
       )
+    }
+
+    @Test
+    fun `RADA update existing RADA so that days are less than 50 percent`() {
+      val result = validationService.validate(EXISTING_RADA.copy(days = 24))
+      assertThat(result).isEmpty()
+    }
+
+    @Test
+    fun `RADA update existing RADA so that days are more than 50 percent`() {
+      val result = validationService.validate(EXISTING_RADA.copy(days = 26))
+      assertThat(result).isEqualTo(listOf(ValidationMessage(ValidationCode.RADA_REDUCES_BY_MORE_THAN_HALF)))
+    }
+
+    @Test
+    fun `RADA update existing RADA so that days are more than ADAs`() {
+      val result = validationService.validate(EXISTING_RADA.copy(days = 51))
+      assertThat(result).isEqualTo(listOf(ValidationMessage(ValidationCode.MORE_RADAS_THAN_ADAS)))
     }
   }
 }

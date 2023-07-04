@@ -2,7 +2,7 @@ package uk.gov.justice.digital.hmpps.adjustments.api.service
 
 import org.springframework.stereotype.Service
 import uk.gov.justice.digital.hmpps.adjustments.api.entity.AdjustmentType
-import uk.gov.justice.digital.hmpps.adjustments.api.model.AdjustmentDetailsDto
+import uk.gov.justice.digital.hmpps.adjustments.api.model.AdjustmentDto
 import uk.gov.justice.digital.hmpps.adjustments.api.model.ValidationCode
 import uk.gov.justice.digital.hmpps.adjustments.api.model.ValidationMessage
 import java.time.LocalDate
@@ -14,7 +14,7 @@ class ValidationService(
   private val adjustmentService: AdjustmentsService,
 ) {
 
-  fun validate(adjustment: AdjustmentDetailsDto): List<ValidationMessage> {
+  fun validate(adjustment: AdjustmentDto): List<ValidationMessage> {
     val startOfSentenceEnvelope = prisonService.getStartOfSentenceEnvelope(adjustment.bookingId)
     if (adjustment.adjustmentType == AdjustmentType.RESTORATION_OF_ADDITIONAL_DAYS_AWARDED) {
       return validateRada(adjustment, startOfSentenceEnvelope)
@@ -22,15 +22,17 @@ class ValidationService(
     return emptyList()
   }
 
-  private fun validateRada(adjustment: AdjustmentDetailsDto, startOfSentenceEnvelope: LocalDate): List<ValidationMessage> {
+  private fun validateRada(adjustment: AdjustmentDto, startOfSentenceEnvelope: LocalDate): List<ValidationMessage> {
     val validationMessages = mutableListOf<ValidationMessage>()
 
     val adjustments = adjustmentService.findByPerson(adjustment.person)
-    val adaDays = adjustments.filter { it.adjustment.adjustmentType === AdjustmentType.ADDITIONAL_DAYS_AWARDED }.filter { it.adjustment.fromDate!!.isAfter(startOfSentenceEnvelope) }.map { it.adjustment.days!! }.reduceOrNull { acc, it -> acc + it } ?: 0
+    val adaDays = adjustments.filter { it.adjustmentType === AdjustmentType.ADDITIONAL_DAYS_AWARDED }.filter { it.fromDate!!.isAfter(startOfSentenceEnvelope) }.map { it.days!! }.reduceOrNull { acc, it -> acc + it } ?: 0
     val radaDays =
       (
-        adjustments.filter { it.adjustment.adjustmentType === AdjustmentType.RESTORATION_OF_ADDITIONAL_DAYS_AWARDED }
-          .filter { it.adjustment.fromDate!!.isAfter(startOfSentenceEnvelope) }.map { it.adjustment.days!! }
+        adjustments.filter { it.adjustmentType === AdjustmentType.RESTORATION_OF_ADDITIONAL_DAYS_AWARDED }
+          .filter { it.fromDate!!.isAfter(startOfSentenceEnvelope) }
+          .filter { adjustment.id == null || adjustment.id != it.id }
+          .map { it.days!! }
           .reduceOrNull { acc, it -> acc + it } ?: 0
         ) + adjustment.days!!
 

@@ -18,7 +18,6 @@ import org.springframework.web.bind.annotation.RequestParam
 import org.springframework.web.bind.annotation.ResponseStatus
 import org.springframework.web.bind.annotation.RestController
 import uk.gov.justice.digital.hmpps.adjustments.api.entity.AdjustmentSource
-import uk.gov.justice.digital.hmpps.adjustments.api.model.AdjustmentDetailsDto
 import uk.gov.justice.digital.hmpps.adjustments.api.model.AdjustmentDto
 import uk.gov.justice.digital.hmpps.adjustments.api.model.CreateResponseDto
 import uk.gov.justice.digital.hmpps.adjustments.api.model.ValidationMessage
@@ -48,7 +47,7 @@ class AdjustmentsController(
       ApiResponse(responseCode = "401", description = "Unauthorised, requires a valid Oauth2 token"),
     ],
   )
-  fun create(@RequestBody adjustment: AdjustmentDetailsDto): CreateResponseDto {
+  fun create(@RequestBody adjustment: AdjustmentDto): CreateResponseDto {
     return adjustmentsService.create(adjustment).also {
       eventService.create(it.adjustmentId, adjustment.person, AdjustmentSource.DPS)
     }
@@ -113,7 +112,7 @@ class AdjustmentsController(
     @Parameter(required = true, description = "The adjustment UUID")
     @PathVariable("adjustmentId")
     adjustmentId: UUID,
-  ): AdjustmentDetailsDto {
+  ): AdjustmentDto {
     return adjustmentsService.get(adjustmentId)
   }
 
@@ -133,7 +132,7 @@ class AdjustmentsController(
     @Parameter(required = true, description = "The adjustment UUID")
     @PathVariable("adjustmentId")
     adjustmentId: UUID,
-    @RequestBody adjustment: AdjustmentDetailsDto,
+    @RequestBody adjustment: AdjustmentDto,
   ) {
     adjustmentsService.update(adjustmentId, adjustment).also {
       eventService.update(adjustmentId, adjustment.person, AdjustmentSource.DPS)
@@ -174,7 +173,7 @@ class AdjustmentsController(
       ApiResponse(responseCode = "401", description = "Unauthorised, requires a valid Oauth2 token"),
     ],
   )
-  fun validate(@RequestBody adjustment: AdjustmentDetailsDto): List<ValidationMessage> {
+  fun validate(@RequestBody adjustment: AdjustmentDto): List<ValidationMessage> {
     return validationService.validate(adjustment)
   }
 }
