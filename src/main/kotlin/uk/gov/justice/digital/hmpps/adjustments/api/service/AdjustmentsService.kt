@@ -162,6 +162,8 @@ class AdjustmentsService(
       sentenceSequence = legacyData.sentenceSequence,
       bookingId = legacyData.bookingId,
       additionalDaysAwarded = additionalDaysAwardedToDto(adjustment),
+      lastUpdatedBy = adjustment.adjustmentHistory.last().changeByUsername,
+      status = if (legacyData.active) "Active" else "Inactive",
     )
   }
 

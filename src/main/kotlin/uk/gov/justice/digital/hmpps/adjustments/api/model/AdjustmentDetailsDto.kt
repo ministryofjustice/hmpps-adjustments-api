@@ -22,4 +22,9 @@ data class AdjustmentDetailsDto(
   val days: Int?,
   @Schema(description = "The details of an additional days awarded adjustments (ADA)")
   val additionalDaysAwarded: AdditionalDaysAwardedDto?,
+  // View only fields
+  @Schema(description = "The person last updating this adjustment", readOnly = true)
+  val lastUpdatedBy: String? = null,
+  @Schema(description = "The status of this adjustment", readOnly = true)
+  val status: String? = null,
 )

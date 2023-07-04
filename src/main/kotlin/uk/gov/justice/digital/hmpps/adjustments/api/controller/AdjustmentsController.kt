@@ -21,8 +21,10 @@ import uk.gov.justice.digital.hmpps.adjustments.api.entity.AdjustmentSource
 import uk.gov.justice.digital.hmpps.adjustments.api.model.AdjustmentDetailsDto
 import uk.gov.justice.digital.hmpps.adjustments.api.model.AdjustmentDto
 import uk.gov.justice.digital.hmpps.adjustments.api.model.CreateResponseDto
+import uk.gov.justice.digital.hmpps.adjustments.api.model.ValidationMessage
 import uk.gov.justice.digital.hmpps.adjustments.api.service.AdjustmentsEventService
 import uk.gov.justice.digital.hmpps.adjustments.api.service.AdjustmentsService
+import uk.gov.justice.digital.hmpps.adjustments.api.service.ValidationService
 import java.util.UUID
 
 @RestController
@@ -31,6 +33,7 @@ import java.util.UUID
 class AdjustmentsController(
   val adjustmentsService: AdjustmentsService,
   val eventService: AdjustmentsEventService,
+  val validationService: ValidationService,
 ) {
 
   @PostMapping
@@ -158,5 +161,20 @@ class AdjustmentsController(
       adjustmentsService.delete(adjustmentId)
       eventService.delete(adjustmentId, it.person, AdjustmentSource.DPS)
     }
+  }
+
+  @PostMapping("/validate")
+  @Operation(
+    summary = "Validate an adjustments",
+    description = "Validate an adjustment.",
+  )
+  @ApiResponses(
+    value = [
+      ApiResponse(responseCode = "200", description = "Adjustment validation returned"),
+      ApiResponse(responseCode = "401", description = "Unauthorised, requires a valid Oauth2 token"),
+    ],
+  )
+  fun validate(@RequestBody adjustment: AdjustmentDetailsDto): List<ValidationMessage> {
+    return validationService.validate(adjustment)
   }
 }
