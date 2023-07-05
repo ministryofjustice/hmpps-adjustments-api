@@ -65,7 +65,7 @@ class ValidationServiceTest {
         ),
       )
       assertThat(result).isEqualTo(listOf(ValidationMessage(ValidationCode.RADA_REDUCES_BY_MORE_THAN_HALF)))
-      assertThat(result[0].message).isEqualTo("Are you sure, as this reduction is more than 50% of the total additional days awarded?")
+      assertThat(result[0].message).isEqualTo("Are you sure you want to add more than 50% of the ADA time for this RADA?")
     }
 
     @Test
@@ -100,7 +100,7 @@ class ValidationServiceTest {
         listOf(
           ValidationMessage(
             ValidationCode.RADA_DATA_MUST_BE_AFTER_SENTENCE_DATE,
-            listOf("01/01/2022"),
+            listOf("1 Jan 2022"),
           ),
         ),
       )

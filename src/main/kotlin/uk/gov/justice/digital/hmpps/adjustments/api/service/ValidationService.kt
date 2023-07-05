@@ -47,7 +47,7 @@ class ValidationService(
     }
 
     if (adjustment.fromDate.isBefore(startOfSentenceEnvelope)) {
-      val formatter = DateTimeFormatter.ofPattern("dd/MM/yyyy")
+      val formatter = DateTimeFormatter.ofPattern("d MMM yyyy")
       validationMessages.add(ValidationMessage(ValidationCode.RADA_DATA_MUST_BE_AFTER_SENTENCE_DATE, listOf(startOfSentenceEnvelope.format(formatter))))
     }
 
