@@ -58,6 +58,18 @@ class ValidationServiceTest {
     }
 
     @Test
+    fun `RADA days missing`() {
+      val result = validationService.validate(VALID_NEW_RADA.copy(days = null))
+      assertThat(result).isEqualTo(listOf(ValidationMessage(ValidationCode.RADA_DAYS_MUST_BE_POSTIVE)))
+    }
+
+    @Test
+    fun `RADA days zero`() {
+      val result = validationService.validate(VALID_NEW_RADA.copy(days = 0))
+      assertThat(result).isEqualTo(listOf(ValidationMessage(ValidationCode.RADA_DAYS_MUST_BE_POSTIVE)))
+    }
+
+    @Test
     fun `RADA reduce ADAs by more than 50 percent`() {
       val result = validationService.validate(
         VALID_NEW_RADA.copy(

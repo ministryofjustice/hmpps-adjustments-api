@@ -25,21 +25,27 @@ class ValidationService(
   private fun validateRada(adjustment: AdjustmentDto, startOfSentenceEnvelope: LocalDate): List<ValidationMessage> {
     val validationMessages = mutableListOf<ValidationMessage>()
 
-    val adjustments = adjustmentService.findByPerson(adjustment.person)
-    val adaDays = adjustments.filter { it.adjustmentType === AdjustmentType.ADDITIONAL_DAYS_AWARDED }.filter { it.fromDate!!.isAfter(startOfSentenceEnvelope) }.map { it.days!! }.reduceOrNull { acc, it -> acc + it } ?: 0
-    val radaDays =
-      (
-        adjustments.filter { it.adjustmentType === AdjustmentType.RESTORATION_OF_ADDITIONAL_DAYS_AWARDED }
-          .filter { it.fromDate!!.isAfter(startOfSentenceEnvelope) }
-          .filter { adjustment.id == null || adjustment.id != it.id }
-          .map { it.days!! }
-          .reduceOrNull { acc, it -> acc + it } ?: 0
-        ) + adjustment.days!!
+    if (adjustment.days != null && adjustment.days > 0) {
+      val adjustments = adjustmentService.findByPerson(adjustment.person)
+      val adaDays = adjustments.filter { it.adjustmentType === AdjustmentType.ADDITIONAL_DAYS_AWARDED }
+        .filter { it.fromDate!!.isAfter(startOfSentenceEnvelope) }.map { it.days!! }
+        .reduceOrNull { acc, it -> acc + it } ?: 0
+      val radaDays =
+        (
+          adjustments.filter { it.adjustmentType === AdjustmentType.RESTORATION_OF_ADDITIONAL_DAYS_AWARDED }
+            .filter { it.fromDate!!.isAfter(startOfSentenceEnvelope) }
+            .filter { adjustment.id == null || adjustment.id != it.id }
+            .map { it.days!! }
+            .reduceOrNull { acc, it -> acc + it } ?: 0
+          ) + adjustment.days!!
 
-    if (adaDays < radaDays) {
-      validationMessages.add(ValidationMessage(ValidationCode.MORE_RADAS_THAN_ADAS))
-    } else if (adaDays / 2 < radaDays) {
-      validationMessages.add(ValidationMessage(ValidationCode.RADA_REDUCES_BY_MORE_THAN_HALF))
+      if (adaDays < radaDays) {
+        validationMessages.add(ValidationMessage(ValidationCode.MORE_RADAS_THAN_ADAS))
+      } else if (adaDays / 2 < radaDays) {
+        validationMessages.add(ValidationMessage(ValidationCode.RADA_REDUCES_BY_MORE_THAN_HALF))
+      }
+    } else {
+      validationMessages.add(ValidationMessage(ValidationCode.RADA_DAYS_MUST_BE_POSTIVE))
     }
 
     if (adjustment.fromDate!!.isAfter(LocalDate.now())) {
