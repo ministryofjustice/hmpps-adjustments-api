@@ -32,6 +32,7 @@ class ValidationServiceTest {
     toDate = null,
     days = 50,
     additionalDaysAwarded = null,
+    unlawfullyAtLarge = null,
   )
 
   private val EXISTING_RADA = EXISTING_ADA.copy(

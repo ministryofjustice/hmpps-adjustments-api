@@ -13,12 +13,15 @@ import uk.gov.justice.digital.hmpps.adjustments.api.entity.Adjustment
 import uk.gov.justice.digital.hmpps.adjustments.api.entity.AdjustmentHistory
 import uk.gov.justice.digital.hmpps.adjustments.api.entity.AdjustmentSource
 import uk.gov.justice.digital.hmpps.adjustments.api.entity.AdjustmentType
+import uk.gov.justice.digital.hmpps.adjustments.api.entity.AdjustmentType.UNLAWFULLY_AT_LARGE
 import uk.gov.justice.digital.hmpps.adjustments.api.entity.ChangeType
+import uk.gov.justice.digital.hmpps.adjustments.api.entity.UnlawfullyAtLarge
 import uk.gov.justice.digital.hmpps.adjustments.api.error.ApiValidationException
 import uk.gov.justice.digital.hmpps.adjustments.api.legacy.model.LegacyData
 import uk.gov.justice.digital.hmpps.adjustments.api.model.AdditionalDaysAwardedDto
 import uk.gov.justice.digital.hmpps.adjustments.api.model.AdjustmentDto
 import uk.gov.justice.digital.hmpps.adjustments.api.model.CreateResponseDto
+import uk.gov.justice.digital.hmpps.adjustments.api.model.UnlawfullyAtLargeDto
 import uk.gov.justice.digital.hmpps.adjustments.api.respository.AdjustmentRepository
 import java.time.LocalDate
 import java.time.temporal.ChronoUnit
@@ -51,6 +54,7 @@ class AdjustmentsService(
       adjustmentType = resource.adjustmentType,
       legacyData = objectToJson(LegacyData(resource.bookingId, resource.sentenceSequence, LocalDate.now(), null, null, true)),
       additionalDaysAwarded = additionalDaysAwarded(resource),
+      unlawfullyAtLarge = unlawfullyAtLarge(resource),
       adjustmentHistory = listOf(
         AdjustmentHistory(
           changeByUsername = getCurrentAuthentication().principal,
@@ -62,6 +66,13 @@ class AdjustmentsService(
 
     return CreateResponseDto(adjustmentRepository.save(adjustment).id)
   }
+
+  private fun unlawfullyAtLarge(adjustmentDto: AdjustmentDto): UnlawfullyAtLarge? =
+    if (adjustmentDto.adjustmentType == UNLAWFULLY_AT_LARGE) {
+      UnlawfullyAtLarge(type = adjustmentDto.unlawfullyAtLarge!!.type)
+    } else {
+      null
+    }
 
   private fun additionalDaysAwarded(resource: AdjustmentDto, adjustment: Adjustment? = null): AdditionalDaysAwarded? {
     if (resource.adjustmentType == AdjustmentType.ADDITIONAL_DAYS_AWARDED) {
@@ -162,10 +173,18 @@ class AdjustmentsService(
       sentenceSequence = legacyData.sentenceSequence,
       bookingId = legacyData.bookingId,
       additionalDaysAwarded = additionalDaysAwardedToDto(adjustment),
+      unlawfullyAtLarge = unlawfullyAtLargeDto(adjustment),
       lastUpdatedBy = adjustment.adjustmentHistory.last().changeByUsername,
       status = if (legacyData.active) "Active" else "Inactive",
     )
   }
+
+  private fun unlawfullyAtLargeDto(adjustment: Adjustment): UnlawfullyAtLargeDto? =
+    if (adjustment.unlawfullyAtLarge != null) {
+      UnlawfullyAtLargeDto(type = adjustment.unlawfullyAtLarge.type)
+    } else {
+      null
+    }
 
   private fun additionalDaysAwardedToDto(adjustment: Adjustment): AdditionalDaysAwardedDto? {
     if (adjustment.additionalDaysAwarded != null) {

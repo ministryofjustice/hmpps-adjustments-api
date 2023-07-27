@@ -11,6 +11,7 @@ import jakarta.persistence.Enumerated
 import jakarta.persistence.Id
 import jakarta.persistence.OneToMany
 import jakarta.persistence.OneToOne
+import jakarta.persistence.PrimaryKeyJoinColumn
 import jakarta.persistence.Table
 import jakarta.validation.constraints.NotNull
 import org.hibernate.annotations.Type
@@ -61,10 +62,14 @@ data class Adjustment(
 
   @OneToOne(mappedBy = "adjustment", cascade = [CascadeType.ALL])
   var additionalDaysAwarded: AdditionalDaysAwarded? = null,
-) {
 
+  @OneToOne(mappedBy = "adjustment", cascade = [CascadeType.ALL])
+  @PrimaryKeyJoinColumn
+  val unlawfullyAtLarge: UnlawfullyAtLarge? = null,
+) {
   init {
     adjustmentHistory.forEach { it.adjustment = this }
     additionalDaysAwarded?.adjustment = this
+    unlawfullyAtLarge?.adjustment = this
   }
 }
