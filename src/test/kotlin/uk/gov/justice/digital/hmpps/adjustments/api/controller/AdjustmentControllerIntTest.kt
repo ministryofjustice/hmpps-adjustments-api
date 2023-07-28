@@ -12,12 +12,15 @@ import org.springframework.test.web.reactive.server.expectBodyList
 import uk.gov.justice.digital.hmpps.adjustments.api.config.ErrorResponse
 import uk.gov.justice.digital.hmpps.adjustments.api.entity.AdjustmentSource
 import uk.gov.justice.digital.hmpps.adjustments.api.entity.AdjustmentType
+import uk.gov.justice.digital.hmpps.adjustments.api.entity.AdjustmentType.UNLAWFULLY_AT_LARGE
 import uk.gov.justice.digital.hmpps.adjustments.api.entity.ChangeType
+import uk.gov.justice.digital.hmpps.adjustments.api.enums.UnlawfullyAtLargeType.RECALL
 import uk.gov.justice.digital.hmpps.adjustments.api.integration.SqsIntegrationTestBase
 import uk.gov.justice.digital.hmpps.adjustments.api.legacy.model.LegacyData
 import uk.gov.justice.digital.hmpps.adjustments.api.model.AdditionalDaysAwardedDto
 import uk.gov.justice.digital.hmpps.adjustments.api.model.AdjustmentDto
 import uk.gov.justice.digital.hmpps.adjustments.api.model.CreateResponseDto
+import uk.gov.justice.digital.hmpps.adjustments.api.model.UnlawfullyAtLargeDto
 import uk.gov.justice.digital.hmpps.adjustments.api.model.ValidationCode
 import uk.gov.justice.digital.hmpps.adjustments.api.model.ValidationMessage
 import uk.gov.justice.digital.hmpps.adjustments.api.respository.AdjustmentRepository
@@ -199,7 +202,7 @@ class AdjustmentControllerIntTest : SqsIntegrationTestBase() {
       )
       .bodyValue(
         CREATED_ADJUSTMENT.copy(
-          adjustmentType = AdjustmentType.UNLAWFULLY_AT_LARGE,
+          adjustmentType = UNLAWFULLY_AT_LARGE,
         ),
       )
       .exchange()
@@ -310,6 +313,58 @@ class AdjustmentControllerIntTest : SqsIntegrationTestBase() {
 
     assertThat(result).isEqualTo(updateDto.copy(id = adjustmentId, days = 4, status = "Active", lastUpdatedBy = "Test User"))
   }
+
+  @Test
+  fun `Create a UAL Adjustment`() {
+    val adjustmentId = postCreateAdjustment(
+      CREATED_ADJUSTMENT.copy(
+        person = "UAL123",
+        adjustmentType = UNLAWFULLY_AT_LARGE,
+        unlawfullyAtLarge = UnlawfullyAtLargeDto(type = RECALL),
+      ),
+    )
+
+    val adjustment = adjustmentRepository.findById(adjustmentId).get()
+
+    assertThat(adjustment.unlawfullyAtLarge).isNotNull
+    assertThat(adjustment.unlawfullyAtLarge!!.type).isEqualTo(RECALL)
+    assertThat(adjustment.unlawfullyAtLarge!!.adjustmentId).isEqualTo(adjustmentId)
+
+    val result = getAdjustmentById(adjustmentId)
+
+    assertThat(result).isEqualTo(
+      CREATED_ADJUSTMENT.copy(
+        id = adjustmentId,
+        person = "UAL123",
+        adjustmentType = UNLAWFULLY_AT_LARGE,
+        unlawfullyAtLarge = UnlawfullyAtLargeDto(type = RECALL),
+        days = 4,
+        lastUpdatedBy = "Test User",
+        status = "Active",
+      ),
+    )
+  }
+
+  private fun postCreateAdjustment(adjustmentDto: AdjustmentDto) = webTestClient
+    .post()
+    .uri("/adjustments")
+    .headers(setAuthorisation())
+    .contentType(MediaType.APPLICATION_JSON)
+    .bodyValue(adjustmentDto)
+    .exchange()
+    .expectStatus().isCreated
+    .returnResult(CreateResponseDto::class.java)
+    .responseBody.blockFirst()!!.adjustmentId
+
+  private fun getAdjustmentById(adjustmentId: UUID) = webTestClient
+    .get()
+    .uri("/adjustments/$adjustmentId")
+    .headers(setAuthorisation())
+    .exchange()
+    .expectStatus().isOk
+    .returnResult(AdjustmentDto::class.java)
+    .responseBody.blockFirst()!!
+
   private fun createAnAdjustment(person: String = "ABC123"): UUID {
     return webTestClient
       .post()
@@ -364,6 +419,7 @@ class AdjustmentControllerIntTest : SqsIntegrationTestBase() {
       toDate = LocalDate.now().minusDays(2),
       days = null,
       additionalDaysAwarded = null,
+      unlawfullyAtLarge = null,
     )
   }
 }

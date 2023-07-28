@@ -167,6 +167,7 @@ class LegacyAndAdjustmentsControllerIntTest : SqsIntegrationTestBase() {
       toDate = LocalDate.now().plusDays(2),
       days = null,
       additionalDaysAwarded = null,
+      unlawfullyAtLarge = null,
     )
   }
 }

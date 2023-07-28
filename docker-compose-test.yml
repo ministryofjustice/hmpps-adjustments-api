@@ -1,0 +1,30 @@
+version: "3"
+services:
+  adjustments-db:
+    image: postgres
+    networks:
+      - hmpps
+    container_name: adjustments-db
+    restart: always
+    ports:
+      - "5432:5432"
+    environment:
+      - POSTGRES_PASSWORD=adjustments
+      - POSTGRES_USER=adjustments
+      - POSTGRES_DB=adjustments
+
+  hmpps-auth:
+    image: quay.io/hmpps/hmpps-auth:latest
+    networks:
+      - hmpps
+    container_name: hmpps-auth
+    ports:
+      - "9090:8080"
+    healthcheck:
+      test: [ "CMD", "curl", "-f", "http://localhost:8080/auth/health" ]
+    environment:
+      - SPRING_PROFILES_ACTIVE=dev
+      - DELIUS_ENABLED=false
+
+networks:
+  hmpps:

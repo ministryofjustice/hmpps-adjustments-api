@@ -25,6 +25,8 @@ data class AdjustmentDto(
   val days: Int?,
   @Schema(description = "The details of an additional days awarded adjustments (ADA)")
   val additionalDaysAwarded: AdditionalDaysAwardedDto?,
+  @Schema(description = "Additional details of a UAL adjustment")
+  val unlawfullyAtLarge: UnlawfullyAtLargeDto?,
   // View only fields
   @Schema(description = "The person last updating this adjustment", readOnly = true)
   val lastUpdatedBy: String? = null,
