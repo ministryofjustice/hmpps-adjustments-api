@@ -7,7 +7,9 @@ import org.junit.jupiter.api.Test
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.whenever
 import uk.gov.justice.digital.hmpps.adjustments.api.entity.AdjustmentType
+import uk.gov.justice.digital.hmpps.adjustments.api.enums.UnlawfullyAtLargeType
 import uk.gov.justice.digital.hmpps.adjustments.api.model.AdjustmentDto
+import uk.gov.justice.digital.hmpps.adjustments.api.model.UnlawfullyAtLargeDto
 import uk.gov.justice.digital.hmpps.adjustments.api.model.ValidationCode
 import uk.gov.justice.digital.hmpps.adjustments.api.model.ValidationMessage
 import java.time.LocalDate
@@ -92,6 +94,12 @@ class ValidationServiceTest {
     }
 
     @Test
+    fun `RADA missing from date`() {
+      val result = validationService.validate(VALID_NEW_RADA.copy(fromDate = null))
+      assertThat(result).isEqualTo(listOf(ValidationMessage(ValidationCode.RADA_FROM_DATE_NOT_NULL)))
+    }
+
+    @Test
     fun `Future dated radas`() {
       val result = validationService.validate(
         VALID_NEW_RADA.copy(
@@ -135,6 +143,55 @@ class ValidationServiceTest {
     fun `RADA update existing RADA so that days are more than ADAs`() {
       val result = validationService.validate(EXISTING_RADA.copy(days = 51))
       assertThat(result).isEqualTo(listOf(ValidationMessage(ValidationCode.MORE_RADAS_THAN_ADAS)))
+    }
+  }
+
+  @Nested
+  inner class UalTests {
+
+    val VALID_NEW_UAL = EXISTING_RADA.copy(
+      id = null,
+      days = null,
+      fromDate = LocalDate.now().minusDays(10),
+      toDate = LocalDate.now().minusDays(2),
+      adjustmentType = AdjustmentType.UNLAWFULLY_AT_LARGE,
+      unlawfullyAtLarge = UnlawfullyAtLargeDto(UnlawfullyAtLargeType.ESCAPE),
+    )
+
+    @Test
+    fun `UAL valid`() {
+      val result = validationService.validate(VALID_NEW_UAL)
+      assertThat(result).isEmpty()
+    }
+
+    @Test
+    fun `UAL valid same from to date`() {
+      val result = validationService.validate(VALID_NEW_UAL.copy(toDate = VALID_NEW_UAL.fromDate))
+      assertThat(result).isEmpty()
+    }
+
+    @Test
+    fun `UAL missing from date`() {
+      val result = validationService.validate(VALID_NEW_UAL.copy(fromDate = null))
+      assertThat(result).isEqualTo(listOf(ValidationMessage(ValidationCode.UAL_FROM_DATE_NOT_NULL)))
+    }
+
+    @Test
+    fun `UAL missing to date`() {
+      val result = validationService.validate(VALID_NEW_UAL.copy(toDate = null))
+      assertThat(result).isEqualTo(listOf(ValidationMessage(ValidationCode.UAL_TO_DATE_NOT_NULL)))
+    }
+
+    @Test
+    fun `UAL to date before from date`() {
+      val result = validationService.validate(VALID_NEW_UAL.copy(toDate = VALID_NEW_UAL.fromDate!!.minusDays(1)))
+      assertThat(result).isEqualTo(listOf(ValidationMessage(ValidationCode.UAL_FROM_DATE_AFTER_TO_DATE)))
+    }
+
+    @Test
+    fun `UAL missing ual type`() {
+      val result = validationService.validate(VALID_NEW_UAL.copy(unlawfullyAtLarge = null))
+      assertThat(result).isEqualTo(listOf(ValidationMessage(ValidationCode.UAL_TYPE_NOT_NULL)))
     }
   }
 }

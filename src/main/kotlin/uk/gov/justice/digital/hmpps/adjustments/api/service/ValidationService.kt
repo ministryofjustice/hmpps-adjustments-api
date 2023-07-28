@@ -19,7 +19,30 @@ class ValidationService(
     if (adjustment.adjustmentType == AdjustmentType.RESTORATION_OF_ADDITIONAL_DAYS_AWARDED) {
       return validateRada(adjustment, startOfSentenceEnvelope)
     }
+    if (adjustment.adjustmentType == AdjustmentType.UNLAWFULLY_AT_LARGE) {
+      return validateUal(adjustment)
+    }
     return emptyList()
+  }
+
+  private fun validateUal(adjustment: AdjustmentDto): List<ValidationMessage> {
+    val validationMessages = mutableListOf<ValidationMessage>()
+
+    if (adjustment.fromDate == null) {
+      validationMessages.add(ValidationMessage(ValidationCode.UAL_FROM_DATE_NOT_NULL))
+    }
+    if (adjustment.toDate == null) {
+      validationMessages.add(ValidationMessage(ValidationCode.UAL_TO_DATE_NOT_NULL))
+    }
+
+    if (adjustment.fromDate != null && adjustment.toDate != null && adjustment.toDate.isBefore(adjustment.fromDate)) {
+      validationMessages.add(ValidationMessage(ValidationCode.UAL_FROM_DATE_AFTER_TO_DATE))
+    }
+
+    if (adjustment.unlawfullyAtLarge == null) {
+      validationMessages.add(ValidationMessage(ValidationCode.UAL_TYPE_NOT_NULL))
+    }
+    return validationMessages
   }
 
   private fun validateRada(adjustment: AdjustmentDto, startOfSentenceEnvelope: LocalDate): List<ValidationMessage> {
@@ -48,13 +71,16 @@ class ValidationService(
       validationMessages.add(ValidationMessage(ValidationCode.RADA_DAYS_MUST_BE_POSTIVE))
     }
 
-    if (adjustment.fromDate!!.isAfter(LocalDate.now())) {
-      validationMessages.add(ValidationMessage(ValidationCode.RADA_DATE_CANNOT_BE_FUTURE))
-    }
-
-    if (adjustment.fromDate.isBefore(startOfSentenceEnvelope)) {
-      val formatter = DateTimeFormatter.ofPattern("d MMM yyyy")
-      validationMessages.add(ValidationMessage(ValidationCode.RADA_DATA_MUST_BE_AFTER_SENTENCE_DATE, listOf(startOfSentenceEnvelope.format(formatter))))
+    if (adjustment.fromDate == null) {
+      validationMessages.add(ValidationMessage(ValidationCode.RADA_FROM_DATE_NOT_NULL))
+    } else {
+      if (adjustment.fromDate.isAfter(LocalDate.now())) {
+        validationMessages.add(ValidationMessage(ValidationCode.RADA_DATE_CANNOT_BE_FUTURE))
+      }
+      if (adjustment.fromDate.isBefore(startOfSentenceEnvelope)) {
+        val formatter = DateTimeFormatter.ofPattern("d MMM yyyy")
+        validationMessages.add(ValidationMessage(ValidationCode.RADA_DATA_MUST_BE_AFTER_SENTENCE_DATE, listOf(startOfSentenceEnvelope.format(formatter))))
+      }
     }
 
     return validationMessages
