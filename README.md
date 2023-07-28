@@ -12,5 +12,5 @@ This will run the service locally. It starts the database and auth using docker 
 Run the following commands from the root directory of the project:
 1. `docker-compose -f docker-compose-test.yml pull`
 2. `docker-compose -f docker-compose-test.yml up --no-start`
-3. `docker-compose -f docker-compose-test.yml start hmpps-auth manage-offences-db`
+3. `docker-compose -f docker-compose-test.yml start hmpps-auth adjustments-db`
 4. `./run-local.sh`
