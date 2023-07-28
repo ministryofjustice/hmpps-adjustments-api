@@ -64,7 +64,7 @@ class AdjustmentsService(
   }
 
   private fun additionalDaysAwarded(resource: AdjustmentDto, adjustment: Adjustment? = null): AdditionalDaysAwarded? {
-    if (resource.adjustmentType == AdjustmentType.ADDITIONAL_DAYS_AWARDED) {
+    if (resource.adjustmentType == AdjustmentType.ADDITIONAL_DAYS_AWARDED && resource.additionalDaysAwarded != null) {
       val additionalDaysAwarded = if (adjustment != null) adjustment.additionalDaysAwarded!! else AdditionalDaysAwarded()
       additionalDaysAwarded.apply {
         adjudicationId = resource.additionalDaysAwarded!!.adjudicationId
