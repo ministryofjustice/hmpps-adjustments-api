@@ -1,11 +1,28 @@
+ALTER TABLE adjustment DROP CONSTRAINT adjustment_from_date_check;
+
 ALTER TABLE adjustment
-ALTER COLUMN source TYPE varchar(50) using source::text;
+DROP COLUMN source;
 
 ALTER TABLE adjustment_history
-ALTER COLUMN change_type TYPE varchar(50) using change_type::text;
+DROP COLUMN change_type;
 
 ALTER TABLE adjustment_history
-ALTER COLUMN change_source TYPE varchar(50) using change_source::text;
+DROP COLUMN change_source;
 
 DROP TYPE source_systems;
 DROP TYPE change_types;
+
+
+ALTER TABLE adjustment ADD COLUMN
+  source varchar(50) NOT NULL default 'NOMIS';
+
+ALTER TABLE adjustment ADD CONSTRAINT adjustment_from_date_check check (
+    NOT(source = 'DPS' AND from_date IS NULL)
+);
+
+ALTER TABLE adjustment_history ADD COLUMN
+  change_type varchar(50) NOT NULL default 'CREATE';
+
+
+ALTER TABLE adjustment_history ADD COLUMN
+  change_source varchar(50) NOT NULL default 'NOMIS';
