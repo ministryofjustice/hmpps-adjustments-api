@@ -67,12 +67,17 @@ class AdjustmentsService(
     return CreateResponseDto(adjustmentRepository.save(adjustment).id)
   }
 
-  private fun unlawfullyAtLarge(adjustmentDto: AdjustmentDto): UnlawfullyAtLarge? =
-    if (adjustmentDto.adjustmentType == UNLAWFULLY_AT_LARGE) {
+  private fun unlawfullyAtLarge(adjustmentDto: AdjustmentDto, adjustment: Adjustment? = null): UnlawfullyAtLarge? {
+    if (adjustmentDto.adjustmentType == UNLAWFULLY_AT_LARGE && adjustmentDto.unlawfullyAtLarge != null) {
       UnlawfullyAtLarge(type = adjustmentDto.unlawfullyAtLarge!!.type)
-    } else {
-      null
+      val unlawfullyAtLarge = if (adjustment != null) adjustment.unlawfullyAtLarge!! else UnlawfullyAtLarge()
+      unlawfullyAtLarge.apply {
+        type = adjustmentDto.unlawfullyAtLarge!!.type
+      }
+      return unlawfullyAtLarge
     }
+    return null
+  }
 
   private fun additionalDaysAwarded(resource: AdjustmentDto, adjustment: Adjustment? = null): AdditionalDaysAwarded? {
     if (resource.adjustmentType == AdjustmentType.ADDITIONAL_DAYS_AWARDED && resource.additionalDaysAwarded != null) {
@@ -110,6 +115,10 @@ class AdjustmentsService(
 
   @Transactional
   fun update(adjustmentId: UUID, resource: AdjustmentDto) {
+    println("#######################")
+    println("#######################")
+    println("#######################")
+    println("#######################" + resource)
     val adjustment = adjustmentRepository.findById(adjustmentId)
       .orElseThrow {
         EntityNotFoundException("No adjustment found with id $adjustmentId")
@@ -120,6 +129,7 @@ class AdjustmentsService(
     val persistedLegacyData = objectMapper.convertValue(adjustment.legacyData, LegacyData::class.java)
     val change = objectToJson(adjustment)
     val calculated: Int? = if (resource.toDate != null) (ChronoUnit.DAYS.between(resource.fromDate, resource.toDate) + 1).toInt() else null
+    println("####################### 1")
     adjustment.apply {
       daysCalculated = resource.days ?: calculated!!
       days = resource.days
@@ -128,6 +138,7 @@ class AdjustmentsService(
       source = AdjustmentSource.DPS
       legacyData = objectToJson(LegacyData(resource.bookingId, resource.sentenceSequence, persistedLegacyData.postedDate, null, persistedLegacyData.type, true))
       additionalDaysAwarded = additionalDaysAwarded(resource, this)
+      unlawfullyAtLarge = unlawfullyAtLarge(resource, this)
       adjustmentHistory += AdjustmentHistory(
         changeByUsername = getCurrentAuthentication().principal,
         changeType = ChangeType.UPDATE,
@@ -181,7 +192,7 @@ class AdjustmentsService(
 
   private fun unlawfullyAtLargeDto(adjustment: Adjustment): UnlawfullyAtLargeDto? =
     if (adjustment.unlawfullyAtLarge != null) {
-      UnlawfullyAtLargeDto(type = adjustment.unlawfullyAtLarge.type)
+      UnlawfullyAtLargeDto(type = adjustment.unlawfullyAtLarge!!.type)
     } else {
       null
     }

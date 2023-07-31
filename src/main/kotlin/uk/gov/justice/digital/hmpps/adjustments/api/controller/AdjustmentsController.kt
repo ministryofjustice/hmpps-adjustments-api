@@ -134,9 +134,11 @@ class AdjustmentsController(
     adjustmentId: UUID,
     @RequestBody adjustment: AdjustmentDto,
   ) {
+    println("####################### 2 start")
     adjustmentsService.update(adjustmentId, adjustment).also {
       eventService.update(adjustmentId, adjustment.person, AdjustmentSource.DPS)
     }
+    println("####################### 2 finish")
   }
 
   @DeleteMapping("/{adjustmentId}")
