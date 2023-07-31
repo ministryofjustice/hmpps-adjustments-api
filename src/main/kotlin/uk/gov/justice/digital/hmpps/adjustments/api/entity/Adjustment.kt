@@ -15,7 +15,6 @@ import jakarta.persistence.PrimaryKeyJoinColumn
 import jakarta.persistence.Table
 import jakarta.validation.constraints.NotNull
 import org.hibernate.annotations.Type
-import uk.gov.justice.digital.hmpps.adjustments.api.config.PostgreSQLEnumType
 import java.time.LocalDate
 import java.util.UUID
 
@@ -56,8 +55,6 @@ data class Adjustment(
 
   @NotNull
   @Enumerated(EnumType.STRING)
-  @Column(columnDefinition = "source_systems")
-  @Type(PostgreSQLEnumType::class)
   var source: AdjustmentSource = AdjustmentSource.DPS,
 
   @OneToOne(mappedBy = "adjustment", cascade = [CascadeType.ALL])
