@@ -14,6 +14,7 @@ import uk.gov.justice.digital.hmpps.adjustments.api.entity.AdjustmentSource
 import uk.gov.justice.digital.hmpps.adjustments.api.entity.AdjustmentType
 import uk.gov.justice.digital.hmpps.adjustments.api.entity.AdjustmentType.UNLAWFULLY_AT_LARGE
 import uk.gov.justice.digital.hmpps.adjustments.api.entity.ChangeType
+import uk.gov.justice.digital.hmpps.adjustments.api.enums.UnlawfullyAtLargeType.ESCAPE
 import uk.gov.justice.digital.hmpps.adjustments.api.enums.UnlawfullyAtLargeType.RECALL
 import uk.gov.justice.digital.hmpps.adjustments.api.integration.SqsIntegrationTestBase
 import uk.gov.justice.digital.hmpps.adjustments.api.legacy.model.LegacyData
@@ -149,20 +150,13 @@ class AdjustmentControllerIntTest : SqsIntegrationTestBase() {
     val id = createAnAdjustment().also {
       cleanQueue()
     }
-    webTestClient
-      .put()
-      .uri("/adjustments/$id")
-      .headers(
-        setAuthorisation(),
-      )
-      .bodyValue(
-        CREATED_ADJUSTMENT.copy(
-          fromDate = CREATED_ADJUSTMENT.fromDate!!.minusYears(1),
-          toDate = CREATED_ADJUSTMENT.toDate!!.minusYears(1),
-        ),
-      )
-      .exchange()
-      .expectStatus().isOk
+    putAdjustmentUpdate(
+      id,
+      CREATED_ADJUSTMENT.copy(
+        fromDate = CREATED_ADJUSTMENT.fromDate!!.minusYears(1),
+        toDate = CREATED_ADJUSTMENT.toDate!!.minusYears(1),
+      ),
+    )
 
     val adjustment = adjustmentRepository.findById(id).get()
 
@@ -288,17 +282,7 @@ class AdjustmentControllerIntTest : SqsIntegrationTestBase() {
         consecutive = false,
       ),
     )
-    webTestClient
-      .put()
-      .uri("/adjustments/$adjustmentId")
-      .headers(
-        setAuthorisation(),
-      )
-      .bodyValue(
-        updateDto,
-      )
-      .exchange()
-      .expectStatus().isOk
+    putAdjustmentUpdate(adjustmentId, updateDto)
 
     val result = webTestClient
       .get()
@@ -315,7 +299,7 @@ class AdjustmentControllerIntTest : SqsIntegrationTestBase() {
   }
 
   @Test
-  fun `Create a UAL Adjustment`() {
+  fun `Create a UAL Adjustment, then update it`() {
     val adjustmentId = postCreateAdjustment(
       CREATED_ADJUSTMENT.copy(
         person = "UAL123",
@@ -330,9 +314,9 @@ class AdjustmentControllerIntTest : SqsIntegrationTestBase() {
     assertThat(adjustment.unlawfullyAtLarge!!.type).isEqualTo(RECALL)
     assertThat(adjustment.unlawfullyAtLarge!!.adjustmentId).isEqualTo(adjustmentId)
 
-    val result = getAdjustmentById(adjustmentId)
+    val createdAdjustment = getAdjustmentById(adjustmentId)
 
-    assertThat(result).isEqualTo(
+    assertThat(createdAdjustment).isEqualTo(
       CREATED_ADJUSTMENT.copy(
         id = adjustmentId,
         person = "UAL123",
@@ -343,6 +327,11 @@ class AdjustmentControllerIntTest : SqsIntegrationTestBase() {
         status = "Active",
       ),
     )
+
+    val updateDto = createdAdjustment.copy(unlawfullyAtLarge = UnlawfullyAtLargeDto(type = ESCAPE))
+    putAdjustmentUpdate(adjustmentId, updateDto)
+    val updatedAdjustment = getAdjustmentById(adjustmentId)
+    assertThat(updatedAdjustment).isEqualTo(createdAdjustment.copy(unlawfullyAtLarge = UnlawfullyAtLargeDto(type = ESCAPE)))
   }
 
   private fun postCreateAdjustment(adjustmentDto: AdjustmentDto) = webTestClient
@@ -406,6 +395,23 @@ class AdjustmentControllerIntTest : SqsIntegrationTestBase() {
     assertThat(validationMessages.size).isEqualTo(2)
     assertThat(validationMessages[0]).isEqualTo(ValidationMessage(ValidationCode.MORE_RADAS_THAN_ADAS))
     assertThat(validationMessages[1]).isEqualTo(ValidationMessage(ValidationCode.RADA_DATE_CANNOT_BE_FUTURE))
+  }
+
+  private fun putAdjustmentUpdate(
+    adjustmentId: UUID,
+    updateDto: AdjustmentDto,
+  ) {
+    webTestClient
+      .put()
+      .uri("/adjustments/$adjustmentId")
+      .headers(
+        setAuthorisation(),
+      )
+      .bodyValue(
+        updateDto,
+      )
+      .exchange()
+      .expectStatus().isOk
   }
 
   companion object {

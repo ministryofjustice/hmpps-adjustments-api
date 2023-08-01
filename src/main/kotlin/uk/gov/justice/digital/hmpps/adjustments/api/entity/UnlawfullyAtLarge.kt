@@ -1,5 +1,6 @@
 package uk.gov.justice.digital.hmpps.adjustments.api.entity
 
+import com.fasterxml.jackson.annotation.JsonIgnore
 import jakarta.persistence.Entity
 import jakarta.persistence.EnumType
 import jakarta.persistence.Enumerated
@@ -16,9 +17,10 @@ data class UnlawfullyAtLarge(
   @Id
   val adjustmentId: UUID = UUID.randomUUID(),
   @Enumerated(EnumType.STRING)
-  val type: UnlawfullyAtLargeType,
+  var type: UnlawfullyAtLargeType? = null,
 
   @OneToOne
   @MapsId
+  @JsonIgnore
   var adjustment: Adjustment = Adjustment(),
 )

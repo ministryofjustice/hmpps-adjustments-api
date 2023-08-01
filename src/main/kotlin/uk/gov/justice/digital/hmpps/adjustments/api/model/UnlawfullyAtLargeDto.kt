@@ -6,5 +6,5 @@ import uk.gov.justice.digital.hmpps.adjustments.api.enums.UnlawfullyAtLargeType
 @Schema(description = "The details of a UAL adjustment")
 data class UnlawfullyAtLargeDto(
   @Schema(description = "The type of UAL")
-  val type: UnlawfullyAtLargeType,
+  val type: UnlawfullyAtLargeType? = null,
 )
