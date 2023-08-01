@@ -115,10 +115,6 @@ class AdjustmentsService(
 
   @Transactional
   fun update(adjustmentId: UUID, resource: AdjustmentDto) {
-    println("#######################")
-    println("#######################")
-    println("#######################")
-    println("#######################" + resource)
     val adjustment = adjustmentRepository.findById(adjustmentId)
       .orElseThrow {
         EntityNotFoundException("No adjustment found with id $adjustmentId")
@@ -129,7 +125,6 @@ class AdjustmentsService(
     val persistedLegacyData = objectMapper.convertValue(adjustment.legacyData, LegacyData::class.java)
     val change = objectToJson(adjustment)
     val calculated: Int? = if (resource.toDate != null) (ChronoUnit.DAYS.between(resource.fromDate, resource.toDate) + 1).toInt() else null
-    println("####################### 1")
     adjustment.apply {
       daysCalculated = resource.days ?: calculated!!
       days = resource.days
