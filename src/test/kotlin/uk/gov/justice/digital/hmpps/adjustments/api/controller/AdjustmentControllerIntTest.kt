@@ -155,7 +155,7 @@ class AdjustmentControllerIntTest : SqsIntegrationTestBase() {
       CREATED_ADJUSTMENT.copy(
         fromDate = CREATED_ADJUSTMENT.fromDate!!.minusYears(1),
         toDate = CREATED_ADJUSTMENT.toDate!!.minusYears(1),
-      )
+      ),
     )
 
     val adjustment = adjustmentRepository.findById(id).get()
@@ -396,7 +396,6 @@ class AdjustmentControllerIntTest : SqsIntegrationTestBase() {
     assertThat(validationMessages[0]).isEqualTo(ValidationMessage(ValidationCode.MORE_RADAS_THAN_ADAS))
     assertThat(validationMessages[1]).isEqualTo(ValidationMessage(ValidationCode.RADA_DATE_CANNOT_BE_FUTURE))
   }
-
 
   private fun putAdjustmentUpdate(
     adjustmentId: UUID,
