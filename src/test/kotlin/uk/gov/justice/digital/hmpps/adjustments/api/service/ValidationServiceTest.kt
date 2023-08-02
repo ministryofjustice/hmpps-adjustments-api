@@ -11,6 +11,8 @@ import uk.gov.justice.digital.hmpps.adjustments.api.enums.UnlawfullyAtLargeType
 import uk.gov.justice.digital.hmpps.adjustments.api.model.AdjustmentDto
 import uk.gov.justice.digital.hmpps.adjustments.api.model.UnlawfullyAtLargeDto
 import uk.gov.justice.digital.hmpps.adjustments.api.model.ValidationCode
+import uk.gov.justice.digital.hmpps.adjustments.api.model.ValidationCode.UAL_FIRST_DATE_CANNOT_BE_FUTURE
+import uk.gov.justice.digital.hmpps.adjustments.api.model.ValidationCode.UAL_FROM_DATE_AFTER_TO_DATE
 import uk.gov.justice.digital.hmpps.adjustments.api.model.ValidationMessage
 import java.time.LocalDate
 import java.util.UUID
@@ -114,7 +116,6 @@ class ValidationServiceTest {
       val result = validationService.validate(
         VALID_NEW_RADA.copy(
           fromDate = START_OF_SENTENCE_ENVELOPE.minusDays(1),
-
         ),
       )
       assertThat(result).isEqualTo(
@@ -185,13 +186,55 @@ class ValidationServiceTest {
     @Test
     fun `UAL to date before from date`() {
       val result = validationService.validate(VALID_NEW_UAL.copy(toDate = VALID_NEW_UAL.fromDate!!.minusDays(1)))
-      assertThat(result).isEqualTo(listOf(ValidationMessage(ValidationCode.UAL_FROM_DATE_AFTER_TO_DATE)))
+      assertThat(result).isEqualTo(listOf(ValidationMessage(UAL_FROM_DATE_AFTER_TO_DATE)))
     }
 
     @Test
     fun `UAL missing ual type`() {
       val result = validationService.validate(VALID_NEW_UAL.copy(unlawfullyAtLarge = null))
       assertThat(result).isEqualTo(listOf(ValidationMessage(ValidationCode.UAL_TYPE_NOT_NULL)))
+    }
+
+    @Test
+    fun `UAL before sentence envelope start`() {
+      val result = validationService.validate(
+        VALID_NEW_UAL.copy(
+          fromDate = START_OF_SENTENCE_ENVELOPE.minusDays(1),
+        ),
+      )
+      assertThat(result).isEqualTo(
+        listOf(
+          ValidationMessage(
+            ValidationCode.UAL_DATE_MUST_BE_AFTER_SENTENCE_DATE,
+            listOf("1 Jan 2022"),
+          ),
+        ),
+      )
+    }
+
+    @Test
+    fun `Future dated UAL start date`() {
+      val result = validationService.validate(
+        VALID_NEW_UAL.copy(
+          fromDate = LocalDate.now().plusDays(1),
+        ),
+      )
+      assertThat(result).isEqualTo(
+        listOf(
+          ValidationMessage(UAL_FIRST_DATE_CANNOT_BE_FUTURE),
+          ValidationMessage(UAL_FROM_DATE_AFTER_TO_DATE),
+        ),
+      )
+    }
+
+    @Test
+    fun `Future dated UAL end date`() {
+      val result = validationService.validate(
+        VALID_NEW_UAL.copy(
+          toDate = LocalDate.now().plusDays(1),
+        ),
+      )
+      assertThat(result).isEqualTo(listOf(ValidationMessage(ValidationCode.UAL_LAST_DATE_CANNOT_BE_FUTURE)))
     }
   }
 }

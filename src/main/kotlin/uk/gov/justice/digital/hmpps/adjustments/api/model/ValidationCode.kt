@@ -14,4 +14,7 @@ enum class ValidationCode(val message: String, val validationType: ValidationTyp
   UAL_TO_DATE_NOT_NULL("You must enter a date for the last day of UAL."),
   UAL_FROM_DATE_AFTER_TO_DATE("The first day of unlawfully at large date must be before the last day of unlawfully at large date."),
   UAL_TYPE_NOT_NULL("You must select the type of UAL."),
+  UAL_FIRST_DATE_CANNOT_BE_FUTURE("The first day of unlawfully at large date must not be in the future"),
+  UAL_LAST_DATE_CANNOT_BE_FUTURE("The last day of unlawfully at large date must not be in the future"),
+  UAL_DATE_MUST_BE_AFTER_SENTENCE_DATE("The first day of unlawfully at large date must be after the start of the sentence, %s"),
 }
