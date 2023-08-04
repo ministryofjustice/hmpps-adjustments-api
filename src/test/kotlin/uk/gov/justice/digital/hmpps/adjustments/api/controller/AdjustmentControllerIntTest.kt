@@ -342,11 +342,12 @@ class AdjustmentControllerIntTest : SqsIntegrationTestBase() {
     "classpath:test_data/insert-nomis-ual.sql",
   )
   fun `Update a UAL Adjustment that has no UAL type (eg migrated from NOMIS)`() {
-    val adjustment = getAdjustmentById(UUID.fromString("dfba24ef-a2d4-4b26-af63-4d9494dd5252"))
+    val adjustmentId = UUID.fromString("dfba24ef-a2d4-4b26-af63-4d9494dd5252")
+    val adjustment = getAdjustmentById(adjustmentId)
 
     putAdjustmentUpdate(adjustment.id!!, adjustment.copy(unlawfullyAtLarge = UnlawfullyAtLargeDto(type = RECALL)))
 
-    val updatedAdjustment = getAdjustmentById(UUID.fromString("dfba24ef-a2d4-4b26-af63-4d9494dd5252"))
+    val updatedAdjustment = getAdjustmentById(adjustmentId)
     assertThat(updatedAdjustment).isEqualTo(adjustment.copy(lastUpdatedBy = "Test User", unlawfullyAtLarge = UnlawfullyAtLargeDto(type = RECALL)))
   }
 
