@@ -7,7 +7,7 @@ spring:
           public-key-location: classpath:local-public-key.pub
 
   datasource:
-    url: 'jdbc:h2:mem:adjustments-db;INIT=create domain if not exists jsonb as CLOB;MODE=PostgreSQL;DB_CLOSE_DELAY=-1'
+    url: 'jdbc:h2:mem:adjustments-db;INIT=create domain if not exists jsonb as CLOB;MODE=PostgreSQL'
     username: adjustments
     password: dummy
 
