@@ -67,24 +67,29 @@ class AdjustmentsService(
     return CreateResponseDto(adjustmentRepository.save(adjustment).id)
   }
 
-  private fun unlawfullyAtLarge(adjustmentDto: AdjustmentDto, adjustment: Adjustment? = null): UnlawfullyAtLarge? {
+  private fun unlawfullyAtLarge(adjustmentDto: AdjustmentDto, adjustment: Adjustment? = null): UnlawfullyAtLarge? =
     if (adjustmentDto.adjustmentType == UNLAWFULLY_AT_LARGE && adjustmentDto.unlawfullyAtLarge != null) {
-      val unlawfullyAtLarge = if (adjustment != null && adjustment?.unlawfullyAtLarge != null) adjustment.unlawfullyAtLarge!!
-      else if (adjustment != null) UnlawfullyAtLarge(adjustment = adjustment)
-      else UnlawfullyAtLarge()
-      unlawfullyAtLarge.apply {
-        type = adjustmentDto.unlawfullyAtLarge!!.type
+      getUnlawfullyAtLarge(adjustment).apply {
+        type = adjustmentDto.unlawfullyAtLarge.type
       }
-      return unlawfullyAtLarge
+    } else {
+      null
     }
-    return null
-  }
+
+  private fun getUnlawfullyAtLarge(adjustment: Adjustment?) =
+    if (adjustment?.unlawfullyAtLarge != null) {
+      adjustment.unlawfullyAtLarge!!
+    } else if (adjustment != null) {
+      UnlawfullyAtLarge(adjustment = adjustment)
+    } else {
+      UnlawfullyAtLarge()
+    }
 
   private fun additionalDaysAwarded(resource: AdjustmentDto, adjustment: Adjustment? = null): AdditionalDaysAwarded? {
     if (resource.adjustmentType == AdjustmentType.ADDITIONAL_DAYS_AWARDED && resource.additionalDaysAwarded != null) {
       val additionalDaysAwarded = if (adjustment != null) adjustment.additionalDaysAwarded!! else AdditionalDaysAwarded()
       additionalDaysAwarded.apply {
-        adjudicationId = resource.additionalDaysAwarded!!.adjudicationId
+        adjudicationId = resource.additionalDaysAwarded.adjudicationId
         consecutive = resource.additionalDaysAwarded.consecutive
       }
       return additionalDaysAwarded
@@ -116,21 +121,13 @@ class AdjustmentsService(
 
   @Transactional
   fun update(adjustmentId: UUID, resource: AdjustmentDto) {
-    println(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>")
-    println(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>")
-    println(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>")
-    println(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>")
-    println("1111 " + adjustmentId)
-    println("1111 " + resource.id)
     val adjustment = adjustmentRepository.findById(adjustmentId)
       .orElseThrow {
         EntityNotFoundException("No adjustment found with id $adjustmentId")
       }
-    println("2222")
     if (adjustment.adjustmentType != resource.adjustmentType) {
       throw ApiValidationException("The provided adjustment type ${resource.adjustmentType} doesn't match the persisted type ${adjustment.adjustmentType}")
     }
-    println("333333")
     val persistedLegacyData = objectMapper.convertValue(adjustment.legacyData, LegacyData::class.java)
     val change = objectToJson(adjustment)
     val calculated: Int? = if (resource.toDate != null) (ChronoUnit.DAYS.between(resource.fromDate, resource.toDate) + 1).toInt() else null
@@ -177,11 +174,6 @@ class AdjustmentsService(
   }
 
   private fun mapToDto(adjustment: Adjustment): AdjustmentDto {
-    println("#################################################")
-    println("#################################################")
-    println("#################################################")
-    println(adjustment.legacyData)
-
     val legacyData = objectMapper.convertValue(adjustment.legacyData, LegacyData::class.java)
     return AdjustmentDto(
       id = adjustment.id,

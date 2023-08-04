@@ -34,7 +34,7 @@ import java.util.UUID
 class AdjustmentControllerIntTest : SqsIntegrationTestBase() {
 
   @Autowired
-  private lateinit var adjustmentRepository: AdjustmentRepository
+  lateinit var adjustmentRepository: AdjustmentRepository
 
   @Test
   @Transactional
@@ -341,7 +341,7 @@ class AdjustmentControllerIntTest : SqsIntegrationTestBase() {
   @Sql(
     "classpath:test_data/insert-nomis-ual.sql",
   )
-  fun `Update a UAL Adjustment that has no UAL type (migrated from NOMIS)`() {
+  fun `Update a UAL Adjustment that has no UAL type (eg migrated from NOMIS)`() {
     val adjustment = getAdjustmentById(UUID.fromString("dfba24ef-a2d4-4b26-af63-4d9494dd5252"))
 
     putAdjustmentUpdate(adjustment.id!!, adjustment.copy(unlawfullyAtLarge = UnlawfullyAtLargeDto(type = RECALL)))
@@ -349,7 +349,6 @@ class AdjustmentControllerIntTest : SqsIntegrationTestBase() {
     val updatedAdjustment = getAdjustmentById(UUID.fromString("dfba24ef-a2d4-4b26-af63-4d9494dd5252"))
     assertThat(updatedAdjustment).isEqualTo(adjustment.copy(lastUpdatedBy = "Test User", unlawfullyAtLarge = UnlawfullyAtLargeDto(type = RECALL)))
   }
-
   private fun postCreateAdjustment(adjustmentDto: AdjustmentDto) = webTestClient
     .post()
     .uri("/adjustments")
