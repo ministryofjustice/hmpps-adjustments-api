@@ -75,9 +75,6 @@ class AdjustmentsService(
       unlawfullyAtLarge.apply {
         type = adjustmentDto.unlawfullyAtLarge!!.type
       }
-      println("unlawfullyAtLarge")
-      println("unlawfullyAtLarge dfba24ef-a2d4-4b26-af63-4d9494dd5252")
-      println(unlawfullyAtLarge)
       return unlawfullyAtLarge
     }
     return null
@@ -137,9 +134,6 @@ class AdjustmentsService(
     val persistedLegacyData = objectMapper.convertValue(adjustment.legacyData, LegacyData::class.java)
     val change = objectToJson(adjustment)
     val calculated: Int? = if (resource.toDate != null) (ChronoUnit.DAYS.between(resource.fromDate, resource.toDate) + 1).toInt() else null
-    println("4444444" + adjustment.fromDate)
-    println("4444444" + adjustment.id)
-    println("4444444" + resource)
     adjustment.apply {
       daysCalculated = resource.days ?: calculated!!
       days = resource.days
@@ -157,7 +151,6 @@ class AdjustmentsService(
         adjustment = adjustment,
       )
     }
-    println("555555555555555 ")
   }
 
   @Transactional

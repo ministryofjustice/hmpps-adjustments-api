@@ -37,6 +37,7 @@ class AdjustmentControllerIntTest : SqsIntegrationTestBase() {
   private lateinit var adjustmentRepository: AdjustmentRepository
 
   @Test
+  @Transactional
   fun create() {
     val id = createAnAdjustment()
     val adjustment = adjustmentRepository.findById(id).get()
@@ -146,6 +147,7 @@ class AdjustmentControllerIntTest : SqsIntegrationTestBase() {
   }
 
   @Test
+  @Transactional
   fun update() {
     val id = createAnAdjustment().also {
       cleanQueue()
@@ -208,6 +210,7 @@ class AdjustmentControllerIntTest : SqsIntegrationTestBase() {
   }
 
   @Test
+  @Transactional
   fun delete() {
     val id = createAnAdjustment().also {
       cleanQueue()
@@ -381,34 +384,34 @@ class AdjustmentControllerIntTest : SqsIntegrationTestBase() {
       .returnResult(CreateResponseDto::class.java)
       .responseBody.blockFirst()!!.adjustmentId
   }
-//
-//  @Test
-//  fun validate() {
-//    val validationMessages = webTestClient
-//      .post()
-//      .uri("/adjustments/validate")
-//      .headers(
-//        setAuthorisation(),
-//      )
-//      .bodyValue(
-//        CREATED_ADJUSTMENT.copy(
-//          fromDate = LocalDate.now().plusYears(1),
-//          toDate = null,
-//          days = 25,
-//          bookingId = PrisonApiExtension.BOOKING_ID,
-//          adjustmentType = AdjustmentType.RESTORATION_OF_ADDITIONAL_DAYS_AWARDED,
-//        ),
-//      )
-//      .exchange()
-//      .expectStatus().isOk
-//      .expectHeader().contentType(MediaType.APPLICATION_JSON)
-//      .expectBody(object : ParameterizedTypeReference<List<ValidationMessage>>() {})
-//      .returnResult().responseBody!!
-//
-//    assertThat(validationMessages.size).isEqualTo(2)
-//    assertThat(validationMessages[0]).isEqualTo(ValidationMessage(ValidationCode.MORE_RADAS_THAN_ADAS))
-//    assertThat(validationMessages[1]).isEqualTo(ValidationMessage(ValidationCode.RADA_DATE_CANNOT_BE_FUTURE))
-//  }
+
+  @Test
+  fun validate() {
+    val validationMessages = webTestClient
+      .post()
+      .uri("/adjustments/validate")
+      .headers(
+        setAuthorisation(),
+      )
+      .bodyValue(
+        CREATED_ADJUSTMENT.copy(
+          fromDate = LocalDate.now().plusYears(1),
+          toDate = null,
+          days = 25,
+          bookingId = PrisonApiExtension.BOOKING_ID,
+          adjustmentType = AdjustmentType.RESTORATION_OF_ADDITIONAL_DAYS_AWARDED,
+        ),
+      )
+      .exchange()
+      .expectStatus().isOk
+      .expectHeader().contentType(MediaType.APPLICATION_JSON)
+      .expectBody(object : ParameterizedTypeReference<List<ValidationMessage>>() {})
+      .returnResult().responseBody!!
+
+    assertThat(validationMessages.size).isEqualTo(2)
+    assertThat(validationMessages[0]).isEqualTo(ValidationMessage(ValidationCode.MORE_RADAS_THAN_ADAS))
+    assertThat(validationMessages[1]).isEqualTo(ValidationMessage(ValidationCode.RADA_DATE_CANNOT_BE_FUTURE))
+  }
 
   private fun putAdjustmentUpdate(
     adjustmentId: UUID,
