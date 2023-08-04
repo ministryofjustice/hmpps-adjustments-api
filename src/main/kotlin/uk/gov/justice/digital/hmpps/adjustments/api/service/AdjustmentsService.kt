@@ -70,7 +70,7 @@ class AdjustmentsService(
   private fun unlawfullyAtLarge(adjustmentDto: AdjustmentDto, adjustment: Adjustment? = null): UnlawfullyAtLarge? {
     if (adjustmentDto.adjustmentType == UNLAWFULLY_AT_LARGE && adjustmentDto.unlawfullyAtLarge != null) {
       UnlawfullyAtLarge(type = adjustmentDto.unlawfullyAtLarge!!.type)
-      val unlawfullyAtLarge = if (adjustment != null) adjustment.unlawfullyAtLarge!! else UnlawfullyAtLarge()
+      val unlawfullyAtLarge = if (adjustment != null && adjustment?.unlawfullyAtLarge != null) adjustment.unlawfullyAtLarge!! else UnlawfullyAtLarge()
       unlawfullyAtLarge.apply {
         type = adjustmentDto.unlawfullyAtLarge!!.type
       }
@@ -115,16 +115,27 @@ class AdjustmentsService(
 
   @Transactional
   fun update(adjustmentId: UUID, resource: AdjustmentDto) {
+    println(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>")
+    println(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>")
+    println(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>")
+    println(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>")
+    println("1111 " + adjustmentId)
+    println("1111 " + resource.id)
     val adjustment = adjustmentRepository.findById(adjustmentId)
       .orElseThrow {
         EntityNotFoundException("No adjustment found with id $adjustmentId")
       }
+    println("2222")
     if (adjustment.adjustmentType != resource.adjustmentType) {
       throw ApiValidationException("The provided adjustment type ${resource.adjustmentType} doesn't match the persisted type ${adjustment.adjustmentType}")
     }
+    println("333333")
     val persistedLegacyData = objectMapper.convertValue(adjustment.legacyData, LegacyData::class.java)
     val change = objectToJson(adjustment)
     val calculated: Int? = if (resource.toDate != null) (ChronoUnit.DAYS.between(resource.fromDate, resource.toDate) + 1).toInt() else null
+    println("4444444" + adjustment.fromDate)
+    println("4444444" + adjustment.id)
+    println("4444444" + resource)
     adjustment.apply {
       daysCalculated = resource.days ?: calculated!!
       days = resource.days
@@ -142,6 +153,7 @@ class AdjustmentsService(
         adjustment = adjustment,
       )
     }
+    println("555555555555555 ")
   }
 
   @Transactional
@@ -168,6 +180,11 @@ class AdjustmentsService(
   }
 
   private fun mapToDto(adjustment: Adjustment): AdjustmentDto {
+    println("#################################################")
+    println("#################################################")
+    println("#################################################")
+    println(adjustment.legacyData)
+
     val legacyData = objectMapper.convertValue(adjustment.legacyData, LegacyData::class.java)
     return AdjustmentDto(
       id = adjustment.id,
