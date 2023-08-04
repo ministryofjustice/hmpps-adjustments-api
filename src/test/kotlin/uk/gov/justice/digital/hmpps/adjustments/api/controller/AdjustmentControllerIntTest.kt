@@ -315,7 +315,7 @@ class AdjustmentControllerIntTest : SqsIntegrationTestBase() {
 
     assertThat(adjustment.unlawfullyAtLarge).isNotNull
     assertThat(adjustment.unlawfullyAtLarge!!.type).isEqualTo(RECALL)
-    assertThat(adjustment.unlawfullyAtLarge!!.adjustment.id).isEqualTo(adjustmentId)
+    assertThat(adjustment.unlawfullyAtLarge!!.adjustmentId).isEqualTo(adjustmentId)
 
     val createdAdjustment = getAdjustmentById(adjustmentId)
 
@@ -349,6 +349,7 @@ class AdjustmentControllerIntTest : SqsIntegrationTestBase() {
     val updatedAdjustment = getAdjustmentById(UUID.fromString("dfba24ef-a2d4-4b26-af63-4d9494dd5252"))
     assertThat(updatedAdjustment).isEqualTo(adjustment.copy(lastUpdatedBy = "Test User", unlawfullyAtLarge = UnlawfullyAtLargeDto(type = RECALL)))
   }
+
   private fun postCreateAdjustment(adjustmentDto: AdjustmentDto) = webTestClient
     .post()
     .uri("/adjustments")
