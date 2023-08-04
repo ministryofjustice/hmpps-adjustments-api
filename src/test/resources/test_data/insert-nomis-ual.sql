@@ -1,0 +1,13 @@
+INSERT INTO adjustment (id,adjustment_type,person,days,days_calculated,legacy_data,from_date,to_date,deleted,source) VALUES
+    ('dfba24ef-a2d4-4b26-af63-4d9494dd5252','UNLAWFULLY_AT_LARGE','G0000VX',3,3,'{"type": "UAL", "active": true, "comment": "comment added on nomis", "bookingId": 1090016, "migration": false, "postedDate": "2023-07-27", "sentenceSequence": null}','2023-07-27 00:00:00+01','2023-07-29 00:00:00+01',false,'NOMIS');
+
+INSERT INTO unlawfully_at_large (adjustment_id) VALUES
+    ('dfba24ef-a2d4-4b26-af63-4d9494dd5252');
+
+INSERT INTO adjustment_history (id,adjustment_id,change_at,change_by_username,change,change_type,change_source) VALUES
+  ('e577058c-549a-4513-b9b1-779b32858636','dfba24ef-a2d4-4b26-af63-4d9494dd5252','2023-07-27 10:36:07.815798+01','USR_ADM','{}','CREATE','NOMIS'),
+  ('46e1564a-745b-49c2-9e33-872b14137d24','dfba24ef-a2d4-4b26-af63-4d9494dd5252','2023-07-31 12:10:17.431977+01','NOMIS','{"id": "dfba24ef-a2d4-4b26-af63-4d9494dd5252", "days": 1, "person": "G0000VX", "source": "NOMIS", "toDate": null, "deleted": false, "fromDate": "2023-07-27", "legacyData": {"type": null, "active": true, "comment": null, "bookingId": 1090016, "migration": false, "postedDate": "2023-07-27", "sentenceSequence": null}, "adjustmentType": "UNLAWFULLY_AT_LARGE", "daysCalculated": 1, "unlawfullyAtLarge": null, "additionalDaysAwarded": null}','UPDATE','NOMIS'),
+  ('a04db19f-a2f2-44d1-897f-b8e18f0b3461','dfba24ef-a2d4-4b26-af63-4d9494dd5252','2023-07-31 12:10:17.393996+01','NOMIS','{"id": "dfba24ef-a2d4-4b26-af63-4d9494dd5252", "days": 1, "person": "G0000VX", "source": "NOMIS", "toDate": null, "deleted": false, "fromDate": "2023-07-27", "legacyData": {"type": null, "active": true, "comment": null, "bookingId": 1090016, "migration": false, "postedDate": "2023-07-27", "sentenceSequence": null}, "adjustmentType": "UNLAWFULLY_AT_LARGE", "daysCalculated": 1, "unlawfullyAtLarge": null, "additionalDaysAwarded": null}','UPDATE','NOMIS'),
+  ('b794fb6d-9749-48b8-838b-437dbc44b634','dfba24ef-a2d4-4b26-af63-4d9494dd5252','2023-08-03 10:04:56.024245+01','NOMIS','{"id": "dfba24ef-a2d4-4b26-af63-4d9494dd5252", "days": 1, "person": "G0000VX", "source": "NOMIS", "toDate": "2023-07-27", "deleted": false, "fromDate": "2023-07-27", "legacyData": {"type": "UAL", "active": false, "comment": "comment added on nomis", "bookingId": 1090016, "migration": false, "postedDate": "2023-07-27", "sentenceSequence": null}, "adjustmentType": "UNLAWFULLY_AT_LARGE", "daysCalculated": 1, "unlawfullyAtLarge": null, "additionalDaysAwarded": null}','UPDATE','NOMIS');
+
+-- ALTER TABLE adjustment DROP CONSTRAINT adjustment_from_date_check;
