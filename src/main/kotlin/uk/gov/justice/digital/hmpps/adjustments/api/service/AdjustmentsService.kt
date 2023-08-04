@@ -69,11 +69,15 @@ class AdjustmentsService(
 
   private fun unlawfullyAtLarge(adjustmentDto: AdjustmentDto, adjustment: Adjustment? = null): UnlawfullyAtLarge? {
     if (adjustmentDto.adjustmentType == UNLAWFULLY_AT_LARGE && adjustmentDto.unlawfullyAtLarge != null) {
-      UnlawfullyAtLarge(type = adjustmentDto.unlawfullyAtLarge!!.type)
-      val unlawfullyAtLarge = if (adjustment != null && adjustment?.unlawfullyAtLarge != null) adjustment.unlawfullyAtLarge!! else UnlawfullyAtLarge()
+      val unlawfullyAtLarge = if (adjustment != null && adjustment?.unlawfullyAtLarge != null) adjustment.unlawfullyAtLarge!!
+      else if (adjustment != null) UnlawfullyAtLarge(adjustment = adjustment)
+      else UnlawfullyAtLarge()
       unlawfullyAtLarge.apply {
         type = adjustmentDto.unlawfullyAtLarge!!.type
       }
+      println("unlawfullyAtLarge")
+      println("unlawfullyAtLarge dfba24ef-a2d4-4b26-af63-4d9494dd5252")
+      println(unlawfullyAtLarge)
       return unlawfullyAtLarge
     }
     return null

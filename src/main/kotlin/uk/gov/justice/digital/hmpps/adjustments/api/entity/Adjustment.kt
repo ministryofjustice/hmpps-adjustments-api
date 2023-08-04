@@ -9,6 +9,7 @@ import jakarta.persistence.Entity
 import jakarta.persistence.EnumType
 import jakarta.persistence.Enumerated
 import jakarta.persistence.Id
+import jakarta.persistence.JoinColumn
 import jakarta.persistence.OneToMany
 import jakarta.persistence.OneToOne
 import jakarta.persistence.PrimaryKeyJoinColumn
@@ -60,8 +61,7 @@ data class Adjustment(
   @OneToOne(mappedBy = "adjustment", cascade = [CascadeType.ALL])
   var additionalDaysAwarded: AdditionalDaysAwarded? = null,
 
-  @OneToOne(mappedBy = "adjustment", cascade = [CascadeType.ALL])
-  @PrimaryKeyJoinColumn
+  @OneToOne(mappedBy = "adjustment", cascade = [CascadeType.ALL], orphanRemoval = true)
   var unlawfullyAtLarge: UnlawfullyAtLarge? = null,
 ) {
   init {

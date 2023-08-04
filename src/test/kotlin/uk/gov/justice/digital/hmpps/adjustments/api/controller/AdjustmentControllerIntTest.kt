@@ -312,7 +312,7 @@ class AdjustmentControllerIntTest : SqsIntegrationTestBase() {
 
     assertThat(adjustment.unlawfullyAtLarge).isNotNull
     assertThat(adjustment.unlawfullyAtLarge!!.type).isEqualTo(RECALL)
-    assertThat(adjustment.unlawfullyAtLarge!!.adjustmentId).isEqualTo(adjustmentId)
+    assertThat(adjustment.unlawfullyAtLarge!!.adjustment.id).isEqualTo(adjustmentId)
 
     val createdAdjustment = getAdjustmentById(adjustmentId)
 
