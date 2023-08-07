@@ -8,6 +8,7 @@ import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.core.ParameterizedTypeReference
 import org.springframework.http.MediaType
+import org.springframework.test.context.jdbc.Sql
 import org.springframework.test.web.reactive.server.expectBodyList
 import uk.gov.justice.digital.hmpps.adjustments.api.config.ErrorResponse
 import uk.gov.justice.digital.hmpps.adjustments.api.entity.AdjustmentSource
@@ -30,13 +31,13 @@ import uk.gov.justice.digital.hmpps.adjustments.api.wiremock.PrisonApiExtension
 import java.time.LocalDate
 import java.util.UUID
 
-@Transactional
 class AdjustmentControllerIntTest : SqsIntegrationTestBase() {
 
   @Autowired
-  private lateinit var adjustmentRepository: AdjustmentRepository
+  lateinit var adjustmentRepository: AdjustmentRepository
 
   @Test
+  @Transactional
   fun create() {
     val id = createAnAdjustment()
     val adjustment = adjustmentRepository.findById(id).get()
@@ -146,6 +147,7 @@ class AdjustmentControllerIntTest : SqsIntegrationTestBase() {
   }
 
   @Test
+  @Transactional
   fun update() {
     val id = createAnAdjustment().also {
       cleanQueue()
@@ -208,6 +210,7 @@ class AdjustmentControllerIntTest : SqsIntegrationTestBase() {
   }
 
   @Test
+  @Transactional
   fun delete() {
     val id = createAnAdjustment().also {
       cleanQueue()
@@ -332,6 +335,20 @@ class AdjustmentControllerIntTest : SqsIntegrationTestBase() {
     putAdjustmentUpdate(adjustmentId, updateDto)
     val updatedAdjustment = getAdjustmentById(adjustmentId)
     assertThat(updatedAdjustment).isEqualTo(createdAdjustment.copy(unlawfullyAtLarge = UnlawfullyAtLargeDto(type = ESCAPE)))
+  }
+
+  @Test
+  @Sql(
+    "classpath:test_data/insert-nomis-ual.sql",
+  )
+  fun `Update a UAL Adjustment that has no UAL type (eg migrated from NOMIS)`() {
+    val adjustmentId = UUID.fromString("dfba24ef-a2d4-4b26-af63-4d9494dd5252")
+    val adjustment = getAdjustmentById(adjustmentId)
+
+    putAdjustmentUpdate(adjustment.id!!, adjustment.copy(unlawfullyAtLarge = UnlawfullyAtLargeDto(type = RECALL)))
+
+    val updatedAdjustment = getAdjustmentById(adjustmentId)
+    assertThat(updatedAdjustment).isEqualTo(adjustment.copy(lastUpdatedBy = "Test User", unlawfullyAtLarge = UnlawfullyAtLargeDto(type = RECALL)))
   }
 
   private fun postCreateAdjustment(adjustmentDto: AdjustmentDto) = webTestClient

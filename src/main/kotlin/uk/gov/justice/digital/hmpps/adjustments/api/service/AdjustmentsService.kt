@@ -67,23 +67,29 @@ class AdjustmentsService(
     return CreateResponseDto(adjustmentRepository.save(adjustment).id)
   }
 
-  private fun unlawfullyAtLarge(adjustmentDto: AdjustmentDto, adjustment: Adjustment? = null): UnlawfullyAtLarge? {
+  private fun unlawfullyAtLarge(adjustmentDto: AdjustmentDto, adjustment: Adjustment? = null): UnlawfullyAtLarge? =
     if (adjustmentDto.adjustmentType == UNLAWFULLY_AT_LARGE && adjustmentDto.unlawfullyAtLarge != null) {
-      UnlawfullyAtLarge(type = adjustmentDto.unlawfullyAtLarge!!.type)
-      val unlawfullyAtLarge = if (adjustment != null) adjustment.unlawfullyAtLarge!! else UnlawfullyAtLarge()
-      unlawfullyAtLarge.apply {
-        type = adjustmentDto.unlawfullyAtLarge!!.type
+      getUnlawfullyAtLarge(adjustment).apply {
+        type = adjustmentDto.unlawfullyAtLarge.type
       }
-      return unlawfullyAtLarge
+    } else {
+      null
     }
-    return null
-  }
+
+  private fun getUnlawfullyAtLarge(adjustment: Adjustment?) =
+    if (adjustment?.unlawfullyAtLarge != null) {
+      adjustment.unlawfullyAtLarge!!
+    } else if (adjustment != null) {
+      UnlawfullyAtLarge(adjustment = adjustment)
+    } else {
+      UnlawfullyAtLarge()
+    }
 
   private fun additionalDaysAwarded(resource: AdjustmentDto, adjustment: Adjustment? = null): AdditionalDaysAwarded? {
     if (resource.adjustmentType == AdjustmentType.ADDITIONAL_DAYS_AWARDED && resource.additionalDaysAwarded != null) {
       val additionalDaysAwarded = if (adjustment != null) adjustment.additionalDaysAwarded!! else AdditionalDaysAwarded()
       additionalDaysAwarded.apply {
-        adjudicationId = resource.additionalDaysAwarded!!.adjudicationId
+        adjudicationId = resource.additionalDaysAwarded.adjudicationId
         consecutive = resource.additionalDaysAwarded.consecutive
       }
       return additionalDaysAwarded

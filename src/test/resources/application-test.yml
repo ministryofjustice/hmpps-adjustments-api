@@ -1,8 +1,5 @@
 spring:
 
-  config:
-    use-legacy-processing: true
-
   security:
     oauth2:
       resourceserver:
@@ -10,14 +7,14 @@ spring:
           public-key-location: classpath:local-public-key.pub
 
   datasource:
-    url: 'jdbc:h2:mem:release-dates-db;MODE=PostgreSQL;INIT=create domain if not exists jsonb as json'
-    username: create_vary
+    url: 'jdbc:h2:mem:adjustments-db;INIT=create domain if not exists jsonb as CLOB;MODE=PostgreSQL'
+    username: adjustments
     password: dummy
 
   flyway:
     locations: classpath:/migration/h2,classpath:/migration/common
     url: ${spring.datasource.url}
-    user: create_vary
+    user: adjustments
     password: dummy
 
   h2:
@@ -33,7 +30,6 @@ spring:
   sql:
     init:
       continue-on-error: true
-
 
 server:
   shutdown: immediate
