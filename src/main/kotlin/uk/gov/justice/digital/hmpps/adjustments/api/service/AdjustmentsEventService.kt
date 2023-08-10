@@ -11,41 +11,41 @@ class AdjustmentsEventService(
 ) {
 
   fun create(id: UUID, person: String, source: AdjustmentSource) {
-//    snsService.publishDomainEvent(
-//      EventType.ADJUSTMENT_CREATED,
-//      "An adjustment has been created",
-//      LocalDateTime.now(),
-//      AdditionalInformation(
-//        id,
-//        person,
-//        source.toString(),
-//      ),
-//    )
+    snsService.publishDomainEvent(
+      EventType.ADJUSTMENT_CREATED,
+      "An adjustment has been created",
+      LocalDateTime.now(),
+      AdditionalInformation(
+        id,
+        person,
+        source.toString(),
+      ),
+    )
   }
 
   fun update(id: UUID, person: String, source: AdjustmentSource) {
-//    snsService.publishDomainEvent(
-//      EventType.ADJUSTMENT_UPDATED,
-//      "An adjustment has been updated",
-//      LocalDateTime.now(),
-//      AdditionalInformation(
-//        id,
-//        person,
-//        source.toString(),
-//      ),
-//    )
+    snsService.publishDomainEvent(
+      EventType.ADJUSTMENT_UPDATED,
+      "An adjustment has been updated",
+      LocalDateTime.now(),
+      AdditionalInformation(
+        id,
+        person,
+        source.toString(),
+      ),
+    )
   }
 
   fun delete(id: UUID, person: String, source: AdjustmentSource) {
-//    snsService.publishDomainEvent(
-//      EventType.ADJUSTMENT_DELETED,
-//      "An adjustment has been deleted",
-//      LocalDateTime.now(),
-//      AdditionalInformation(
-//        id,
-//        person,
-//        source.toString(),
-//      ),
-//    )
+    snsService.publishDomainEvent(
+      EventType.ADJUSTMENT_DELETED,
+      "An adjustment has been deleted",
+      LocalDateTime.now(),
+      AdditionalInformation(
+        id,
+        person,
+        source.toString(),
+      ),
+    )
   }
 }
