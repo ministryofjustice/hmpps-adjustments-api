@@ -2,7 +2,7 @@ package uk.gov.justice.digital.hmpps.adjustments.api.service
 
 import org.springframework.stereotype.Service
 import uk.gov.justice.digital.hmpps.adjustments.api.client.PrisonApiClient
-import uk.gov.justice.digital.hmpps.calculatereleasedatesapi.model.external.SentenceAndOffences
+import uk.gov.justice.digital.hmpps.adjustments.api.model.prisonapi.SentenceAndOffences
 import java.time.LocalDate
 
 @Service
@@ -18,4 +18,7 @@ class PrisonService(
     return prisonApiClient.getSentencesAndOffences(bookingId)
       .filter { !filterActive || it.sentenceStatus == "A" }
   }
+
+  fun getStartOfSentenceEnvelope(person: String): LocalDate =
+    getStartOfSentenceEnvelope(prisonApiClient.getPrisonerDetail(person).bookingId)
 }

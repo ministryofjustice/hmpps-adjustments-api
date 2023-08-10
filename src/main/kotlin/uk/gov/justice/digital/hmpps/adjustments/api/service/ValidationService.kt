@@ -62,14 +62,13 @@ class ValidationService(
     val validationMessages = mutableListOf<ValidationMessage>()
 
     if (adjustment.days != null && adjustment.days > 0) {
-      val adjustments = adjustmentService.findByPerson(adjustment.person)
+      val adjustments = adjustmentService.findCurrentAdjustments(adjustment.person, startOfSentenceEnvelope)
       val adaDays = adjustments.filter { it.adjustmentType === AdjustmentType.ADDITIONAL_DAYS_AWARDED }
-        .filter { it.fromDate!!.isAfter(startOfSentenceEnvelope) }.map { it.days!! }
+        .map { it.days!! }
         .reduceOrNull { acc, it -> acc + it } ?: 0
       val radaDays =
         (
           adjustments.filter { it.adjustmentType === AdjustmentType.RESTORATION_OF_ADDITIONAL_DAYS_AWARDED }
-            .filter { it.fromDate!!.isAfter(startOfSentenceEnvelope) }
             .filter { adjustment.id == null || adjustment.id != it.id }
             .map { it.days!! }
             .reduceOrNull { acc, it -> acc + it } ?: 0

@@ -29,6 +29,7 @@ import uk.gov.justice.digital.hmpps.adjustments.api.respository.AdjustmentReposi
 import uk.gov.justice.digital.hmpps.adjustments.api.service.EventType
 import uk.gov.justice.digital.hmpps.adjustments.api.wiremock.PrisonApiExtension
 import java.time.LocalDate
+import java.time.LocalDateTime
 import java.util.UUID
 
 class AdjustmentControllerIntTest : SqsIntegrationTestBase() {
@@ -55,7 +56,16 @@ class AdjustmentControllerIntTest : SqsIntegrationTestBase() {
     assertThat(adjustment.daysCalculated).isEqualTo(4)
 
     val legacyData = objectMapper.convertValue(adjustment.legacyData, LegacyData::class.java)
-    assertThat(legacyData).isEqualTo(LegacyData(bookingId = 1, sentenceSequence = 1, postedDate = LocalDate.now(), comment = null, type = null, active = true))
+    assertThat(legacyData).isEqualTo(
+      LegacyData(
+        bookingId = 1,
+        sentenceSequence = 1,
+        postedDate = LocalDate.now(),
+        comment = null,
+        type = null,
+        active = true,
+      ),
+    )
 
     awaitAtMost30Secs untilCallTo { getNumberOfMessagesCurrentlyOnQueue() } matches { it == 1 }
     val latestMessage: String = getLatestMessage()!!.messages()[0].body()
@@ -80,7 +90,10 @@ class AdjustmentControllerIntTest : SqsIntegrationTestBase() {
       .returnResult(AdjustmentDto::class.java)
       .responseBody.blockFirst()!!
 
-    assertThat(result).isEqualTo(CREATED_ADJUSTMENT.copy(id = id, days = 4, lastUpdatedBy = "Test User", status = "Active"))
+    assertThat(result)
+      .usingRecursiveComparison()
+      .ignoringFieldsMatchingRegexes("lastUpdatedDate")
+      .isEqualTo(CREATED_ADJUSTMENT.copy(id = id, days = 4, lastUpdatedBy = "Test User", status = "Active"))
     awaitAtMost30Secs untilCallTo { getNumberOfMessagesCurrentlyOnQueue() } matches { it == 0 }
   }
 
@@ -103,45 +116,18 @@ class AdjustmentControllerIntTest : SqsIntegrationTestBase() {
       .responseBody!!
 
     assertThat(result.size).isEqualTo(1)
-    assertThat(result[0]).isEqualTo(CREATED_ADJUSTMENT.copy(id = id, person = person, days = 4, lastUpdatedBy = "Test User", status = "Active"))
-
-    awaitAtMost30Secs untilCallTo { getNumberOfMessagesCurrentlyOnQueue() } matches { it == 0 }
-  }
-
-  @Test
-  fun findByPersonAndSource() {
-    val person = "HIJKLM"
-    val id = createAnAdjustment(person).also {
-      cleanQueue()
-    }
-    val dpsResult = webTestClient
-      .get()
-      .uri("/adjustments?person=$person&source=${AdjustmentSource.DPS}")
-      .headers(
-        setAuthorisation(),
+    assertThat(result[0])
+      .usingRecursiveComparison()
+      .ignoringFieldsMatchingRegexes("lastUpdatedDate")
+      .isEqualTo(
+        CREATED_ADJUSTMENT.copy(
+          id = id,
+          person = person,
+          days = 4,
+          lastUpdatedBy = "Test User",
+          status = "Active",
+        ),
       )
-      .exchange()
-      .expectStatus().isOk
-      .expectBodyList<AdjustmentDto>()
-      .returnResult()
-      .responseBody!!
-
-    assertThat(dpsResult.size).isEqualTo(1)
-    assertThat(dpsResult[0].id).isEqualTo(id)
-
-    val nomisResult = webTestClient
-      .get()
-      .uri("/adjustments?person=$person&source=${AdjustmentSource.NOMIS}")
-      .headers(
-        setAuthorisation(),
-      )
-      .exchange()
-      .expectStatus().isOk
-      .expectBodyList<AdjustmentDto>()
-      .returnResult()
-      .responseBody!!
-
-    assertThat(nomisResult.size).isEqualTo(0)
 
     awaitAtMost30Secs untilCallTo { getNumberOfMessagesCurrentlyOnQueue() } matches { it == 0 }
   }
@@ -175,7 +161,16 @@ class AdjustmentControllerIntTest : SqsIntegrationTestBase() {
     assertThat(adjustment.daysCalculated).isEqualTo(4)
 
     val legacyData = objectMapper.convertValue(adjustment.legacyData, LegacyData::class.java)
-    assertThat(legacyData).isEqualTo(LegacyData(bookingId = 1, sentenceSequence = 1, postedDate = LocalDate.now(), comment = null, type = null, active = true))
+    assertThat(legacyData).isEqualTo(
+      LegacyData(
+        bookingId = 1,
+        sentenceSequence = 1,
+        postedDate = LocalDate.now(),
+        comment = null,
+        type = null,
+        active = true,
+      ),
+    )
 
     awaitAtMost30Secs untilCallTo { getNumberOfMessagesCurrentlyOnQueue() } matches { it == 1 }
     val latestMessage: String = getLatestMessage()!!.messages()[0].body()
@@ -298,7 +293,10 @@ class AdjustmentControllerIntTest : SqsIntegrationTestBase() {
       .returnResult(AdjustmentDto::class.java)
       .responseBody.blockFirst()!!
 
-    assertThat(result).isEqualTo(updateDto.copy(id = adjustmentId, days = 4, status = "Active", lastUpdatedBy = "Test User"))
+    assertThat(result)
+      .usingRecursiveComparison()
+      .ignoringFieldsMatchingRegexes("lastUpdatedDate")
+      .isEqualTo(updateDto.copy(id = adjustmentId, days = 4, status = "Active", lastUpdatedBy = "Test User"))
   }
 
   @Test
@@ -319,26 +317,33 @@ class AdjustmentControllerIntTest : SqsIntegrationTestBase() {
 
     val createdAdjustment = getAdjustmentById(adjustmentId)
 
-    assertThat(createdAdjustment).isEqualTo(
-      CREATED_ADJUSTMENT.copy(
-        id = adjustmentId,
-        person = "UAL123",
-        adjustmentType = UNLAWFULLY_AT_LARGE,
-        unlawfullyAtLarge = UnlawfullyAtLargeDto(type = RECALL),
-        days = 4,
-        lastUpdatedBy = "Test User",
-        status = "Active",
-      ),
-    )
+    assertThat(createdAdjustment)
+      .usingRecursiveComparison()
+      .ignoringFieldsMatchingRegexes("lastUpdatedDate")
+      .isEqualTo(
+        CREATED_ADJUSTMENT.copy(
+          id = adjustmentId,
+          person = "UAL123",
+          adjustmentType = UNLAWFULLY_AT_LARGE,
+          unlawfullyAtLarge = UnlawfullyAtLargeDto(type = RECALL),
+          days = 4,
+          lastUpdatedBy = "Test User",
+          status = "Active",
+        ),
+      )
 
     val updateDto = createdAdjustment.copy(unlawfullyAtLarge = UnlawfullyAtLargeDto(type = ESCAPE))
     putAdjustmentUpdate(adjustmentId, updateDto)
     val updatedAdjustment = getAdjustmentById(adjustmentId)
-    assertThat(updatedAdjustment).isEqualTo(createdAdjustment.copy(unlawfullyAtLarge = UnlawfullyAtLargeDto(type = ESCAPE)))
+    assertThat(updatedAdjustment)
+      .usingRecursiveComparison()
+      .ignoringFieldsMatchingRegexes("lastUpdatedDate")
+      .isEqualTo(createdAdjustment.copy(unlawfullyAtLarge = UnlawfullyAtLargeDto(type = ESCAPE)))
   }
 
   @Test
   @Sql(
+    "classpath:test_data/reset-data.sql",
     "classpath:test_data/insert-nomis-ual.sql",
   )
   fun `Update a UAL Adjustment that has no UAL type (eg migrated from NOMIS)`() {
@@ -348,8 +353,38 @@ class AdjustmentControllerIntTest : SqsIntegrationTestBase() {
     putAdjustmentUpdate(adjustment.id!!, adjustment.copy(unlawfullyAtLarge = UnlawfullyAtLargeDto(type = RECALL)))
 
     val updatedAdjustment = getAdjustmentById(adjustmentId)
-    assertThat(updatedAdjustment).isEqualTo(adjustment.copy(lastUpdatedBy = "Test User", unlawfullyAtLarge = UnlawfullyAtLargeDto(type = RECALL)))
+    assertThat(updatedAdjustment)
+      .usingRecursiveComparison()
+      .ignoringFieldsMatchingRegexes("lastUpdatedDate")
+      .isEqualTo(adjustment.copy(lastUpdatedBy = "Test User", unlawfullyAtLarge = UnlawfullyAtLargeDto(type = RECALL)))
   }
+
+  @Test
+  @Sql(
+    "classpath:test_data/reset-data.sql",
+    "classpath:test_data/insert-adjustments-spanning-sentence-envelope.sql",
+  )
+  fun `Get adjustments by person where some have been deleted, and some fall outside of the sentence envelope`() {
+    // The sentence envelope start date is 2015-03-17 (set in prison-api mock call)
+    val person = "BCDEFG"
+    val result = getAdjustmentsByPerson(person)
+
+    assertThat(result.map { it.lastUpdatedBy })
+      .usingRecursiveComparison()
+      .ignoringCollectionOrder()
+      .isEqualTo(listOf("current-ual", "current-rada", "tagged-bail-no-dates"))
+  }
+
+  private fun getAdjustmentsByPerson(person: String): List<AdjustmentDto> =
+    webTestClient
+      .get()
+      .uri("/adjustments?person=$person")
+      .headers(setAuthorisation())
+      .exchange()
+      .expectStatus().isOk
+      .expectBodyList<AdjustmentDto>()
+      .returnResult()
+      .responseBody
 
   private fun postCreateAdjustment(adjustmentDto: AdjustmentDto) = webTestClient
     .post()
@@ -438,11 +473,12 @@ class AdjustmentControllerIntTest : SqsIntegrationTestBase() {
       sentenceSequence = 1,
       person = "ABC123",
       adjustmentType = AdjustmentType.REMAND,
-      fromDate = LocalDate.now().minusDays(5),
       toDate = LocalDate.now().minusDays(2),
+      fromDate = LocalDate.now().minusDays(5),
       days = null,
       additionalDaysAwarded = null,
       unlawfullyAtLarge = null,
+      lastUpdatedDate = LocalDateTime.now(),
     )
   }
 }

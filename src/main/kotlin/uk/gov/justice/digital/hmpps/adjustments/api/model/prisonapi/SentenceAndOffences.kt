@@ -1,7 +1,5 @@
-package uk.gov.justice.digital.hmpps.calculatereleasedatesapi.model.external
+package uk.gov.justice.digital.hmpps.adjustments.api.model.prisonapi
 
-import uk.gov.justice.digital.hmpps.adjustments.api.model.prisonapi.OffenderOffence
-import uk.gov.justice.digital.hmpps.adjustments.api.model.prisonapi.SentenceTerms
 import java.math.BigDecimal
 import java.time.LocalDate
 

@@ -16,6 +16,7 @@ import uk.gov.justice.digital.hmpps.adjustments.api.legacy.model.LegacyData
 import uk.gov.justice.digital.hmpps.adjustments.api.model.AdjustmentDto
 import uk.gov.justice.digital.hmpps.adjustments.api.respository.AdjustmentRepository
 import java.time.LocalDate
+import java.time.LocalDateTime
 
 /*
 This is testing the sync between NOMIS and our service.
@@ -168,6 +169,7 @@ class LegacyAndAdjustmentsControllerIntTest : SqsIntegrationTestBase() {
       days = null,
       additionalDaysAwarded = null,
       unlawfullyAtLarge = null,
+      lastUpdatedDate = LocalDateTime.now(),
     )
   }
 }
