@@ -55,8 +55,8 @@ class AdjustmentsController(
 
   @GetMapping("", params = ["person"])
   @Operation(
-    summary = "Get adjustments by person",
-    description = "Get adjustments for a given person.",
+    summary = "Get current adjustments by person",
+    description = "Get current adjustments for a given person.",
   )
   @ApiResponses(
     value = [
@@ -70,30 +70,7 @@ class AdjustmentsController(
     @RequestParam("person")
     person: String,
   ): List<AdjustmentDto> {
-    return adjustmentsService.findByPerson(person)
-  }
-
-  @GetMapping("", params = ["person", "source"])
-  @Operation(
-    summary = "Get adjustments by person and source",
-    description = "Get adjustments for a given person and adjustment source.",
-  )
-  @ApiResponses(
-    value = [
-      ApiResponse(responseCode = "200", description = "Adjustment found"),
-      ApiResponse(responseCode = "401", description = "Unauthorised, requires a valid Oauth2 token"),
-      ApiResponse(responseCode = "404", description = "Adjustment not found"),
-    ],
-  )
-  fun findByPersonAndSource(
-    @Parameter(required = true, description = "The noms ID of the person")
-    @RequestParam("person")
-    person: String,
-    @Parameter(required = true, description = "The noms ID of the person")
-    @RequestParam("source")
-    source: AdjustmentSource,
-  ): List<AdjustmentDto> {
-    return adjustmentsService.findByPersonAndSource(person, source)
+    return adjustmentsService.findCurrentAdjustments(person)
   }
 
   @GetMapping("/{adjustmentId}")

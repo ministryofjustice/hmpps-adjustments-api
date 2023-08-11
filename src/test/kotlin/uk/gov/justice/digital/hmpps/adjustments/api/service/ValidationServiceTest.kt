@@ -15,6 +15,7 @@ import uk.gov.justice.digital.hmpps.adjustments.api.model.ValidationCode.UAL_FIR
 import uk.gov.justice.digital.hmpps.adjustments.api.model.ValidationCode.UAL_FROM_DATE_AFTER_TO_DATE
 import uk.gov.justice.digital.hmpps.adjustments.api.model.ValidationMessage
 import java.time.LocalDate
+import java.time.LocalDateTime
 import java.util.UUID
 
 class ValidationServiceTest {
@@ -32,11 +33,12 @@ class ValidationServiceTest {
     sentenceSequence = null,
     person = PERSON,
     adjustmentType = AdjustmentType.ADDITIONAL_DAYS_AWARDED,
-    fromDate = LocalDate.now().minusDays(5),
     toDate = null,
+    fromDate = LocalDate.now().minusDays(5),
     days = 50,
     additionalDaysAwarded = null,
     unlawfullyAtLarge = null,
+    lastUpdatedDate = LocalDateTime.now(),
   )
 
   private val EXISTING_RADA = EXISTING_ADA.copy(
@@ -48,7 +50,7 @@ class ValidationServiceTest {
   @BeforeEach
   fun init() {
     whenever(prisonService.getStartOfSentenceEnvelope(BOOKING_ID)).thenReturn(START_OF_SENTENCE_ENVELOPE)
-    whenever(adjustmentService.findByPerson(PERSON)).thenReturn(listOf(EXISTING_ADA, EXISTING_RADA))
+    whenever(adjustmentService.findCurrentAdjustments(PERSON, START_OF_SENTENCE_ENVELOPE)).thenReturn(listOf(EXISTING_ADA, EXISTING_RADA))
   }
 
   @Nested

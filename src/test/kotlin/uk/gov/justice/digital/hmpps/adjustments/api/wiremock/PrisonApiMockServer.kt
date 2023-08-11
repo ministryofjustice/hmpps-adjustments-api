@@ -3,10 +3,12 @@ package uk.gov.justice.digital.hmpps.adjustments.api.wiremock
 import com.github.tomakehurst.wiremock.WireMockServer
 import com.github.tomakehurst.wiremock.client.WireMock.aResponse
 import com.github.tomakehurst.wiremock.client.WireMock.get
+import com.github.tomakehurst.wiremock.stubbing.StubMapping
 import org.junit.jupiter.api.extension.AfterAllCallback
 import org.junit.jupiter.api.extension.BeforeAllCallback
 import org.junit.jupiter.api.extension.BeforeEachCallback
 import org.junit.jupiter.api.extension.ExtensionContext
+import uk.gov.justice.digital.hmpps.adjustments.api.wiremock.PrisonApiExtension.Companion.PRISONER_ID
 
 /*
     This class mocks the prison-api.
@@ -16,10 +18,13 @@ class PrisonApiExtension : BeforeAllCallback, AfterAllCallback, BeforeEachCallba
     @JvmField
     val prisonApi = PrisonApiMockServer()
     const val BOOKING_ID = 123L
+    const val PRISONER_ID = "BCDEFG"
   }
+
   override fun beforeAll(context: ExtensionContext) {
     prisonApi.start()
     prisonApi.stubSentencesAndOffences()
+    prisonApi.stubGetPrisonerDetails()
   }
 
   override fun beforeEach(context: ExtensionContext) {
@@ -75,4 +80,25 @@ class PrisonApiMockServer : WireMockServer(WIREMOCK_PORT) {
         ),
     )
   }
+
+  fun stubGetPrisonerDetails(): StubMapping =
+    stubFor(
+      get("/api/offenders/$PRISONER_ID")
+        .willReturn(
+          aResponse()
+            .withHeader("Content-Type", "application/json")
+            .withBody(
+              """
+              {
+                 "offenderNo": "default",
+                 "bookingId": 123,
+                 "firstName": "Default",
+                 "lastName": "Prisoner",
+                 "dateOfBirth": "1995-03-08"
+              }
+              """.trimIndent(),
+            )
+            .withStatus(200),
+        ),
+    )
 }

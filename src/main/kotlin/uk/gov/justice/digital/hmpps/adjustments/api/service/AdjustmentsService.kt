@@ -32,6 +32,7 @@ import java.util.UUID
 class AdjustmentsService(
   val adjustmentRepository: AdjustmentRepository,
   val objectMapper: ObjectMapper,
+  private val prisonService: PrisonService,
 ) {
 
   fun getCurrentAuthentication(): AuthAwareAuthenticationToken =
@@ -105,18 +106,9 @@ class AdjustmentsService(
       }!!
     return mapToDto(adjustment)
   }
-
-  fun findByPerson(person: String): List<AdjustmentDto> {
-    return adjustmentRepository.findByPerson(person)
-      .filter { !it.deleted }
-      .map { mapToDto(it) }
-  }
-
-  fun findByPersonAndSource(person: String, source: AdjustmentSource): List<AdjustmentDto> {
-    return adjustmentRepository.findByPerson(person)
-      .filter { !it.deleted }
-      .filter { it.source == source }
-      .map { mapToDto(it) }
+  fun findCurrentAdjustments(person: String, startOfSentenceEnvelope: LocalDate? = null): List<AdjustmentDto> {
+    val fromDate = startOfSentenceEnvelope ?: prisonService.getStartOfSentenceEnvelope(person)
+    return adjustmentRepository.findCurrentAdjustmentsByPerson(person, fromDate).map { mapToDto(it) }
   }
 
   @Transactional
@@ -187,6 +179,7 @@ class AdjustmentsService(
       additionalDaysAwarded = additionalDaysAwardedToDto(adjustment),
       unlawfullyAtLarge = unlawfullyAtLargeDto(adjustment),
       lastUpdatedBy = adjustment.adjustmentHistory.last().changeByUsername,
+      lastUpdatedDate = adjustment.adjustmentHistory.last().changeAt,
       status = if (legacyData.active) "Active" else "Inactive",
     )
   }
