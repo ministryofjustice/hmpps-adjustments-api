@@ -372,7 +372,7 @@ class AdjustmentControllerIntTest : SqsIntegrationTestBase() {
     assertThat(result.map { it.lastUpdatedBy })
       .usingRecursiveComparison()
       .ignoringCollectionOrder()
-      .isEqualTo(listOf("current-ual", "current-rada", "tagged-bail-no-dates"))
+      .isEqualTo(listOf("current-ual", "current-rada", "tagged-bail-no-dates", "remand-before-sentence"))
   }
 
   private fun getAdjustmentsByPerson(person: String): List<AdjustmentDto> =
