@@ -63,6 +63,8 @@ data class Adjustment(
   @OneToOne(mappedBy = "adjustment", cascade = [CascadeType.ALL])
   @PrimaryKeyJoinColumn
   var unlawfullyAtLarge: UnlawfullyAtLarge? = null,
+
+  val prisonId: String? = null,
 ) {
   init {
     adjustmentHistory.forEach { it.adjustment = this }
