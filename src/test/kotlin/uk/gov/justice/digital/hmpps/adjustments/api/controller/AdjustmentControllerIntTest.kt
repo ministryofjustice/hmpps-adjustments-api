@@ -375,6 +375,24 @@ class AdjustmentControllerIntTest : SqsIntegrationTestBase() {
       .isEqualTo(listOf("current-ual", "current-rada", "tagged-bail-no-dates", "remand-before-sentence"))
   }
 
+  @Test
+  @Sql(
+    "classpath:test_data/reset-data.sql",
+    "classpath:test_data/insert-adjustment-with-prison.sql",
+  )
+  fun `Get adjustment details where a prison is associated)`() {
+    val adjustmentId = UUID.fromString("dfba24ef-a2d4-4b26-af63-4d9494dd5252")
+    val adjustment = getAdjustmentById(adjustmentId)
+
+    putAdjustmentUpdate(adjustment.id!!, adjustment.copy(unlawfullyAtLarge = UnlawfullyAtLargeDto(type = RECALL)))
+
+    val updatedAdjustment = getAdjustmentById(adjustmentId)
+    assertThat(updatedAdjustment)
+      .usingRecursiveComparison()
+      .ignoringFieldsMatchingRegexes("lastUpdatedDate")
+      .isEqualTo(adjustment.copy(lastUpdatedBy = "Test User", unlawfullyAtLarge = UnlawfullyAtLargeDto(type = RECALL), prisonId = "LDS", prisonName = "Leeds"))
+  }
+
   private fun getAdjustmentsByPerson(person: String): List<AdjustmentDto> =
     webTestClient
       .get()

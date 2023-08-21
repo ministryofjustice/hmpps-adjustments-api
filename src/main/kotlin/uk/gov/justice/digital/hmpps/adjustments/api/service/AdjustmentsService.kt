@@ -7,6 +7,7 @@ import jakarta.persistence.EntityNotFoundException
 import org.springframework.security.core.context.SecurityContextHolder
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
+import uk.gov.justice.digital.hmpps.adjustments.api.client.PrisonApiClient
 import uk.gov.justice.digital.hmpps.adjustments.api.config.AuthAwareAuthenticationToken
 import uk.gov.justice.digital.hmpps.adjustments.api.entity.AdditionalDaysAwarded
 import uk.gov.justice.digital.hmpps.adjustments.api.entity.Adjustment
@@ -33,6 +34,7 @@ class AdjustmentsService(
   val adjustmentRepository: AdjustmentRepository,
   val objectMapper: ObjectMapper,
   private val prisonService: PrisonService,
+  private val prisonApiClient: PrisonApiClient,
 ) {
 
   fun getCurrentAuthentication(): AuthAwareAuthenticationToken =
@@ -44,7 +46,8 @@ class AdjustmentsService(
     if (resource.toDate == null && resource.days == null) {
       throw ApiValidationException("resource must have either toDate or days.")
     }
-    val daysCalculated: Int? = if (resource.toDate != null) (ChronoUnit.DAYS.between(resource.fromDate, resource.toDate) + 1).toInt() else null
+    val daysCalculated: Int? =
+      if (resource.toDate != null) (ChronoUnit.DAYS.between(resource.fromDate, resource.toDate) + 1).toInt() else null
     val adjustment = Adjustment(
       person = resource.person,
       daysCalculated = resource.days ?: daysCalculated!!,
@@ -53,7 +56,17 @@ class AdjustmentsService(
       toDate = resource.toDate,
       source = AdjustmentSource.DPS,
       adjustmentType = resource.adjustmentType,
-      legacyData = objectToJson(LegacyData(resource.bookingId, resource.sentenceSequence, LocalDate.now(), null, null, true)),
+      prisonId = resource.prisonId,
+      legacyData = objectToJson(
+        LegacyData(
+          resource.bookingId,
+          resource.sentenceSequence,
+          LocalDate.now(),
+          null,
+          null,
+          true,
+        ),
+      ),
       additionalDaysAwarded = additionalDaysAwarded(resource),
       unlawfullyAtLarge = unlawfullyAtLarge(resource),
       adjustmentHistory = listOf(
@@ -88,7 +101,8 @@ class AdjustmentsService(
 
   private fun additionalDaysAwarded(resource: AdjustmentDto, adjustment: Adjustment? = null): AdditionalDaysAwarded? {
     if (resource.adjustmentType == AdjustmentType.ADDITIONAL_DAYS_AWARDED && resource.additionalDaysAwarded != null) {
-      val additionalDaysAwarded = if (adjustment != null) adjustment.additionalDaysAwarded!! else AdditionalDaysAwarded()
+      val additionalDaysAwarded =
+        if (adjustment != null) adjustment.additionalDaysAwarded!! else AdditionalDaysAwarded()
       additionalDaysAwarded.apply {
         adjudicationId = resource.additionalDaysAwarded.adjudicationId
         consecutive = resource.additionalDaysAwarded.consecutive
@@ -106,6 +120,7 @@ class AdjustmentsService(
       }!!
     return mapToDto(adjustment)
   }
+
   fun findCurrentAdjustments(person: String, startOfSentenceEnvelope: LocalDate? = null): List<AdjustmentDto> {
     val fromDate = startOfSentenceEnvelope ?: prisonService.getStartOfSentenceEnvelope(person)
     return adjustmentRepository.findCurrentAdjustmentsByPerson(person, fromDate).map { mapToDto(it) }
@@ -122,14 +137,24 @@ class AdjustmentsService(
     }
     val persistedLegacyData = objectMapper.convertValue(adjustment.legacyData, LegacyData::class.java)
     val change = objectToJson(adjustment)
-    val calculated: Int? = if (resource.toDate != null) (ChronoUnit.DAYS.between(resource.fromDate, resource.toDate) + 1).toInt() else null
+    val calculated: Int? =
+      if (resource.toDate != null) (ChronoUnit.DAYS.between(resource.fromDate, resource.toDate) + 1).toInt() else null
     adjustment.apply {
       daysCalculated = resource.days ?: calculated!!
       days = resource.days
       fromDate = resource.fromDate
       toDate = resource.toDate
       source = AdjustmentSource.DPS
-      legacyData = objectToJson(LegacyData(resource.bookingId, resource.sentenceSequence, persistedLegacyData.postedDate, null, persistedLegacyData.type, true))
+      legacyData = objectToJson(
+        LegacyData(
+          resource.bookingId,
+          resource.sentenceSequence,
+          persistedLegacyData.postedDate,
+          null,
+          persistedLegacyData.type,
+          true,
+        ),
+      )
       additionalDaysAwarded = additionalDaysAwarded(resource, this)
       unlawfullyAtLarge = unlawfullyAtLarge(resource, this)
       adjustmentHistory += AdjustmentHistory(
@@ -167,6 +192,7 @@ class AdjustmentsService(
 
   private fun mapToDto(adjustment: Adjustment): AdjustmentDto {
     val legacyData = objectMapper.convertValue(adjustment.legacyData, LegacyData::class.java)
+    val prisonDescription = adjustment.prisonId?.let { prisonApiClient.getPrison(adjustment.prisonId).description }
     return AdjustmentDto(
       id = adjustment.id,
       person = adjustment.person,
@@ -181,6 +207,8 @@ class AdjustmentsService(
       lastUpdatedBy = adjustment.adjustmentHistory.last().changeByUsername,
       lastUpdatedDate = adjustment.adjustmentHistory.last().changeAt,
       status = if (legacyData.active) "Active" else "Inactive",
+      prisonId = adjustment.prisonId,
+      prisonName = prisonDescription,
     )
   }
 
