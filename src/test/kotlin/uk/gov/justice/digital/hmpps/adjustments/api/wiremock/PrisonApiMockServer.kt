@@ -19,16 +19,14 @@ class PrisonApiExtension : BeforeAllCallback, AfterAllCallback, BeforeEachCallba
     val prisonApi = PrisonApiMockServer()
     const val BOOKING_ID = 123L
     const val PRISONER_ID = "BCDEFG"
-    const val LEEDS_PRISON_ID = "LDS"
-    const val MOORGATE_PRISON_ID = "MRG"
   }
 
   override fun beforeAll(context: ExtensionContext) {
     prisonApi.start()
     prisonApi.stubSentencesAndOffences()
     prisonApi.stubGetPrisonerDetails()
-    prisonApi.stubGetPrison(LEEDS_PRISON_ID)
-    prisonApi.stubGetPrison(MOORGATE_PRISON_ID)
+    prisonApi.stubGetPrison("LDS", "Leeds")
+    prisonApi.stubGetPrison("MRG", "Moorgate")
   }
 
   override fun beforeEach(context: ExtensionContext) {
@@ -105,7 +103,7 @@ class PrisonApiMockServer : WireMockServer(WIREMOCK_PORT) {
             .withStatus(200),
         ),
     )
-  fun stubGetPrison(prisonId: String): StubMapping =
+  fun stubGetPrison(prisonId: String, prisonDescription: String): StubMapping =
     stubFor(
       get("/api/agencies/$prisonId?activeOnly=false")
         .willReturn(
@@ -115,7 +113,7 @@ class PrisonApiMockServer : WireMockServer(WIREMOCK_PORT) {
               """
               {
                  "agencyId": "$prisonId",
-                 "description": "Prison description"
+                 "description": "$prisonDescription"
               }
               """.trimIndent(),
             )
