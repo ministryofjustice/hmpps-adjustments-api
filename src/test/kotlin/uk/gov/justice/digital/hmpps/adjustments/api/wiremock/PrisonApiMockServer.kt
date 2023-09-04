@@ -9,7 +9,6 @@ import org.junit.jupiter.api.extension.BeforeAllCallback
 import org.junit.jupiter.api.extension.BeforeEachCallback
 import org.junit.jupiter.api.extension.ExtensionContext
 import uk.gov.justice.digital.hmpps.adjustments.api.wiremock.PrisonApiExtension.Companion.PRISONER_ID
-import uk.gov.justice.digital.hmpps.adjustments.api.wiremock.PrisonApiExtension.Companion.PRISON_ID
 
 /*
     This class mocks the prison-api.
@@ -20,14 +19,16 @@ class PrisonApiExtension : BeforeAllCallback, AfterAllCallback, BeforeEachCallba
     val prisonApi = PrisonApiMockServer()
     const val BOOKING_ID = 123L
     const val PRISONER_ID = "BCDEFG"
-    const val PRISON_ID = "LDS"
+    const val LEEDS_PRISON_ID = "LDS"
+    const val MOORGATE_PRISON_ID = "MRG"
   }
 
   override fun beforeAll(context: ExtensionContext) {
     prisonApi.start()
     prisonApi.stubSentencesAndOffences()
     prisonApi.stubGetPrisonerDetails()
-    prisonApi.stubGetPrison()
+    prisonApi.stubGetPrison(LEEDS_PRISON_ID)
+    prisonApi.stubGetPrison(MOORGATE_PRISON_ID)
   }
 
   override fun beforeEach(context: ExtensionContext) {
@@ -104,17 +105,17 @@ class PrisonApiMockServer : WireMockServer(WIREMOCK_PORT) {
             .withStatus(200),
         ),
     )
-  fun stubGetPrison(): StubMapping =
+  fun stubGetPrison(prisonId: String): StubMapping =
     stubFor(
-      get("/api/agencies/$PRISON_ID?activeOnly=false")
+      get("/api/agencies/$prisonId?activeOnly=false")
         .willReturn(
           aResponse()
             .withHeader("Content-Type", "application/json")
             .withBody(
               """
               {
-                 "agencyId": "LDS",
-                 "description": "Leeds"
+                 "agencyId": "$prisonId",
+                 "description": "Prison description"
               }
               """.trimIndent(),
             )

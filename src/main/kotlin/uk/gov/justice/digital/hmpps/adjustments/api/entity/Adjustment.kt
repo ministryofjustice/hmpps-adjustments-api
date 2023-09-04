@@ -64,7 +64,7 @@ data class Adjustment(
   @PrimaryKeyJoinColumn
   var unlawfullyAtLarge: UnlawfullyAtLarge? = null,
 
-  val prisonId: String? = null,
+  var prisonId: String? = null,
 ) {
   init {
     adjustmentHistory.forEach { it.adjustment = this }
