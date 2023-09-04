@@ -69,15 +69,15 @@ class AdjustmentsService(
       ),
       additionalDaysAwarded = additionalDaysAwarded(resource),
       unlawfullyAtLarge = unlawfullyAtLarge(resource),
-      adjustmentHistory = listOf(
-        AdjustmentHistory(
-          changeByUsername = getCurrentAuthentication().principal,
-          changeType = ChangeType.CREATE,
-          changeSource = AdjustmentSource.DPS,
-        ),
+    )
+    adjustment.adjustmentHistory = listOf(
+      AdjustmentHistory(
+        changeByUsername = getCurrentAuthentication().principal,
+        changeType = ChangeType.CREATE,
+        changeSource = AdjustmentSource.DPS,
+        adjustment = adjustment,
       ),
     )
-
     return CreateResponseDto(adjustmentRepository.save(adjustment).id)
   }
 
@@ -145,6 +145,7 @@ class AdjustmentsService(
       fromDate = resource.fromDate
       toDate = resource.toDate
       source = AdjustmentSource.DPS
+      prisonId = resource.prisonId
       legacyData = objectToJson(
         LegacyData(
           resource.bookingId,
@@ -192,7 +193,7 @@ class AdjustmentsService(
 
   private fun mapToDto(adjustment: Adjustment): AdjustmentDto {
     val legacyData = objectMapper.convertValue(adjustment.legacyData, LegacyData::class.java)
-    val prisonDescription = adjustment.prisonId?.let { prisonApiClient.getPrison(adjustment.prisonId).description }
+    val prisonDescription = adjustment.prisonId?.let { prisonApiClient.getPrison(adjustment.prisonId!!).description }
     return AdjustmentDto(
       id = adjustment.id,
       person = adjustment.person,
