@@ -356,7 +356,7 @@ class AdjustmentControllerIntTest : SqsIntegrationTestBase() {
     assertThat(updatedAdjustment)
       .usingRecursiveComparison()
       .ignoringFieldsMatchingRegexes("lastUpdatedDate")
-      .isEqualTo(adjustment.copy(lastUpdatedBy = "Test User", unlawfullyAtLarge = UnlawfullyAtLargeDto(type = RECALL), prisonId = "MRG"))
+      .isEqualTo(adjustment.copy(lastUpdatedBy = "Test User", unlawfullyAtLarge = UnlawfullyAtLargeDto(type = RECALL), prisonId = "MRG", prisonName = "Moorgate"))
   }
 
   @Test
