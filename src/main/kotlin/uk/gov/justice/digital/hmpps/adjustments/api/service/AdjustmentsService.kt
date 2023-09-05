@@ -151,7 +151,7 @@ class AdjustmentsService(
           resource.bookingId,
           resource.sentenceSequence,
           persistedLegacyData.postedDate,
-          null,
+          persistedLegacyData.comment,
           persistedLegacyData.type,
           true,
         ),
