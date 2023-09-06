@@ -11,6 +11,7 @@ import uk.gov.justice.digital.hmpps.adjustments.api.entity.AdjustmentHistory
 import uk.gov.justice.digital.hmpps.adjustments.api.entity.AdjustmentSource
 import uk.gov.justice.digital.hmpps.adjustments.api.entity.AdjustmentType
 import uk.gov.justice.digital.hmpps.adjustments.api.entity.ChangeType
+import uk.gov.justice.digital.hmpps.adjustments.api.entity.Remand
 import uk.gov.justice.digital.hmpps.adjustments.api.legacy.model.LegacyAdjustment
 import uk.gov.justice.digital.hmpps.adjustments.api.legacy.model.LegacyAdjustmentCreatedResponse
 import uk.gov.justice.digital.hmpps.adjustments.api.legacy.model.LegacyAdjustmentType
@@ -27,7 +28,7 @@ class LegacyService(
 
   @Transactional
   fun create(resource: LegacyAdjustment, migration: Boolean): LegacyAdjustmentCreatedResponse {
-    val adjustment = Adjustment(
+    var adjustment = Adjustment(
       person = resource.offenderNo,
       daysCalculated = resource.adjustmentDays,
       days = resource.adjustmentDays,
@@ -36,6 +37,7 @@ class LegacyService(
       source = AdjustmentSource.NOMIS,
       adjustmentType = transform(resource.adjustmentType),
       legacyData = objectToJson(LegacyData(resource.bookingId, resource.sentenceSequence, resource.adjustmentDate, resource.comment, resource.adjustmentType, resource.active, migration)),
+      remand = linkThisRemandToExistingUnusedRemand(resource),
       adjustmentHistory = listOf(
         AdjustmentHistory(
           changeByUsername = "NOMIS",
@@ -44,8 +46,51 @@ class LegacyService(
         ),
       ),
     )
+    adjustment = adjustmentRepository.save(adjustment)
+    linkUnusedRemandToExistingRemand(resource, adjustment)
+    return LegacyAdjustmentCreatedResponse(adjustment.id)
+  }
 
-    return LegacyAdjustmentCreatedResponse(adjustmentRepository.save(adjustment).id)
+  /*
+    An unused remand has just been created, find any existing remand to link to.
+   */
+  private fun linkUnusedRemandToExistingRemand(resource: LegacyAdjustment, unusedRemand: Adjustment) {
+    if (resource.adjustmentType == LegacyAdjustmentType.UR) {
+      val adjustments = adjustmentRepository.findByPersonAndDeleted(resource.offenderNo)
+      val adjustmentToLinkUnusedRemandTo = adjustments
+        .filter { it.adjustmentType == AdjustmentType.REMAND }
+        .find {
+          val legacyData = objectMapper.convertValue(it.legacyData, LegacyData::class.java)
+          legacyData.active == resource.active && (legacyData.type == LegacyAdjustmentType.RX || legacyData.type == LegacyAdjustmentType.RSR)
+        }
+      if (adjustmentToLinkUnusedRemandTo != null) {
+        adjustmentToLinkUnusedRemandTo.remand =
+          Remand(adjustment = adjustmentToLinkUnusedRemandTo, unusedRemand = unusedRemand)
+        adjustmentRepository.save(adjustmentToLinkUnusedRemandTo)
+      }
+    }
+  }
+
+  /*
+    A remand has just been created, find any existing unused remand, which has not already been linked and then link it.
+   */
+  private fun linkThisRemandToExistingUnusedRemand(resource: LegacyAdjustment): Remand? {
+    if (resource.adjustmentType == LegacyAdjustmentType.RX || resource.adjustmentType == LegacyAdjustmentType.RSR) {
+      val adjustments = adjustmentRepository.findByPersonAndDeleted(resource.offenderNo)
+      val remandAdjustments = adjustments
+        .filter { it.adjustmentType == AdjustmentType.REMAND }
+      val unusedRemandToLinkTo = remandAdjustments
+        .find {
+          val legacyData = objectMapper.convertValue(it.legacyData, LegacyData::class.java)
+          legacyData.active == resource.active && (legacyData.type == LegacyAdjustmentType.UR) && remandAdjustments.none { existingRemand ->
+            existingRemand.remand?.unusedRemand?.id === it.id
+          }
+        }
+      if (unusedRemandToLinkTo != null) {
+        return Remand(unusedRemand = unusedRemandToLinkTo)
+      }
+    }
+    return null
   }
 
   fun get(adjustmentId: UUID): LegacyAdjustment {

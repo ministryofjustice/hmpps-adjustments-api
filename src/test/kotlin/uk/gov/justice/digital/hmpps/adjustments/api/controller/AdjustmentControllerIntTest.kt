@@ -4,6 +4,7 @@ import jakarta.transaction.Transactional
 import org.assertj.core.api.Assertions.assertThat
 import org.awaitility.kotlin.matches
 import org.awaitility.kotlin.untilCallTo
+import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.core.ParameterizedTypeReference
@@ -22,6 +23,7 @@ import uk.gov.justice.digital.hmpps.adjustments.api.legacy.model.LegacyData
 import uk.gov.justice.digital.hmpps.adjustments.api.model.AdditionalDaysAwardedDto
 import uk.gov.justice.digital.hmpps.adjustments.api.model.AdjustmentDto
 import uk.gov.justice.digital.hmpps.adjustments.api.model.CreateResponseDto
+import uk.gov.justice.digital.hmpps.adjustments.api.model.RemandDto
 import uk.gov.justice.digital.hmpps.adjustments.api.model.UnlawfullyAtLargeDto
 import uk.gov.justice.digital.hmpps.adjustments.api.model.ValidationCode
 import uk.gov.justice.digital.hmpps.adjustments.api.model.ValidationMessage
@@ -393,6 +395,67 @@ class AdjustmentControllerIntTest : SqsIntegrationTestBase() {
       .isEqualTo(adjustment.copy(lastUpdatedBy = "Test User", unlawfullyAtLarge = UnlawfullyAtLargeDto(type = RECALL), prisonId = "LDS", prisonName = "Leeds"))
   }
 
+  @Nested
+  inner class UnusedRemandTests {
+
+    @Test
+    fun `Create and update unused remand`() {
+      val createAdjustment = CREATED_ADJUSTMENT.copy(person = "QRE123", remand = RemandDto(10), fromDate = LocalDate.now().minusDays(10), toDate = LocalDate.now().plusDays(10))
+      val remandId = postCreateAdjustment(createAdjustment)
+
+      var remand = adjustmentRepository.findById(remandId).get()
+      var unusedRemand = remand.remand!!.unusedRemand
+
+      assertThat(remand.daysCalculated).isEqualTo(21)
+      assertThat(unusedRemand.days).isEqualTo(10)
+
+      awaitAtMost30Secs untilCallTo { getNumberOfMessagesCurrentlyOnQueue() } matches { it == 2 }
+      var messages = getLatestMessage()!!.messages()
+      var remandMessage: String = messages.find { it.body().contains(remand.id.toString()) }!!.body()
+      assertThat(remandMessage).contains(remand.id.toString())
+      assertThat(remandMessage).contains(EventType.ADJUSTMENT_CREATED.value)
+      var unusedMessage: String = messages.find { it.body().contains(unusedRemand.id.toString()) }!!.body()
+      assertThat(unusedMessage).contains(unusedRemand.id.toString())
+      assertThat(unusedMessage).contains(EventType.ADJUSTMENT_CREATED.value)
+
+      val updateAdjustment = createAdjustment.copy(remand = RemandDto(5))
+
+      putAdjustmentUpdate(remand.id, updateAdjustment)
+
+      remand = adjustmentRepository.findById(remandId).get()
+      unusedRemand = remand.remand!!.unusedRemand
+
+      assertThat(remand.daysCalculated).isEqualTo(21)
+      assertThat(unusedRemand.days).isEqualTo(5)
+
+      awaitAtMost30Secs untilCallTo { getNumberOfMessagesCurrentlyOnQueue() } matches { it == 2 }
+      messages = getLatestMessage()!!.messages()
+      remandMessage = messages.find { it.body().contains(remand.id.toString()) }!!.body()
+      assertThat(remandMessage).contains(remand.id.toString())
+      assertThat(remandMessage).contains(EventType.ADJUSTMENT_UPDATED.value)
+      unusedMessage = messages.find { it.body().contains(unusedRemand.id.toString()) }!!.body()
+      assertThat(unusedMessage).contains(unusedRemand.id.toString())
+      assertThat(unusedMessage).contains(EventType.ADJUSTMENT_UPDATED.value)
+
+      val updateWhichDeletes = updateAdjustment.copy(remand = null)
+      putAdjustmentUpdate(remand.id, updateWhichDeletes)
+
+      remand = adjustmentRepository.findById(remandId).get()
+      unusedRemand = adjustmentRepository.findById(unusedRemand.id).get()
+      assertThat(remand.daysCalculated).isEqualTo(21)
+      assertThat(unusedRemand.deleted).isTrue
+
+      awaitAtMost30Secs untilCallTo { getNumberOfMessagesCurrentlyOnQueue() } matches { it == 2 }
+      messages = getLatestMessage()!!.messages()
+      remandMessage = messages.find { it.body().contains(remand.id.toString()) }!!.body()
+      assertThat(remandMessage).contains(remand.id.toString())
+      assertThat(remandMessage).contains(EventType.ADJUSTMENT_UPDATED.value)
+      unusedMessage = messages.find { it.body().contains(unusedRemand.id.toString()) }!!.body()
+      assertThat(unusedMessage).contains(unusedRemand.id.toString())
+      assertThat(unusedMessage).contains(EventType.ADJUSTMENT_DELETED.value)
+    }
+  }
+
   private fun getAdjustmentsByPerson(person: String): List<AdjustmentDto> =
     webTestClient
       .get()
@@ -402,7 +465,7 @@ class AdjustmentControllerIntTest : SqsIntegrationTestBase() {
       .expectStatus().isOk
       .expectBodyList<AdjustmentDto>()
       .returnResult()
-      .responseBody
+      .responseBody!!.toList()
 
   private fun postCreateAdjustment(adjustmentDto: AdjustmentDto) = webTestClient
     .post()
@@ -496,6 +559,7 @@ class AdjustmentControllerIntTest : SqsIntegrationTestBase() {
       days = null,
       additionalDaysAwarded = null,
       unlawfullyAtLarge = null,
+      remand = null,
       lastUpdatedDate = LocalDateTime.now(),
     )
   }

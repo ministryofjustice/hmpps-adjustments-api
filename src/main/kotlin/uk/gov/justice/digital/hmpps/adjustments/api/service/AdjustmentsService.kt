@@ -16,12 +16,16 @@ import uk.gov.justice.digital.hmpps.adjustments.api.entity.AdjustmentSource
 import uk.gov.justice.digital.hmpps.adjustments.api.entity.AdjustmentType
 import uk.gov.justice.digital.hmpps.adjustments.api.entity.AdjustmentType.UNLAWFULLY_AT_LARGE
 import uk.gov.justice.digital.hmpps.adjustments.api.entity.ChangeType
+import uk.gov.justice.digital.hmpps.adjustments.api.entity.Remand
 import uk.gov.justice.digital.hmpps.adjustments.api.entity.UnlawfullyAtLarge
 import uk.gov.justice.digital.hmpps.adjustments.api.error.ApiValidationException
+import uk.gov.justice.digital.hmpps.adjustments.api.legacy.model.LegacyAdjustmentType
 import uk.gov.justice.digital.hmpps.adjustments.api.legacy.model.LegacyData
 import uk.gov.justice.digital.hmpps.adjustments.api.model.AdditionalDaysAwardedDto
+import uk.gov.justice.digital.hmpps.adjustments.api.model.AdditionalEvent
 import uk.gov.justice.digital.hmpps.adjustments.api.model.AdjustmentDto
 import uk.gov.justice.digital.hmpps.adjustments.api.model.CreateResponseDto
+import uk.gov.justice.digital.hmpps.adjustments.api.model.RemandDto
 import uk.gov.justice.digital.hmpps.adjustments.api.model.UnlawfullyAtLargeDto
 import uk.gov.justice.digital.hmpps.adjustments.api.respository.AdjustmentRepository
 import java.time.LocalDate
@@ -48,6 +52,7 @@ class AdjustmentsService(
     }
     val daysCalculated: Int? =
       if (resource.toDate != null) (ChronoUnit.DAYS.between(resource.fromDate, resource.toDate) + 1).toInt() else null
+    val remand = remand(resource)
     val adjustment = Adjustment(
       person = resource.person,
       daysCalculated = resource.days ?: daysCalculated!!,
@@ -69,6 +74,7 @@ class AdjustmentsService(
       ),
       additionalDaysAwarded = additionalDaysAwarded(resource),
       unlawfullyAtLarge = unlawfullyAtLarge(resource),
+      remand = remand?.first,
     )
     adjustment.adjustmentHistory = listOf(
       AdjustmentHistory(
@@ -78,7 +84,59 @@ class AdjustmentsService(
         adjustment = adjustment,
       ),
     )
-    return CreateResponseDto(adjustmentRepository.save(adjustment).id)
+    return CreateResponseDto(adjustmentRepository.save(adjustment).id, remand?.second)
+  }
+
+  private fun remand(resource: AdjustmentDto, adjustment: Adjustment? = null): Pair<Remand?, AdditionalEvent>? {
+    if (resource.remand != null) {
+      if (adjustment?.remand == null) {
+        var unusedRemandAdjustment = Adjustment(
+          person = resource.person,
+          days = resource.remand.unusedDays,
+          fromDate = resource.fromDate,
+          source = AdjustmentSource.DPS,
+          adjustmentType = resource.adjustmentType,
+          prisonId = resource.prisonId,
+          legacyData = objectToJson(
+            LegacyData(
+              resource.bookingId,
+              null,
+              LocalDate.now(),
+              null,
+              LegacyAdjustmentType.UR,
+              true,
+            ),
+          ),
+        )
+        unusedRemandAdjustment.adjustmentHistory = listOf(
+          AdjustmentHistory(
+            changeByUsername = getCurrentAuthentication().principal,
+            changeType = ChangeType.CREATE,
+            changeSource = AdjustmentSource.DPS,
+            adjustment = unusedRemandAdjustment,
+          ),
+        )
+        unusedRemandAdjustment = adjustmentRepository.save(unusedRemandAdjustment)
+        return Remand(unusedRemand = unusedRemandAdjustment) to AdditionalEvent(EventType.ADJUSTMENT_CREATED, unusedRemandAdjustment.id)
+      } else {
+        adjustment.remand!!.unusedRemand.days = resource.remand.unusedDays
+        return adjustment.remand!! to AdditionalEvent(EventType.ADJUSTMENT_UPDATED, adjustment.remand!!.unusedRemand.id)
+      }
+    } else if (adjustment?.remand != null) {
+      val change = objectToJson(adjustment.remand!!.unusedRemand)
+      adjustment.remand!!.unusedRemand.apply {
+        deleted = true
+        adjustmentHistory += AdjustmentHistory(
+          changeByUsername = getCurrentAuthentication().principal,
+          changeType = ChangeType.DELETE,
+          changeSource = AdjustmentSource.DPS,
+          change = change,
+          adjustment = this,
+        )
+      }
+      return null to AdditionalEvent(EventType.ADJUSTMENT_DELETED, adjustment.remand!!.unusedRemand.id)
+    }
+    return null
   }
 
   private fun unlawfullyAtLarge(adjustmentDto: AdjustmentDto, adjustment: Adjustment? = null): UnlawfullyAtLarge? =
@@ -127,7 +185,7 @@ class AdjustmentsService(
   }
 
   @Transactional
-  fun update(adjustmentId: UUID, resource: AdjustmentDto) {
+  fun update(adjustmentId: UUID, resource: AdjustmentDto): AdditionalEvent? {
     val adjustment = adjustmentRepository.findById(adjustmentId)
       .orElseThrow {
         EntityNotFoundException("No adjustment found with id $adjustmentId")
@@ -137,6 +195,7 @@ class AdjustmentsService(
     }
     val persistedLegacyData = objectMapper.convertValue(adjustment.legacyData, LegacyData::class.java)
     val change = objectToJson(adjustment)
+    val remandAndEvent = remand(resource, adjustment)
     val calculated: Int? =
       if (resource.toDate != null) (ChronoUnit.DAYS.between(resource.fromDate, resource.toDate) + 1).toInt() else null
     adjustment.apply {
@@ -158,6 +217,7 @@ class AdjustmentsService(
       )
       additionalDaysAwarded = additionalDaysAwarded(resource, this)
       unlawfullyAtLarge = unlawfullyAtLarge(resource, this)
+      remand = remandAndEvent?.first
       adjustmentHistory += AdjustmentHistory(
         changeByUsername = getCurrentAuthentication().principal,
         changeType = ChangeType.UPDATE,
@@ -166,10 +226,11 @@ class AdjustmentsService(
         adjustment = adjustment,
       )
     }
+    return remandAndEvent?.second
   }
 
   @Transactional
-  fun delete(adjustmentId: UUID) {
+  fun delete(adjustmentId: UUID): AdditionalEvent? {
     val adjustment = adjustmentRepository.findById(adjustmentId)
       .orElseThrow {
         EntityNotFoundException("No adjustment found with id $adjustmentId")
@@ -185,6 +246,21 @@ class AdjustmentsService(
         adjustment = adjustment,
       )
     }
+    if (adjustment.remand?.unusedRemand !== null) {
+      val unusedRemandChange = objectToJson(adjustment.remand!!.unusedRemand)
+      adjustment.remand!!.unusedRemand.apply {
+        deleted = true
+        adjustmentHistory += AdjustmentHistory(
+          changeByUsername = getCurrentAuthentication().principal,
+          changeType = ChangeType.DELETE,
+          changeSource = AdjustmentSource.DPS,
+          change = unusedRemandChange,
+          adjustment = this,
+        )
+      }
+      return AdditionalEvent(EventType.ADJUSTMENT_DELETED, adjustment.remand!!.unusedRemand.id)
+    }
+    return null
   }
 
   private fun objectToJson(subject: Any): JsonNode {
@@ -205,12 +281,21 @@ class AdjustmentsService(
       bookingId = legacyData.bookingId,
       additionalDaysAwarded = additionalDaysAwardedToDto(adjustment),
       unlawfullyAtLarge = unlawfullyAtLargeDto(adjustment),
+      remand = remandDto(adjustment),
       lastUpdatedBy = adjustment.adjustmentHistory.last().changeByUsername,
       lastUpdatedDate = adjustment.adjustmentHistory.last().changeAt,
       status = if (legacyData.active) "Active" else "Inactive",
       prisonId = adjustment.prisonId,
       prisonName = prisonDescription,
     )
+  }
+
+  private fun remandDto(adjustment: Adjustment): RemandDto? {
+    return if (adjustment.remand?.unusedRemand != null) {
+      RemandDto(adjustment.remand!!.unusedRemand.days!!)
+    } else {
+      null
+    }
   }
 
   private fun unlawfullyAtLargeDto(adjustment: Adjustment): UnlawfullyAtLargeDto? =
