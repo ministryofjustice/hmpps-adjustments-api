@@ -407,6 +407,7 @@ class AdjustmentControllerIntTest : SqsIntegrationTestBase() {
       var unusedRemand = remand.remand!!.unusedRemand
 
       assertThat(remand.daysCalculated).isEqualTo(21)
+      assertThat(remand.days).isEqualTo(11)
       assertThat(unusedRemand.days).isEqualTo(10)
 
       awaitAtMost30Secs untilCallTo { getNumberOfMessagesCurrentlyOnQueue() } matches { it == 2 }
@@ -426,6 +427,7 @@ class AdjustmentControllerIntTest : SqsIntegrationTestBase() {
       unusedRemand = remand.remand!!.unusedRemand
 
       assertThat(remand.daysCalculated).isEqualTo(21)
+      assertThat(remand.days).isEqualTo(16)
       assertThat(unusedRemand.days).isEqualTo(5)
 
       awaitAtMost30Secs untilCallTo { getNumberOfMessagesCurrentlyOnQueue() } matches { it == 2 }
@@ -443,6 +445,7 @@ class AdjustmentControllerIntTest : SqsIntegrationTestBase() {
       remand = adjustmentRepository.findById(remandId).get()
       unusedRemand = adjustmentRepository.findById(unusedRemand.id).get()
       assertThat(remand.daysCalculated).isEqualTo(21)
+      assertThat(remand.days).isNull()
       assertThat(unusedRemand.deleted).isTrue
 
       awaitAtMost30Secs untilCallTo { getNumberOfMessagesCurrentlyOnQueue() } matches { it == 2 }

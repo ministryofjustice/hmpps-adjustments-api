@@ -56,7 +56,7 @@ class AdjustmentsService(
     val adjustment = Adjustment(
       person = resource.person,
       daysCalculated = resource.days ?: daysCalculated!!,
-      days = resource.days,
+      days = if (resource.remand == null) resource.days else daysCalculated!!.minus(resource.remand.unusedDays),
       fromDate = resource.fromDate,
       toDate = resource.toDate,
       source = AdjustmentSource.DPS,
@@ -200,7 +200,7 @@ class AdjustmentsService(
       if (resource.toDate != null) (ChronoUnit.DAYS.between(resource.fromDate, resource.toDate) + 1).toInt() else null
     adjustment.apply {
       daysCalculated = resource.days ?: calculated!!
-      days = resource.days
+      days = if (resource.remand == null) resource.days else calculated!!.minus(resource.remand.unusedDays)
       fromDate = resource.fromDate
       toDate = resource.toDate
       source = AdjustmentSource.DPS
