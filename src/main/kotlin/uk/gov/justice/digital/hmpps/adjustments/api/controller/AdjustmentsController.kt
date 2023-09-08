@@ -18,11 +18,13 @@ import org.springframework.web.bind.annotation.RequestParam
 import org.springframework.web.bind.annotation.ResponseStatus
 import org.springframework.web.bind.annotation.RestController
 import uk.gov.justice.digital.hmpps.adjustments.api.entity.AdjustmentSource
+import uk.gov.justice.digital.hmpps.adjustments.api.model.AdditionalEvent
 import uk.gov.justice.digital.hmpps.adjustments.api.model.AdjustmentDto
 import uk.gov.justice.digital.hmpps.adjustments.api.model.CreateResponseDto
 import uk.gov.justice.digital.hmpps.adjustments.api.model.ValidationMessage
 import uk.gov.justice.digital.hmpps.adjustments.api.service.AdjustmentsEventService
 import uk.gov.justice.digital.hmpps.adjustments.api.service.AdjustmentsService
+import uk.gov.justice.digital.hmpps.adjustments.api.service.EventType
 import uk.gov.justice.digital.hmpps.adjustments.api.service.ValidationService
 import java.util.UUID
 
@@ -50,6 +52,7 @@ class AdjustmentsController(
   fun create(@RequestBody adjustment: AdjustmentDto): CreateResponseDto {
     return adjustmentsService.create(adjustment).also {
       eventService.create(it.adjustmentId, adjustment.person, AdjustmentSource.DPS)
+      handleAdditionalEvent(adjustment, it.additionalEvent)
     }
   }
 
@@ -113,6 +116,16 @@ class AdjustmentsController(
   ) {
     adjustmentsService.update(adjustmentId, adjustment).also {
       eventService.update(adjustmentId, adjustment.person, AdjustmentSource.DPS)
+      handleAdditionalEvent(adjustment, it)
+    }
+  }
+
+  private fun handleAdditionalEvent(adjustment: AdjustmentDto, additionalEvent: AdditionalEvent?) {
+    when (additionalEvent?.eventType) {
+      EventType.ADJUSTMENT_DELETED -> eventService.delete(additionalEvent.id, adjustment.person, AdjustmentSource.DPS)
+      EventType.ADJUSTMENT_CREATED -> eventService.create(additionalEvent.id, adjustment.person, AdjustmentSource.DPS)
+      EventType.ADJUSTMENT_UPDATED -> eventService.update(additionalEvent.id, adjustment.person, AdjustmentSource.DPS)
+      null -> null
     }
   }
 
@@ -134,8 +147,10 @@ class AdjustmentsController(
     adjustmentId: UUID,
   ) {
     adjustmentsService.get(adjustmentId).also {
-      adjustmentsService.delete(adjustmentId)
-      eventService.delete(adjustmentId, it.person, AdjustmentSource.DPS)
+      adjustmentsService.delete(adjustmentId).also { addEvent ->
+        eventService.delete(adjustmentId, it.person, AdjustmentSource.DPS)
+        handleAdditionalEvent(it, addEvent)
+      }
     }
   }
 

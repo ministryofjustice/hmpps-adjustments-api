@@ -72,6 +72,6 @@ class SqsIntegrationTestBase : IntegrationTestBase() {
   }
 
   fun getLatestMessage(): ReceiveMessageResponse? {
-    return adjustmentsQueue.sqsClient.receiveMessage(ReceiveMessageRequest.builder().queueUrl(adjustmentsQueue.queueUrl).build()).get()
+    return adjustmentsQueue.sqsClient.receiveMessage(ReceiveMessageRequest.builder().queueUrl(adjustmentsQueue.queueUrl).maxNumberOfMessages(10).build()).get()
   }
 }
