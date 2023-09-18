@@ -21,6 +21,4 @@ interface AdjustmentRepository : JpaRepository<Adjustment, UUID> {
     fromDate: LocalDate,
     adjustmentTypes: List<AdjustmentType>? = listOf(REMAND, TAGGED_BAIL),
   ): List<Adjustment>
-
-  fun findByPersonAndDeleted(person: String, deleted: Boolean = false): List<Adjustment>
 }
