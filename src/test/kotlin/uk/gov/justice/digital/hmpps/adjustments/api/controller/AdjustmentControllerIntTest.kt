@@ -255,7 +255,7 @@ class AdjustmentControllerIntTest : SqsIntegrationTestBase() {
           person = "ADA123",
           adjustmentType = AdjustmentType.ADDITIONAL_DAYS_AWARDED,
           additionalDaysAwarded = AdditionalDaysAwardedDto(
-            adjudicationId = "987654321",
+            adjudicationId = 987654321,
             consecutive = true,
           ),
         ),
@@ -268,7 +268,7 @@ class AdjustmentControllerIntTest : SqsIntegrationTestBase() {
     val adjustment = adjustmentRepository.findById(adjustmentId).get()
 
     assertThat(adjustment.additionalDaysAwarded).isNotNull
-    assertThat(adjustment.additionalDaysAwarded!!.adjudicationId).isEqualTo("987654321")
+    assertThat(adjustment.additionalDaysAwarded!!.adjudicationId).isEqualTo(987654321)
     assertThat(adjustment.additionalDaysAwarded!!.consecutive).isEqualTo(true)
 
     val updateDto = CREATED_ADJUSTMENT.copy(
@@ -276,7 +276,7 @@ class AdjustmentControllerIntTest : SqsIntegrationTestBase() {
       person = "ADA123",
       adjustmentType = AdjustmentType.ADDITIONAL_DAYS_AWARDED,
       additionalDaysAwarded = AdditionalDaysAwardedDto(
-        adjudicationId = "123456789",
+        adjudicationId = 123456789,
         consecutive = false,
       ),
     )
