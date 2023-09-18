@@ -18,7 +18,7 @@ data class AdditionalDaysAwarded(
   val id: UUID = UUID.randomUUID(),
 
   @NotNull
-  var adjudicationId: String = "",
+  var adjudicationId: Long = -1,
 
   @NotNull
   var consecutive: Boolean = false,
