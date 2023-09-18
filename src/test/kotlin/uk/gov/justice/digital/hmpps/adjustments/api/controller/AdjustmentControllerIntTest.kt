@@ -61,8 +61,8 @@ class AdjustmentControllerIntTest : SqsIntegrationTestBase() {
 
     assertThat(adjustment.fromDate).isEqualTo(LocalDate.now().minusDays(5))
     assertThat(adjustment.toDate).isEqualTo(LocalDate.now().minusDays(2))
-    assertThat(adjustment.days).isEqualTo(null)
-    assertThat(adjustment.daysCalculated).isEqualTo(4)
+    assertThat(adjustment.days).isEqualTo(4)
+    assertThat(adjustment.effectiveDays).isEqualTo(2)
 
     val legacyData = objectMapper.convertValue(adjustment.legacyData, LegacyData::class.java)
     assertThat(legacyData).isEqualTo(
@@ -178,8 +178,8 @@ class AdjustmentControllerIntTest : SqsIntegrationTestBase() {
 
     assertThat(adjustment.fromDate).isEqualTo(LocalDate.now().minusDays(5).minusYears(1))
     assertThat(adjustment.toDate).isEqualTo(LocalDate.now().minusDays(2).minusYears(1))
-    assertThat(adjustment.days).isEqualTo(null)
-    assertThat(adjustment.daysCalculated).isEqualTo(4)
+    assertThat(adjustment.days).isEqualTo(4)
+    assertThat(adjustment.effectiveDays).isEqualTo(2)
 
     val legacyData = objectMapper.convertValue(adjustment.legacyData, LegacyData::class.java)
     assertThat(legacyData).isEqualTo(
@@ -344,7 +344,7 @@ class AdjustmentControllerIntTest : SqsIntegrationTestBase() {
         ),
       )
 
-    val updateDto = createdAdjustment.copy(unlawfullyAtLarge = UnlawfullyAtLargeDto(type = ESCAPE))
+    val updateDto = createdAdjustment.copy(days = null, unlawfullyAtLarge = UnlawfullyAtLargeDto(type = ESCAPE))
     putAdjustmentUpdate(adjustmentId, updateDto)
     val updatedAdjustment = getAdjustmentById(adjustmentId)
     assertThat(updatedAdjustment)
@@ -365,7 +365,7 @@ class AdjustmentControllerIntTest : SqsIntegrationTestBase() {
     putAdjustmentUpdate(adjustment.id!!, adjustment.copy(unlawfullyAtLarge = UnlawfullyAtLargeDto(type = RECALL), prisonId = "MRG"))
 
     val updatedAdjustment = getAdjustmentById(adjustmentId)
-    assertThat(updatedAdjustment)
+    assertThat(updatedAdjustment.copy(days = null))
       .usingRecursiveComparison()
       .ignoringFieldsMatchingRegexes("lastUpdatedDate")
       .isEqualTo(adjustment.copy(lastUpdatedBy = "Test User", unlawfullyAtLarge = UnlawfullyAtLargeDto(type = RECALL), prisonId = "MRG", prisonName = "Moorgate"))
@@ -396,7 +396,7 @@ class AdjustmentControllerIntTest : SqsIntegrationTestBase() {
     val adjustmentId = UUID.fromString("dfba24ef-a2d4-4b26-af63-4d9494dd5252")
     val adjustment = getAdjustmentById(adjustmentId)
 
-    putAdjustmentUpdate(adjustment.id!!, adjustment.copy(unlawfullyAtLarge = UnlawfullyAtLargeDto(type = RECALL)))
+    putAdjustmentUpdate(adjustment.id!!, adjustment.copy(days = null, unlawfullyAtLarge = UnlawfullyAtLargeDto(type = RECALL)))
 
     val updatedAdjustment = getAdjustmentById(adjustmentId)
     assertThat(updatedAdjustment)
@@ -506,6 +506,7 @@ class AdjustmentControllerIntTest : SqsIntegrationTestBase() {
       toDate = LocalDate.now().minusDays(2),
       fromDate = LocalDate.now().minusDays(5),
       days = null,
+      effectiveDays = 2,
       additionalDaysAwarded = null,
       unlawfullyAtLarge = null,
       lastUpdatedDate = LocalDateTime.now(),

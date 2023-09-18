@@ -36,7 +36,7 @@ data class Adjustment(
   var days: Int? = null,
 
   @NotNull
-  var daysCalculated: Int = -1,
+  var effectiveDays: Int = -1,
 
   @NotNull
   @Enumerated(EnumType.STRING)

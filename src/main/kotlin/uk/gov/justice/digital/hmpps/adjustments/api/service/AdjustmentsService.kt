@@ -46,15 +46,15 @@ class AdjustmentsService(
 
   @Transactional
   fun create(resource: AdjustmentDto): CreateResponseDto {
-    if (resource.toDate == null && resource.days == null) {
-      throw ApiValidationException("resource must have either toDate or days.")
+    if ((resource.toDate == null && resource.days == null) || (resource.toDate != null && resource.days != null)) {
+      throw ApiValidationException("resource must have either toDate or days, not both")
     }
-    val daysCalculated: Int? =
-      if (resource.toDate != null) (ChronoUnit.DAYS.between(resource.fromDate, resource.toDate) + 1).toInt() else null
+    val totalDays: Int =
+      if (resource.toDate != null) (ChronoUnit.DAYS.between(resource.fromDate, resource.toDate) + 1).toInt() else resource.days!!
     val adjustment = Adjustment(
       person = resource.person,
-      daysCalculated = resource.days ?: daysCalculated!!,
-      days = resource.days,
+      effectiveDays = resource.effectiveDays ?: totalDays,
+      days = totalDays,
       fromDate = resource.fromDate,
       toDate = resource.toDate,
       source = AdjustmentSource.DPS,
@@ -144,13 +144,16 @@ class AdjustmentsService(
     if (adjustment.adjustmentType != resource.adjustmentType) {
       throw ApiValidationException("The provided adjustment type ${resource.adjustmentType} doesn't match the persisted type ${adjustment.adjustmentType}")
     }
+    if ((resource.toDate == null && resource.days == null) || (resource.toDate != null && resource.days != null)) {
+      throw ApiValidationException("resource must have either toDate or days, not both")
+    }
+    val totalDays: Int =
+      if (resource.toDate != null) (ChronoUnit.DAYS.between(resource.fromDate, resource.toDate) + 1).toInt() else resource.days!!
     val persistedLegacyData = objectMapper.convertValue(adjustment.legacyData, LegacyData::class.java)
     val change = objectToJson(adjustment)
-    val calculated: Int? =
-      if (resource.toDate != null) (ChronoUnit.DAYS.between(resource.fromDate, resource.toDate) + 1).toInt() else null
     adjustment.apply {
-      daysCalculated = resource.days ?: calculated!!
-      days = resource.days
+      effectiveDays = resource.effectiveDays ?: totalDays
+      days = totalDays
       fromDate = resource.fromDate
       toDate = resource.toDate
       source = AdjustmentSource.DPS
@@ -206,7 +209,8 @@ class AdjustmentsService(
     return AdjustmentDto(
       id = adjustment.id,
       person = adjustment.person,
-      days = adjustment.days ?: adjustment.daysCalculated,
+      effectiveDays = adjustment.effectiveDays,
+      days = adjustment.days,
       fromDate = adjustment.fromDate,
       toDate = adjustment.toDate,
       adjustmentType = adjustment.adjustmentType,

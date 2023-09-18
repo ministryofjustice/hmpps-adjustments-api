@@ -32,8 +32,7 @@ class LegacyService(
   fun create(resource: LegacyAdjustment, migration: Boolean): LegacyAdjustmentCreatedResponse {
     val adjustment = Adjustment(
       person = resource.offenderNo,
-      daysCalculated = resource.adjustmentDays,
-      days = resource.adjustmentDays,
+      effectiveDays = resource.adjustmentDays,
       fromDate = resource.adjustmentFromDate,
       toDate = resource.adjustmentFromDate?.plusDays(resource.adjustmentDays.toLong() - 1),
       source = AdjustmentSource.NOMIS,
@@ -61,7 +60,7 @@ class LegacyService(
     val legacyData = objectMapper.convertValue(adjustment.legacyData, LegacyData::class.java)
     return LegacyAdjustment(
       offenderNo = adjustment.person,
-      adjustmentDays = adjustment.days ?: adjustment.daysCalculated,
+      adjustmentDays = adjustment.effectiveDays,
       adjustmentFromDate = adjustment.fromDate,
       adjustmentDate = legacyData.postedDate,
       adjustmentType = transform(adjustment.adjustmentType, legacyData),
@@ -80,8 +79,7 @@ class LegacyService(
       }
     val change = objectToJson(adjustment)
     adjustment.apply {
-      daysCalculated = resource.adjustmentDays
-      days = resource.adjustmentDays
+      effectiveDays = resource.adjustmentDays
       fromDate = resource.adjustmentFromDate
       toDate = resource.adjustmentFromDate?.plusDays(resource.adjustmentDays.toLong() - 1)
       source = AdjustmentSource.NOMIS
