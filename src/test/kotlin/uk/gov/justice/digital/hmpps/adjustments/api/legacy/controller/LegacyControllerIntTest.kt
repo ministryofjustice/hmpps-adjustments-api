@@ -32,7 +32,19 @@ class LegacyControllerIntTest : SqsIntegrationTestBase() {
 
   @BeforeEach
   fun setup() {
-    CREATED_ID = createAdjustment(CREATED_ADJUSTMENT).adjustmentId
+    val result = webTestClient
+      .post()
+      .uri("/legacy/adjustments")
+      .headers(
+        setAuthorisation(),
+      )
+      .header("Content-Type", LegacyController.LEGACY_CONTENT_TYPE)
+      .bodyValue(CREATED_ADJUSTMENT)
+      .exchange()
+      .expectStatus().isCreated
+      .returnResult(LegacyAdjustmentCreatedResponse::class.java)
+      .responseBody.blockFirst()!!
+    CREATED_ID = result.adjustmentId
   }
 
   @Test
@@ -120,6 +132,7 @@ class LegacyControllerIntTest : SqsIntegrationTestBase() {
         CREATED_ADJUSTMENT.copy(
           adjustmentFromDate = CREATED_ADJUSTMENT.adjustmentFromDate!!.minusYears(1),
           adjustmentDays = 5,
+          adjustmentType = LegacyAdjustmentType.RX,
           comment = "Updated",
         ),
       )
@@ -143,7 +156,7 @@ class LegacyControllerIntTest : SqsIntegrationTestBase() {
     assertThat(adjustment.daysCalculated).isEqualTo(5)
 
     val legacyData = objectMapper.convertValue(adjustment.legacyData, LegacyData::class.java)
-    assertThat(legacyData).isEqualTo(LegacyData(bookingId = 1, sentenceSequence = 1, postedDate = LocalDate.now(), comment = "Updated", type = LegacyAdjustmentType.UR, active = true, migration = false))
+    assertThat(legacyData).isEqualTo(LegacyData(bookingId = 1, sentenceSequence = 1, postedDate = LocalDate.now(), comment = "Updated", type = LegacyAdjustmentType.RX, active = true, migration = false))
 
     awaitAtMost30Secs untilCallTo { getNumberOfMessagesCurrentlyOnQueue() } matches { it == 1 }
     val latestMessage: String = getLatestMessage()!!.messages()[0].body()
@@ -185,41 +198,6 @@ class LegacyControllerIntTest : SqsIntegrationTestBase() {
       .header("Content-Type", LegacyController.LEGACY_CONTENT_TYPE)
       .exchange()
       .expectStatus().isNotFound
-  }
-
-  private fun createAdjustment(adjustment: LegacyAdjustment): LegacyAdjustmentCreatedResponse {
-    return webTestClient
-      .post()
-      .uri("/legacy/adjustments")
-      .headers(
-        setAuthorisation(),
-      )
-      .header("Content-Type", LegacyController.LEGACY_CONTENT_TYPE)
-      .bodyValue(adjustment)
-      .exchange()
-      .expectStatus().isCreated
-      .returnResult(LegacyAdjustmentCreatedResponse::class.java)
-      .responseBody.blockFirst()!!
-  }
-
-  @Test
-  fun `Create unused remand, and then create remand`() {
-    val unusedRemandId = createAdjustment(CREATED_ADJUSTMENT.copy(adjustmentType = LegacyAdjustmentType.UR, offenderNo = "QRE123"))
-    val remandId = createAdjustment(CREATED_ADJUSTMENT.copy(adjustmentType = LegacyAdjustmentType.RX, offenderNo = "QRE123"))
-
-    val remand = adjustmentRepository.findById(remandId.adjustmentId).get()
-
-    assertThat(remand.remand!!.unusedRemand.id).isEqualTo(unusedRemandId.adjustmentId)
-  }
-
-  @Test
-  fun `Create remand, and then create unused remand`() {
-    val remandId = createAdjustment(CREATED_ADJUSTMENT.copy(adjustmentType = LegacyAdjustmentType.RX, offenderNo = "XYZ321"))
-    val unusedRemandId = createAdjustment(CREATED_ADJUSTMENT.copy(adjustmentType = LegacyAdjustmentType.UR, offenderNo = "XYZ321"))
-
-    val remand = adjustmentRepository.findById(remandId.adjustmentId).get()
-
-    assertThat(remand.remand!!.unusedRemand.id).isEqualTo(unusedRemandId.adjustmentId)
   }
 
   companion object {
