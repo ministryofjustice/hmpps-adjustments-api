@@ -6,6 +6,7 @@ import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.test.annotation.Rollback
 import uk.gov.justice.digital.hmpps.adjustments.api.entity.AdjustmentSource
+import uk.gov.justice.digital.hmpps.adjustments.api.entity.AdjustmentStatus
 import uk.gov.justice.digital.hmpps.adjustments.api.entity.AdjustmentType
 import uk.gov.justice.digital.hmpps.adjustments.api.entity.ChangeType
 import uk.gov.justice.digital.hmpps.adjustments.api.integration.SqsIntegrationTestBase
@@ -66,6 +67,7 @@ class LegacyAndAdjustmentsControllerIntTest : SqsIntegrationTestBase() {
     assertThat(adjustment.adjustmentHistory[1].changeByUsername).isEqualTo("Test User")
     assertThat(adjustment.adjustmentHistory[1].changeSource).isEqualTo(AdjustmentSource.DPS)
     assertThat(adjustment.source).isEqualTo(AdjustmentSource.DPS)
+    assertThat(adjustment.status).isEqualTo(AdjustmentStatus.ACTIVE)
 
     assertThat(adjustment.fromDate).isEqualTo(LocalDate.now().minusDays(5))
     assertThat(adjustment.toDate).isEqualTo(LocalDate.now().plusDays(2))
@@ -73,7 +75,7 @@ class LegacyAndAdjustmentsControllerIntTest : SqsIntegrationTestBase() {
     assertThat(adjustment.daysCalculated).isEqualTo(8)
 
     val legacyData = objectMapper.convertValue(adjustment.legacyData, LegacyData::class.java)
-    assertThat(legacyData).isEqualTo(LegacyData(bookingId = 1, sentenceSequence = 1, postedDate = LocalDate.now(), comment = "Created", type = LegacyAdjustmentType.UR, active = true, migration = false))
+    assertThat(legacyData).isEqualTo(LegacyData(bookingId = 1, sentenceSequence = 1, postedDate = LocalDate.now(), comment = "Created", type = LegacyAdjustmentType.UR, migration = false))
   }
 
   @Test
@@ -155,7 +157,7 @@ class LegacyAndAdjustmentsControllerIntTest : SqsIntegrationTestBase() {
       adjustmentFromDate = LocalDate.now().minusDays(5),
       adjustmentDays = 3,
       comment = "Created",
-      active = true,
+      active = false,
     )
 
     private val ADJUSTMENT = AdjustmentDto(

@@ -8,6 +8,5 @@ data class LegacyData(
   val postedDate: LocalDate? = null,
   val comment: String? = null,
   val type: LegacyAdjustmentType? = null,
-  val active: Boolean = false,
   val migration: Boolean = false,
 )

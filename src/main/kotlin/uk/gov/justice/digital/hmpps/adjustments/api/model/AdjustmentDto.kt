@@ -1,6 +1,7 @@
 package uk.gov.justice.digital.hmpps.adjustments.api.model
 
 import io.swagger.v3.oas.annotations.media.Schema
+import uk.gov.justice.digital.hmpps.adjustments.api.entity.AdjustmentStatus
 import uk.gov.justice.digital.hmpps.adjustments.api.entity.AdjustmentType
 import java.time.LocalDate
 import java.time.LocalDateTime
@@ -36,7 +37,7 @@ data class AdjustmentDto(
   @Schema(description = "The person last updating this adjustment", readOnly = true)
   val lastUpdatedBy: String? = null,
   @Schema(description = "The status of this adjustment", readOnly = true)
-  val status: String? = null,
+  val status: AdjustmentStatus? = null,
   @Schema(description = "The date and time this adjustment was last updated", readOnly = true)
   val lastUpdatedDate: LocalDateTime? = null,
 )

@@ -12,6 +12,8 @@ import org.springframework.test.context.jdbc.Sql
 import org.springframework.test.web.reactive.server.expectBodyList
 import uk.gov.justice.digital.hmpps.adjustments.api.config.ErrorResponse
 import uk.gov.justice.digital.hmpps.adjustments.api.entity.AdjustmentSource
+import uk.gov.justice.digital.hmpps.adjustments.api.entity.AdjustmentStatus.ACTIVE
+import uk.gov.justice.digital.hmpps.adjustments.api.entity.AdjustmentStatus.DELETED
 import uk.gov.justice.digital.hmpps.adjustments.api.entity.AdjustmentType
 import uk.gov.justice.digital.hmpps.adjustments.api.entity.AdjustmentType.UNLAWFULLY_AT_LARGE
 import uk.gov.justice.digital.hmpps.adjustments.api.entity.ChangeType
@@ -49,6 +51,7 @@ class AdjustmentControllerIntTest : SqsIntegrationTestBase() {
     assertThat(adjustment.adjustmentHistory[0].changeByUsername).isEqualTo("Test User")
     assertThat(adjustment.adjustmentHistory[0].changeSource).isEqualTo(AdjustmentSource.DPS)
     assertThat(adjustment.source).isEqualTo(AdjustmentSource.DPS)
+    assertThat(adjustment.status).isEqualTo(ACTIVE)
 
     assertThat(adjustment.fromDate).isEqualTo(LocalDate.now().minusDays(5))
     assertThat(adjustment.toDate).isEqualTo(LocalDate.now().minusDays(2))
@@ -63,7 +66,6 @@ class AdjustmentControllerIntTest : SqsIntegrationTestBase() {
         postedDate = LocalDate.now(),
         comment = null,
         type = null,
-        active = true,
       ),
     )
 
@@ -93,7 +95,7 @@ class AdjustmentControllerIntTest : SqsIntegrationTestBase() {
     assertThat(result)
       .usingRecursiveComparison()
       .ignoringFieldsMatchingRegexes("lastUpdatedDate")
-      .isEqualTo(CREATED_ADJUSTMENT.copy(id = id, days = 4, lastUpdatedBy = "Test User", status = "Active"))
+      .isEqualTo(CREATED_ADJUSTMENT.copy(id = id, days = 4, lastUpdatedBy = "Test User", status = ACTIVE))
     awaitAtMost30Secs untilCallTo { getNumberOfMessagesCurrentlyOnQueue() } matches { it == 0 }
   }
 
@@ -125,7 +127,7 @@ class AdjustmentControllerIntTest : SqsIntegrationTestBase() {
           person = person,
           days = 4,
           lastUpdatedBy = "Test User",
-          status = "Active",
+          status = ACTIVE,
         ),
       )
 
@@ -154,6 +156,7 @@ class AdjustmentControllerIntTest : SqsIntegrationTestBase() {
     assertThat(adjustment.adjustmentHistory[1].changeByUsername).isEqualTo("Test User")
     assertThat(adjustment.adjustmentHistory[1].changeSource).isEqualTo(AdjustmentSource.DPS)
     assertThat(adjustment.source).isEqualTo(AdjustmentSource.DPS)
+    assertThat(adjustment.status).isEqualTo(ACTIVE)
 
     assertThat(adjustment.fromDate).isEqualTo(LocalDate.now().minusDays(5).minusYears(1))
     assertThat(adjustment.toDate).isEqualTo(LocalDate.now().minusDays(2).minusYears(1))
@@ -168,7 +171,6 @@ class AdjustmentControllerIntTest : SqsIntegrationTestBase() {
         postedDate = LocalDate.now(),
         comment = null,
         type = null,
-        active = true,
       ),
     )
 
@@ -221,7 +223,7 @@ class AdjustmentControllerIntTest : SqsIntegrationTestBase() {
 
     val adjustment = adjustmentRepository.findById(id).get()
 
-    assertThat(adjustment.deleted).isEqualTo(true)
+    assertThat(adjustment.status).isEqualTo(DELETED)
     assertThat(adjustment.adjustmentHistory.size).isEqualTo(2)
     assertThat(adjustment.adjustmentHistory[1].changeType).isEqualTo(ChangeType.DELETE)
 
@@ -296,7 +298,7 @@ class AdjustmentControllerIntTest : SqsIntegrationTestBase() {
     assertThat(result)
       .usingRecursiveComparison()
       .ignoringFieldsMatchingRegexes("lastUpdatedDate")
-      .isEqualTo(updateDto.copy(id = adjustmentId, days = 4, status = "Active", lastUpdatedBy = "Test User"))
+      .isEqualTo(updateDto.copy(id = adjustmentId, days = 4, status = ACTIVE, lastUpdatedBy = "Test User"))
   }
 
   @Test
@@ -328,7 +330,7 @@ class AdjustmentControllerIntTest : SqsIntegrationTestBase() {
           unlawfullyAtLarge = UnlawfullyAtLargeDto(type = RECALL),
           days = 4,
           lastUpdatedBy = "Test User",
-          status = "Active",
+          status = ACTIVE,
         ),
       )
 
