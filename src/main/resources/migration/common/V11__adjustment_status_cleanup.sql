@@ -1,0 +1,3 @@
+ALTER TABLE adjustment ALTER COLUMN status SET NOT NULL;
+
+ALTER TABLE adjustment DROP COLUMN deleted;

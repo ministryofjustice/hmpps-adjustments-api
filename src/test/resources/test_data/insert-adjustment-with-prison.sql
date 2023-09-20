@@ -1,5 +1,5 @@
-INSERT INTO adjustment (id,adjustment_type,person,days,days_calculated,legacy_data,from_date,to_date,deleted,source, prison_id) VALUES
-    ('dfba24ef-a2d4-4b26-af63-4d9494dd5252','UNLAWFULLY_AT_LARGE','G0000VX',3,3,'{"type": "UAL", "active": true, "comment": "comment added on nomis", "bookingId": 1090016, "migration": false, "postedDate": "2023-07-27", "sentenceSequence": null}','2023-07-27 00:00:00+01','2023-07-29 00:00:00+01',false,'NOMIS', 'LDS');
+INSERT INTO adjustment (id,adjustment_type,person,days,days_calculated,legacy_data,from_date,to_date,status,source, prison_id) VALUES
+    ('dfba24ef-a2d4-4b26-af63-4d9494dd5252','UNLAWFULLY_AT_LARGE','G0000VX',3,3,'{"type": "UAL", "comment": "comment added on nomis", "bookingId": 1090016, "migration": false, "postedDate": "2023-07-27", "sentenceSequence": null}','2023-07-27 00:00:00+01','2023-07-29 00:00:00+01','ACTIVE','NOMIS', 'LDS');
 
 INSERT INTO adjustment_history (id,adjustment_id,change_at,change_by_username,change,change_type,change_source) VALUES
   ('e577058c-549a-4513-b9b1-779b32858636','dfba24ef-a2d4-4b26-af63-4d9494dd5252','2023-07-27 10:36:07.815798+01','USR_ADM','{}','CREATE','NOMIS'),

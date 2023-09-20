@@ -9,6 +9,9 @@ import org.springframework.transaction.annotation.Transactional
 import uk.gov.justice.digital.hmpps.adjustments.api.entity.Adjustment
 import uk.gov.justice.digital.hmpps.adjustments.api.entity.AdjustmentHistory
 import uk.gov.justice.digital.hmpps.adjustments.api.entity.AdjustmentSource
+import uk.gov.justice.digital.hmpps.adjustments.api.entity.AdjustmentStatus.ACTIVE
+import uk.gov.justice.digital.hmpps.adjustments.api.entity.AdjustmentStatus.DELETED
+import uk.gov.justice.digital.hmpps.adjustments.api.entity.AdjustmentStatus.INACTIVE
 import uk.gov.justice.digital.hmpps.adjustments.api.entity.AdjustmentType
 import uk.gov.justice.digital.hmpps.adjustments.api.entity.ChangeType
 import uk.gov.justice.digital.hmpps.adjustments.api.legacy.model.LegacyAdjustment
@@ -35,7 +38,8 @@ class LegacyService(
       toDate = resource.adjustmentFromDate?.plusDays(resource.adjustmentDays.toLong() - 1),
       source = AdjustmentSource.NOMIS,
       adjustmentType = transform(resource.adjustmentType),
-      legacyData = objectToJson(LegacyData(resource.bookingId, resource.sentenceSequence, resource.adjustmentDate, resource.comment, resource.adjustmentType, resource.active, migration)),
+      status = if (resource.active) ACTIVE else INACTIVE,
+      legacyData = objectToJson(LegacyData(resource.bookingId, resource.sentenceSequence, resource.adjustmentDate, resource.comment, resource.adjustmentType, migration)),
       adjustmentHistory = listOf(
         AdjustmentHistory(
           changeByUsername = "NOMIS",
@@ -50,7 +54,7 @@ class LegacyService(
 
   fun get(adjustmentId: UUID): LegacyAdjustment {
     val adjustment = adjustmentRepository.findById(adjustmentId)
-      .map { if (it.deleted) null else it }
+      .map { if (it.status == DELETED) null else it }
       .orElseThrow {
         EntityNotFoundException("No adjustment found with id $adjustmentId")
       }!!
@@ -63,7 +67,7 @@ class LegacyService(
       adjustmentType = transform(adjustment.adjustmentType, legacyData),
       sentenceSequence = legacyData.sentenceSequence,
       bookingId = legacyData.bookingId,
-      active = legacyData.active,
+      active = adjustment.status == ACTIVE,
       comment = legacyData.comment,
     )
   }
@@ -81,7 +85,8 @@ class LegacyService(
       fromDate = resource.adjustmentFromDate
       toDate = resource.adjustmentFromDate?.plusDays(resource.adjustmentDays.toLong() - 1)
       source = AdjustmentSource.NOMIS
-      legacyData = objectToJson(LegacyData(resource.bookingId, resource.sentenceSequence, resource.adjustmentDate, resource.comment, resource.adjustmentType, resource.active, false))
+      status = if (resource.active) ACTIVE else INACTIVE
+      legacyData = objectToJson(LegacyData(resource.bookingId, resource.sentenceSequence, resource.adjustmentDate, resource.comment, resource.adjustmentType, false))
       adjustmentHistory += AdjustmentHistory(
         changeByUsername = "NOMIS",
         changeType = ChangeType.UPDATE,
@@ -100,7 +105,7 @@ class LegacyService(
       }
     val change = objectToJson(adjustment)
     adjustment.apply {
-      deleted = true
+      status = DELETED
       adjustmentHistory += AdjustmentHistory(
         changeByUsername = "NOMIS",
         changeType = ChangeType.DELETE,

@@ -9,6 +9,7 @@ import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.test.annotation.Rollback
 import uk.gov.justice.digital.hmpps.adjustments.api.entity.AdjustmentSource
+import uk.gov.justice.digital.hmpps.adjustments.api.entity.AdjustmentStatus
 import uk.gov.justice.digital.hmpps.adjustments.api.entity.AdjustmentType
 import uk.gov.justice.digital.hmpps.adjustments.api.entity.ChangeType
 import uk.gov.justice.digital.hmpps.adjustments.api.integration.SqsIntegrationTestBase
@@ -58,6 +59,7 @@ class LegacyControllerIntTest : SqsIntegrationTestBase() {
     assertThat(adjustment.adjustmentHistory[0].changeByUsername).isEqualTo("NOMIS")
     assertThat(adjustment.adjustmentHistory[0].changeSource).isEqualTo(AdjustmentSource.NOMIS)
     assertThat(adjustment.source).isEqualTo(AdjustmentSource.NOMIS)
+    assertThat(adjustment.status).isEqualTo(AdjustmentStatus.INACTIVE)
 
     assertThat(adjustment.fromDate).isEqualTo(LocalDate.now().minusDays(5))
     assertThat(adjustment.toDate).isEqualTo(LocalDate.now().minusDays(3))
@@ -65,7 +67,7 @@ class LegacyControllerIntTest : SqsIntegrationTestBase() {
     assertThat(adjustment.daysCalculated).isEqualTo(3)
 
     val legacyData = objectMapper.convertValue(adjustment.legacyData, LegacyData::class.java)
-    assertThat(legacyData).isEqualTo(LegacyData(bookingId = 1, sentenceSequence = 1, postedDate = LocalDate.now(), comment = "Created", type = LegacyAdjustmentType.UR, active = true, migration = false))
+    assertThat(legacyData).isEqualTo(LegacyData(bookingId = 1, sentenceSequence = 1, postedDate = LocalDate.now(), comment = "Created", type = LegacyAdjustmentType.UR, migration = false))
 
     awaitAtMost30Secs untilCallTo { getNumberOfMessagesCurrentlyOnQueue() } matches { it == 1 }
     val latestMessage: String = getLatestMessage()!!.messages()[0].body()
@@ -133,6 +135,7 @@ class LegacyControllerIntTest : SqsIntegrationTestBase() {
           adjustmentFromDate = CREATED_ADJUSTMENT.adjustmentFromDate!!.minusYears(1),
           adjustmentDays = 5,
           adjustmentType = LegacyAdjustmentType.RX,
+          active = true,
           comment = "Updated",
         ),
       )
@@ -147,6 +150,7 @@ class LegacyControllerIntTest : SqsIntegrationTestBase() {
     assertThat(adjustment.adjustmentHistory[1].changeByUsername).isEqualTo("NOMIS")
     assertThat(adjustment.adjustmentHistory[1].changeSource).isEqualTo(AdjustmentSource.NOMIS)
     assertThat(adjustment.adjustmentHistory[1].change.toString()).contains("Created")
+    assertThat(adjustment.status).isEqualTo(AdjustmentStatus.ACTIVE)
     assertThat(adjustment.source).isEqualTo(AdjustmentSource.NOMIS)
 
     assertThat(adjustment.fromDate).isEqualTo(LocalDate.now().minusDays(5).minusYears(1))
@@ -156,7 +160,7 @@ class LegacyControllerIntTest : SqsIntegrationTestBase() {
     assertThat(adjustment.daysCalculated).isEqualTo(5)
 
     val legacyData = objectMapper.convertValue(adjustment.legacyData, LegacyData::class.java)
-    assertThat(legacyData).isEqualTo(LegacyData(bookingId = 1, sentenceSequence = 1, postedDate = LocalDate.now(), comment = "Updated", type = LegacyAdjustmentType.RX, active = true, migration = false))
+    assertThat(legacyData).isEqualTo(LegacyData(bookingId = 1, sentenceSequence = 1, postedDate = LocalDate.now(), comment = "Updated", type = LegacyAdjustmentType.RX, migration = false))
 
     awaitAtMost30Secs untilCallTo { getNumberOfMessagesCurrentlyOnQueue() } matches { it == 1 }
     val latestMessage: String = getLatestMessage()!!.messages()[0].body()
@@ -180,7 +184,7 @@ class LegacyControllerIntTest : SqsIntegrationTestBase() {
 
     val adjustment = adjustmentRepository.findById(CREATED_ID).get()
 
-    assertThat(adjustment.deleted).isEqualTo(true)
+    assertThat(adjustment.status).isEqualTo(AdjustmentStatus.DELETED)
     assertThat(adjustment.adjustmentHistory.size).isEqualTo(2)
     assertThat(adjustment.adjustmentHistory[1].changeType).isEqualTo(ChangeType.DELETE)
 
@@ -210,7 +214,7 @@ class LegacyControllerIntTest : SqsIntegrationTestBase() {
       adjustmentFromDate = LocalDate.now().minusDays(5),
       adjustmentDays = 3,
       comment = "Created",
-      active = true,
+      active = false,
     )
   }
 }

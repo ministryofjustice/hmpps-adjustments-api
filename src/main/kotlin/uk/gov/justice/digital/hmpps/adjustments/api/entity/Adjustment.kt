@@ -47,7 +47,8 @@ data class Adjustment(
   var legacyData: JsonNode? = null,
 
   @NotNull
-  var deleted: Boolean = false,
+  @Enumerated(EnumType.STRING)
+  var status: AdjustmentStatus = AdjustmentStatus.ACTIVE,
 
   @OneToMany(mappedBy = "adjustment", cascade = [CascadeType.ALL])
   @JsonIgnore

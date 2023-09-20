@@ -13,6 +13,8 @@ import uk.gov.justice.digital.hmpps.adjustments.api.entity.AdditionalDaysAwarded
 import uk.gov.justice.digital.hmpps.adjustments.api.entity.Adjustment
 import uk.gov.justice.digital.hmpps.adjustments.api.entity.AdjustmentHistory
 import uk.gov.justice.digital.hmpps.adjustments.api.entity.AdjustmentSource
+import uk.gov.justice.digital.hmpps.adjustments.api.entity.AdjustmentStatus.ACTIVE
+import uk.gov.justice.digital.hmpps.adjustments.api.entity.AdjustmentStatus.DELETED
 import uk.gov.justice.digital.hmpps.adjustments.api.entity.AdjustmentType
 import uk.gov.justice.digital.hmpps.adjustments.api.entity.AdjustmentType.UNLAWFULLY_AT_LARGE
 import uk.gov.justice.digital.hmpps.adjustments.api.entity.ChangeType
@@ -57,6 +59,7 @@ class AdjustmentsService(
       source = AdjustmentSource.DPS,
       adjustmentType = resource.adjustmentType,
       prisonId = resource.prisonId,
+      status = ACTIVE,
       legacyData = objectToJson(
         LegacyData(
           resource.bookingId,
@@ -64,7 +67,6 @@ class AdjustmentsService(
           LocalDate.now(),
           null,
           null,
-          true,
         ),
       ),
       additionalDaysAwarded = additionalDaysAwarded(resource),
@@ -114,7 +116,7 @@ class AdjustmentsService(
 
   fun get(adjustmentId: UUID): AdjustmentDto {
     val adjustment = adjustmentRepository.findById(adjustmentId)
-      .map { if (it.deleted) null else it }
+      .map { if (it.status == DELETED) null else it }
       .orElseThrow {
         EntityNotFoundException("No adjustment found with id $adjustmentId")
       }!!
@@ -146,6 +148,7 @@ class AdjustmentsService(
       toDate = resource.toDate
       source = AdjustmentSource.DPS
       prisonId = resource.prisonId
+      status = ACTIVE
       legacyData = objectToJson(
         LegacyData(
           resource.bookingId,
@@ -153,7 +156,6 @@ class AdjustmentsService(
           persistedLegacyData.postedDate,
           persistedLegacyData.comment,
           persistedLegacyData.type,
-          true,
         ),
       )
       additionalDaysAwarded = additionalDaysAwarded(resource, this)
@@ -176,7 +178,7 @@ class AdjustmentsService(
       }
     val change = objectToJson(adjustment)
     adjustment.apply {
-      deleted = true
+      status = DELETED
       adjustmentHistory += AdjustmentHistory(
         changeByUsername = getCurrentAuthentication().principal,
         changeType = ChangeType.DELETE,
@@ -207,7 +209,7 @@ class AdjustmentsService(
       unlawfullyAtLarge = unlawfullyAtLargeDto(adjustment),
       lastUpdatedBy = adjustment.adjustmentHistory.last().changeByUsername,
       lastUpdatedDate = adjustment.adjustmentHistory.last().changeAt,
-      status = if (legacyData.active) "Active" else "Inactive",
+      status = adjustment.status,
       prisonId = adjustment.prisonId,
       prisonName = prisonDescription,
     )
