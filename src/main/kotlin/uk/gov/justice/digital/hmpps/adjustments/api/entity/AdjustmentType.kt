@@ -8,4 +8,10 @@ enum class AdjustmentType {
   ADDITIONAL_DAYS_AWARDED,
   RESTORATION_OF_ADDITIONAL_DAYS_AWARDED,
   SPECIAL_REMISSION,
+  UNUSED_DEDUCTIONS;
+
+
+  fun canHaveUnusedPart(): Boolean {
+    return this == REMAND || this == TAGGED_BAIL
+  }
 }

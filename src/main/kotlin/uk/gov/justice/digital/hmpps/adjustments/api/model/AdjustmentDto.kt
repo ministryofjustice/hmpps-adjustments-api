@@ -5,6 +5,7 @@ import uk.gov.justice.digital.hmpps.adjustments.api.entity.AdjustmentStatus
 import uk.gov.justice.digital.hmpps.adjustments.api.entity.AdjustmentType
 import java.time.LocalDate
 import java.time.LocalDateTime
+import java.time.temporal.ChronoUnit
 import java.util.UUID
 
 @Schema(description = "The adjustment and its identifier")
@@ -25,8 +26,6 @@ data class AdjustmentDto(
   val fromDate: LocalDate?,
   @Schema(description = "The number of adjustment days")
   val days: Int?,
-  @Schema(description = "The number of days effective in a calculation. (for example remand minus any unused deductions)")
-  val effectiveDays: Int?,
   @Schema(description = "The details of an additional days awarded adjustments (ADA)")
   val additionalDaysAwarded: AdditionalDaysAwardedDto?,
   @Schema(description = "Additional details of a UAL adjustment")
@@ -42,4 +41,17 @@ data class AdjustmentDto(
   val status: AdjustmentStatus? = null,
   @Schema(description = "The date and time this adjustment was last updated", readOnly = true)
   val lastUpdatedDate: LocalDateTime? = null,
-)
+  @Schema(description = "The number of days effective in a calculation. (for example remand minus any unused deductions)")
+  val effectiveDays: Int?,
+) {
+
+
+  val daysBetween: Int?
+    get() {
+      return if (this.fromDate == null || this.toDate == null) {
+        null
+      } else {
+        (ChronoUnit.DAYS.between(this.fromDate, this.toDate) + 1).toInt()
+      }
+    }
+}
