@@ -1,5 +1,6 @@
 package uk.gov.justice.digital.hmpps.adjustments.api.controller
 
+import jakarta.persistence.EntityManager
 import jakarta.transaction.Transactional
 import org.assertj.core.api.Assertions.assertThat
 import org.awaitility.kotlin.matches
@@ -11,6 +12,7 @@ import org.springframework.http.MediaType
 import org.springframework.test.context.jdbc.Sql
 import org.springframework.test.web.reactive.server.expectBodyList
 import uk.gov.justice.digital.hmpps.adjustments.api.config.ErrorResponse
+import uk.gov.justice.digital.hmpps.adjustments.api.entity.AdjudicationCharges
 import uk.gov.justice.digital.hmpps.adjustments.api.entity.AdjustmentSource
 import uk.gov.justice.digital.hmpps.adjustments.api.entity.AdjustmentStatus.ACTIVE
 import uk.gov.justice.digital.hmpps.adjustments.api.entity.AdjustmentStatus.DELETED
@@ -38,6 +40,9 @@ class AdjustmentControllerIntTest : SqsIntegrationTestBase() {
 
   @Autowired
   lateinit var adjustmentRepository: AdjustmentRepository
+
+  @Autowired
+  lateinit var entityManager: EntityManager
 
   @Test
   @Transactional
@@ -244,61 +249,38 @@ class AdjustmentControllerIntTest : SqsIntegrationTestBase() {
   }
 
   @Test
+  @Transactional
   fun adaAdjustments() {
-    val adjustmentId = webTestClient
-      .post()
-      .uri("/adjustments")
-      .headers(
-        setAuthorisation(),
-      )
-      .contentType(MediaType.APPLICATION_JSON)
-      .bodyValue(
-        CREATED_ADJUSTMENT.copy(
-          person = "ADA123",
-          adjustmentType = AdjustmentType.ADDITIONAL_DAYS_AWARDED,
-          additionalDaysAwarded = AdditionalDaysAwardedDto(
-            adjudicationId = 987654321,
-            consecutive = true,
-          ),
-        ),
-      )
-      .exchange()
-      .expectStatus().isCreated
-      .returnResult(CreateResponseDto::class.java)
-      .responseBody.blockFirst()!!.adjustmentId
+    val createDto = CREATED_ADJUSTMENT.copy(
+      person = "ADA123",
+      adjustmentType = AdjustmentType.ADDITIONAL_DAYS_AWARDED,
+      additionalDaysAwarded = AdditionalDaysAwardedDto(
+        adjudicationId = listOf(987654321, 23456789),
+      ),
+    )
+    val adjustmentId = postCreateAdjustment(createDto)
 
-    val adjustment = adjustmentRepository.findById(adjustmentId).get()
+    var adjustment = adjustmentRepository.findById(adjustmentId).get()
+    assertThat(adjustment.adjudicationCharges).containsAll(listOf(AdjudicationCharges(987654321), AdjudicationCharges(23456789)))
 
-    assertThat(adjustment.additionalDaysAwarded).isNotNull
-    assertThat(adjustment.additionalDaysAwarded!!.adjudicationId).isEqualTo(987654321)
-    assertThat(adjustment.additionalDaysAwarded!!.consecutive).isEqualTo(true)
+    var adjustmentDto = getAdjustmentById(adjustmentId)
+    assertThat(adjustmentDto.additionalDaysAwarded).isEqualTo(AdditionalDaysAwardedDto(listOf(987654321, 23456789)))
 
     val updateDto = CREATED_ADJUSTMENT.copy(
       id = adjustmentId,
       person = "ADA123",
       adjustmentType = AdjustmentType.ADDITIONAL_DAYS_AWARDED,
       additionalDaysAwarded = AdditionalDaysAwardedDto(
-        adjudicationId = 123456789,
-        consecutive = false,
+        adjudicationId = listOf(32415555),
       ),
     )
     putAdjustmentUpdate(adjustmentId, updateDto)
 
-    val result = webTestClient
-      .get()
-      .uri("/adjustments/$adjustmentId")
-      .headers(
-        setAuthorisation(),
-      )
-      .exchange()
-      .expectStatus().isOk
-      .returnResult(AdjustmentDto::class.java)
-      .responseBody.blockFirst()!!
+    adjustmentDto = getAdjustmentById(adjustmentId)
+    assertThat(adjustmentDto.additionalDaysAwarded).isEqualTo(AdditionalDaysAwardedDto(listOf(32415555)))
 
-    assertThat(result)
-      .usingRecursiveComparison()
-      .ignoringFieldsMatchingRegexes("lastUpdatedDate")
-      .isEqualTo(updateDto.copy(id = adjustmentId, days = 4, status = ACTIVE, lastUpdatedBy = "Test User"))
+    entityManager.refresh(adjustment)
+    assertThat(adjustment.adjudicationCharges).containsAll(listOf(AdjudicationCharges(32415555)))
   }
 
   @Test
