@@ -219,7 +219,7 @@ class AdjustmentsService(
   private fun additionalDaysAwardedToDto(adjustment: Adjustment): AdditionalDaysAwardedDto? {
     if (adjustment.adjudicationCharges.isNotEmpty()) {
       return AdditionalDaysAwardedDto(
-        adjudicationId = adjustment.adjudicationCharges.map { it.adjudicationId }
+        adjudicationId = adjustment.adjudicationCharges.map { it.adjudicationId },
       )
     }
     return null

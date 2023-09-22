@@ -43,6 +43,7 @@ class AdjustmentControllerIntTest : SqsIntegrationTestBase() {
 
   @Autowired
   lateinit var entityManager: EntityManager
+
   @Test
   @Transactional
   fun create() {
@@ -250,7 +251,7 @@ class AdjustmentControllerIntTest : SqsIntegrationTestBase() {
   @Test
   @Transactional
   fun adaAdjustments() {
-    val createDto =  CREATED_ADJUSTMENT.copy(
+    val createDto = CREATED_ADJUSTMENT.copy(
       person = "ADA123",
       adjustmentType = AdjustmentType.ADDITIONAL_DAYS_AWARDED,
       additionalDaysAwarded = AdditionalDaysAwardedDto(
@@ -274,7 +275,6 @@ class AdjustmentControllerIntTest : SqsIntegrationTestBase() {
       ),
     )
     putAdjustmentUpdate(adjustmentId, updateDto)
-
 
     adjustmentDto = getAdjustmentById(adjustmentId)
     assertThat(adjustmentDto.additionalDaysAwarded).isEqualTo(AdditionalDaysAwardedDto(listOf(32415555)))
