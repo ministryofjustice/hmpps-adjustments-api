@@ -24,7 +24,11 @@ abstract class IntegrationTestBase {
 
   internal fun setAdjustmentsMaintainerAuth(
     user: String = "Test User",
-    roles: List<String> = listOf("ROLE_ADJUSTMENTS_MAINTAINER"),
+    roles: List<String> = listOf("ROLE_ADJUSTMENTS_MAINTAINER", "ROLE_RELEASE_DATE_CALCULATOR"),
+  ): (HttpHeaders) -> Unit = jwtAuthHelper.setAuthorisation(user, roles)
+  internal fun setViewAdjustmentsAuth(
+    user: String = "Test User",
+    roles: List<String> = listOf("ROLE_VIEW_SENTENCE_ADJUSTMENTS"),
   ): (HttpHeaders) -> Unit = jwtAuthHelper.setAuthorisation(user, roles)
   internal fun setLegacySynchronisationAuth(
     user: String = "Test User",

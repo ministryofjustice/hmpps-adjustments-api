@@ -90,7 +90,7 @@ class AdjustmentControllerIntTest : SqsIntegrationTestBase() {
       .get()
       .uri("/adjustments/$id")
       .headers(
-        setAdjustmentsMaintainerAuth(),
+        setViewAdjustmentsAuth(),
       )
       .exchange()
       .expectStatus().isOk
