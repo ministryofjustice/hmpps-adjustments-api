@@ -90,7 +90,7 @@ class AdjustmentControllerIntTest : SqsIntegrationTestBase() {
       .get()
       .uri("/adjustments/$id")
       .headers(
-        setAuthorisation(),
+        setAdjustmentsMaintainerAuth(),
       )
       .exchange()
       .expectStatus().isOk
@@ -114,7 +114,7 @@ class AdjustmentControllerIntTest : SqsIntegrationTestBase() {
       .get()
       .uri("/adjustments?person=$person")
       .headers(
-        setAuthorisation(),
+        setAdjustmentsMaintainerAuth(),
       )
       .exchange()
       .expectStatus().isOk
@@ -196,7 +196,7 @@ class AdjustmentControllerIntTest : SqsIntegrationTestBase() {
       .put()
       .uri("/adjustments/$id")
       .headers(
-        setAuthorisation(),
+        setAdjustmentsMaintainerAuth(),
       )
       .bodyValue(
         CREATED_ADJUSTMENT.copy(
@@ -221,7 +221,7 @@ class AdjustmentControllerIntTest : SqsIntegrationTestBase() {
       .delete()
       .uri("/adjustments/$id")
       .headers(
-        setAuthorisation(),
+        setAdjustmentsMaintainerAuth(),
       )
       .exchange()
       .expectStatus().isOk
@@ -236,7 +236,7 @@ class AdjustmentControllerIntTest : SqsIntegrationTestBase() {
       .get()
       .uri("/adjustments/$id")
       .headers(
-        setAuthorisation(),
+        setAdjustmentsMaintainerAuth(),
       )
       .exchange()
       .expectStatus().isNotFound
@@ -381,7 +381,7 @@ class AdjustmentControllerIntTest : SqsIntegrationTestBase() {
     webTestClient
       .get()
       .uri("/adjustments?person=$person")
-      .headers(setAuthorisation())
+      .headers(setAdjustmentsMaintainerAuth())
       .exchange()
       .expectStatus().isOk
       .expectBodyList<AdjustmentDto>()
@@ -391,7 +391,7 @@ class AdjustmentControllerIntTest : SqsIntegrationTestBase() {
   private fun postCreateAdjustment(adjustmentDto: AdjustmentDto) = webTestClient
     .post()
     .uri("/adjustments")
-    .headers(setAuthorisation())
+    .headers(setAdjustmentsMaintainerAuth())
     .contentType(MediaType.APPLICATION_JSON)
     .bodyValue(adjustmentDto)
     .exchange()
@@ -402,7 +402,7 @@ class AdjustmentControllerIntTest : SqsIntegrationTestBase() {
   private fun getAdjustmentById(adjustmentId: UUID) = webTestClient
     .get()
     .uri("/adjustments/$adjustmentId")
-    .headers(setAuthorisation())
+    .headers(setAdjustmentsMaintainerAuth())
     .exchange()
     .expectStatus().isOk
     .returnResult(AdjustmentDto::class.java)
@@ -413,7 +413,7 @@ class AdjustmentControllerIntTest : SqsIntegrationTestBase() {
       .post()
       .uri("/adjustments")
       .headers(
-        setAuthorisation(),
+        setAdjustmentsMaintainerAuth(),
       )
       .contentType(MediaType.APPLICATION_JSON)
       .bodyValue(CREATED_ADJUSTMENT.copy(person = person))
@@ -429,7 +429,7 @@ class AdjustmentControllerIntTest : SqsIntegrationTestBase() {
       .post()
       .uri("/adjustments/validate")
       .headers(
-        setAuthorisation(),
+        setAdjustmentsMaintainerAuth(),
       )
       .bodyValue(
         CREATED_ADJUSTMENT.copy(
@@ -459,7 +459,7 @@ class AdjustmentControllerIntTest : SqsIntegrationTestBase() {
       .put()
       .uri("/adjustments/$adjustmentId")
       .headers(
-        setAuthorisation(),
+        setAdjustmentsMaintainerAuth(),
       )
       .bodyValue(
         updateDto,

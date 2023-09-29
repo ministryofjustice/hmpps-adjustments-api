@@ -35,7 +35,7 @@ class LegacyAndAdjustmentsControllerIntTest : SqsIntegrationTestBase() {
       .post()
       .uri("/legacy/adjustments")
       .headers(
-        setAuthorisation(),
+        setLegacySynchronisationAuth(),
       )
       .header("Content-Type", LegacyController.LEGACY_CONTENT_TYPE)
       .bodyValue(LEGACY_ADJUSTMENT)
@@ -50,7 +50,7 @@ class LegacyAndAdjustmentsControllerIntTest : SqsIntegrationTestBase() {
       .put()
       .uri("/adjustments/$id")
       .headers(
-        setAuthorisation(),
+        setAdjustmentsMaintainerAuth(),
       )
       .bodyValue(ADJUSTMENT)
       .exchange()
@@ -84,7 +84,7 @@ class LegacyAndAdjustmentsControllerIntTest : SqsIntegrationTestBase() {
       .post()
       .uri("/legacy/adjustments")
       .headers(
-        setAuthorisation(),
+        setLegacySynchronisationAuth(),
       )
       .header("Content-Type", LegacyController.LEGACY_CONTENT_TYPE)
       .bodyValue(LEGACY_ADJUSTMENT.copy(adjustmentFromDate = null))
@@ -99,7 +99,7 @@ class LegacyAndAdjustmentsControllerIntTest : SqsIntegrationTestBase() {
       .put()
       .uri("/adjustments/$id")
       .headers(
-        setAuthorisation(),
+        setAdjustmentsMaintainerAuth(),
       )
       .bodyValue(ADJUSTMENT)
       .exchange()
@@ -109,7 +109,7 @@ class LegacyAndAdjustmentsControllerIntTest : SqsIntegrationTestBase() {
       .get()
       .uri("/legacy/adjustments/$id")
       .headers(
-        setAuthorisation(),
+        setLegacySynchronisationAuth(),
       )
       .header("Content-Type", LegacyController.LEGACY_CONTENT_TYPE)
       .exchange()
@@ -126,7 +126,7 @@ class LegacyAndAdjustmentsControllerIntTest : SqsIntegrationTestBase() {
       .post()
       .uri("/legacy/adjustments")
       .headers(
-        setAuthorisation(),
+        setLegacySynchronisationAuth(),
       )
       .header("Content-Type", LegacyController.LEGACY_CONTENT_TYPE)
       .bodyValue(LEGACY_ADJUSTMENT.copy(adjustmentFromDate = null))
@@ -141,7 +141,7 @@ class LegacyAndAdjustmentsControllerIntTest : SqsIntegrationTestBase() {
       .delete()
       .uri("/adjustments/$id")
       .headers(
-        setAuthorisation(),
+        setAdjustmentsMaintainerAuth(),
       )
       .exchange()
       .expectStatus().isOk
