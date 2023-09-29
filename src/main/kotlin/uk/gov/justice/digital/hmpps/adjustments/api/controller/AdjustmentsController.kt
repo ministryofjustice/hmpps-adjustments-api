@@ -38,7 +38,7 @@ class AdjustmentsController(
 
   @PostMapping
   @ResponseStatus(HttpStatus.CREATED)
-  @PreAuthorize("hasRole('ADJUSTMENTS_MAINTAINER') and hasRole('RELEASE_DATE_CALCULATOR')")
+  @PreAuthorize("hasRole('ADJUSTMENTS_MAINTAINER') and hasRole('RELEASE_DATES_CALCULATOR')")
   @Operation(
     summary = "Create an adjustments",
     description = "Create an adjustment.",
@@ -67,7 +67,7 @@ class AdjustmentsController(
       ApiResponse(responseCode = "404", description = "Adjustment not found"),
     ],
   )
-  @PreAuthorize("(hasRole('ADJUSTMENTS_MAINTAINER') and hasRole('RELEASE_DATE_CALCULATOR')) or hasRole('VIEW_SENTENCE_ADJUSTMENTS')")
+  @PreAuthorize("(hasRole('ADJUSTMENTS_MAINTAINER') and hasRole('RELEASE_DATES_CALCULATOR')) or hasRole('VIEW_SENTENCE_ADJUSTMENTS')")
   fun findByPerson(
     @Parameter(required = true, description = "The noms ID of the person")
     @RequestParam("person")
@@ -88,7 +88,7 @@ class AdjustmentsController(
       ApiResponse(responseCode = "404", description = "Adjustment not found"),
     ],
   )
-  @PreAuthorize("(hasRole('ADJUSTMENTS_MAINTAINER') and hasRole('RELEASE_DATE_CALCULATOR')) or hasRole('VIEW_SENTENCE_ADJUSTMENTS')")
+  @PreAuthorize("(hasRole('ADJUSTMENTS_MAINTAINER') and hasRole('RELEASE_DATES_CALCULATOR')) or hasRole('VIEW_SENTENCE_ADJUSTMENTS')")
   fun get(
     @Parameter(required = true, description = "The adjustment UUID")
     @PathVariable("adjustmentId")
@@ -133,7 +133,7 @@ class AdjustmentsController(
       ApiResponse(responseCode = "404", description = "Adjustment not found"),
     ],
   )
-  @PreAuthorize("hasRole('ADJUSTMENTS_MAINTAINER') and hasRole('RELEASE_DATE_CALCULATOR')")
+  @PreAuthorize("hasRole('ADJUSTMENTS_MAINTAINER') and hasRole('RELEASE_DATES_CALCULATOR')")
   fun delete(
     @Parameter(required = true, description = "The adjustment UUID")
     @PathVariable("adjustmentId")
@@ -156,7 +156,7 @@ class AdjustmentsController(
       ApiResponse(responseCode = "401", description = "Unauthorised, requires a valid Oauth2 token"),
     ],
   )
-  @PreAuthorize("hasRole('ADJUSTMENTS_MAINTAINER') and hasRole('RELEASE_DATE_CALCULATOR')")
+  @PreAuthorize("hasRole('ADJUSTMENTS_MAINTAINER') and hasRole('RELEASE_DATES_CALCULATOR')")
   fun validate(@RequestBody adjustment: AdjustmentDto): List<ValidationMessage> {
     return validationService.validate(adjustment)
   }
