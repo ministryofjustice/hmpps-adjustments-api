@@ -7,6 +7,7 @@ import io.swagger.v3.oas.annotations.responses.ApiResponses
 import io.swagger.v3.oas.annotations.tags.Tag
 import org.springframework.http.HttpStatus
 import org.springframework.http.MediaType
+import org.springframework.security.access.prepost.PreAuthorize
 import org.springframework.web.bind.annotation.DeleteMapping
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.PathVariable
@@ -43,6 +44,7 @@ class LegacyController(
       ApiResponse(responseCode = "401", description = "Unauthorised, requires a valid Oauth2 token"),
     ],
   )
+  @PreAuthorize("hasRole('SENTENCE_ADJUSTMENTS_SYNCHRONISATION')")
   fun create(@RequestBody adjustment: LegacyAdjustment): LegacyAdjustmentCreatedResponse {
     return legacyService.create(adjustment, migration = false).also {
       eventService.create(it.adjustmentId, adjustment.offenderNo, AdjustmentSource.NOMIS)
@@ -62,6 +64,7 @@ class LegacyController(
       ApiResponse(responseCode = "401", description = "Unauthorised, requires a valid Oauth2 token"),
     ],
   )
+  @PreAuthorize("hasRole('SENTENCE_ADJUSTMENTS_SYNCHRONISATION')")
   fun migration(@RequestBody adjustment: LegacyAdjustment): LegacyAdjustmentCreatedResponse {
     return legacyService.create(adjustment, migration = true)
   }
@@ -78,6 +81,7 @@ class LegacyController(
       ApiResponse(responseCode = "404", description = "Adjustment not found"),
     ],
   )
+  @PreAuthorize("hasAnyRole('SENTENCE_ADJUSTMENTS_SYNCHRONISATION', 'VIEW_SENTENCE_ADJUSTMENTS')")
   fun get(
     @Parameter(required = true, description = "The adjustment UUID")
     @PathVariable("adjustmentId")
@@ -98,6 +102,7 @@ class LegacyController(
       ApiResponse(responseCode = "404", description = "Adjustment not found"),
     ],
   )
+  @PreAuthorize("hasRole('SENTENCE_ADJUSTMENTS_SYNCHRONISATION')")
   fun update(
     @Parameter(required = true, description = "The adjustment UUID")
     @PathVariable("adjustmentId")
@@ -121,6 +126,7 @@ class LegacyController(
       ApiResponse(responseCode = "404", description = "Adjustment not found"),
     ],
   )
+  @PreAuthorize("hasRole('SENTENCE_ADJUSTMENTS_SYNCHRONISATION')")
   fun delete(
     @Parameter(required = true, description = "The adjustment UUID")
     @PathVariable("adjustmentId")

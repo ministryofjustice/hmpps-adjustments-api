@@ -7,6 +7,7 @@ import io.swagger.v3.oas.annotations.responses.ApiResponses
 import io.swagger.v3.oas.annotations.tags.Tag
 import org.springframework.http.HttpStatus
 import org.springframework.http.MediaType
+import org.springframework.security.access.prepost.PreAuthorize
 import org.springframework.web.bind.annotation.DeleteMapping
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.PathVariable
@@ -37,6 +38,7 @@ class AdjustmentsController(
 
   @PostMapping
   @ResponseStatus(HttpStatus.CREATED)
+  @PreAuthorize("hasRole('ADJUSTMENTS_MAINTAINER') and hasRole('RELEASE_DATE_CALCULATOR')")
   @Operation(
     summary = "Create an adjustments",
     description = "Create an adjustment.",
@@ -65,6 +67,7 @@ class AdjustmentsController(
       ApiResponse(responseCode = "404", description = "Adjustment not found"),
     ],
   )
+  @PreAuthorize("(hasRole('ADJUSTMENTS_MAINTAINER') and hasRole('RELEASE_DATE_CALCULATOR')) or hasRole('VIEW_SENTENCE_ADJUSTMENTS')")
   fun findByPerson(
     @Parameter(required = true, description = "The noms ID of the person")
     @RequestParam("person")
@@ -85,6 +88,7 @@ class AdjustmentsController(
       ApiResponse(responseCode = "404", description = "Adjustment not found"),
     ],
   )
+  @PreAuthorize("(hasRole('ADJUSTMENTS_MAINTAINER') and hasRole('RELEASE_DATE_CALCULATOR')) or hasRole('VIEW_SENTENCE_ADJUSTMENTS')")
   fun get(
     @Parameter(required = true, description = "The adjustment UUID")
     @PathVariable("adjustmentId")
@@ -105,6 +109,7 @@ class AdjustmentsController(
       ApiResponse(responseCode = "404", description = "Adjustment not found"),
     ],
   )
+  @PreAuthorize("hasRole('ADJUSTMENTS_MAINTAINER')")
   fun update(
     @Parameter(required = true, description = "The adjustment UUID")
     @PathVariable("adjustmentId")
@@ -128,6 +133,7 @@ class AdjustmentsController(
       ApiResponse(responseCode = "404", description = "Adjustment not found"),
     ],
   )
+  @PreAuthorize("hasRole('ADJUSTMENTS_MAINTAINER') and hasRole('RELEASE_DATE_CALCULATOR')")
   fun delete(
     @Parameter(required = true, description = "The adjustment UUID")
     @PathVariable("adjustmentId")
@@ -150,6 +156,7 @@ class AdjustmentsController(
       ApiResponse(responseCode = "401", description = "Unauthorised, requires a valid Oauth2 token"),
     ],
   )
+  @PreAuthorize("hasRole('ADJUSTMENTS_MAINTAINER') and hasRole('RELEASE_DATE_CALCULATOR')")
   fun validate(@RequestBody adjustment: AdjustmentDto): List<ValidationMessage> {
     return validationService.validate(adjustment)
   }

@@ -37,7 +37,7 @@ class LegacyControllerIntTest : SqsIntegrationTestBase() {
       .post()
       .uri("/legacy/adjustments")
       .headers(
-        setAuthorisation(),
+        setLegacySynchronisationAuth(),
       )
       .header("Content-Type", LegacyController.LEGACY_CONTENT_TYPE)
       .bodyValue(CREATED_ADJUSTMENT)
@@ -83,7 +83,7 @@ class LegacyControllerIntTest : SqsIntegrationTestBase() {
       .post()
       .uri("/legacy/adjustments/migration")
       .headers(
-        setAuthorisation(),
+        setLegacySynchronisationAuth(),
       )
       .header("Content-Type", LegacyController.LEGACY_CONTENT_TYPE)
       .bodyValue(CREATED_ADJUSTMENT)
@@ -108,7 +108,7 @@ class LegacyControllerIntTest : SqsIntegrationTestBase() {
       .get()
       .uri("/legacy/adjustments/$CREATED_ID")
       .headers(
-        setAuthorisation(),
+        setViewAdjustmentsAuth(),
       )
       .header("Content-Type", LegacyController.LEGACY_CONTENT_TYPE)
       .exchange()
@@ -127,7 +127,7 @@ class LegacyControllerIntTest : SqsIntegrationTestBase() {
       .put()
       .uri("/legacy/adjustments/$CREATED_ID")
       .headers(
-        setAuthorisation(),
+        setLegacySynchronisationAuth(),
       )
       .header("Content-Type", LegacyController.LEGACY_CONTENT_TYPE)
       .bodyValue(
@@ -176,7 +176,7 @@ class LegacyControllerIntTest : SqsIntegrationTestBase() {
       .delete()
       .uri("/legacy/adjustments/$CREATED_ID")
       .headers(
-        setAuthorisation(),
+        setLegacySynchronisationAuth(),
       )
       .header("Content-Type", LegacyController.LEGACY_CONTENT_TYPE)
       .exchange()
@@ -197,7 +197,7 @@ class LegacyControllerIntTest : SqsIntegrationTestBase() {
       .get()
       .uri("/legacy/adjustments/$CREATED_ID")
       .headers(
-        setAuthorisation(),
+        setLegacySynchronisationAuth(),
       )
       .header("Content-Type", LegacyController.LEGACY_CONTENT_TYPE)
       .exchange()
