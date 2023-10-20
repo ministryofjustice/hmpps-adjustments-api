@@ -12,6 +12,7 @@ import org.springframework.web.bind.annotation.RestControllerAdvice
 import org.springframework.web.client.RestClientException
 import org.springframework.web.client.RestClientResponseException
 import uk.gov.justice.digital.hmpps.adjustments.api.error.ApiValidationException
+import uk.gov.justice.digital.hmpps.adjustments.api.error.NoActiveSentencesException
 
 @RestControllerAdvice
 class AdjustmentsApiExceptionHandler {
@@ -108,6 +109,20 @@ class AdjustmentsApiExceptionHandler {
       .body(
         ErrorResponse(
           status = HttpStatus.BAD_REQUEST.value(),
+          userMessage = e.message,
+          developerMessage = e.message,
+        ),
+      )
+  }
+
+  @ExceptionHandler(NoActiveSentencesException::class)
+  fun handleNoActiveSentencesException(e: NoActiveSentencesException): ResponseEntity<ErrorResponse> {
+    log.info("NoActiveSentencesException: {}", e.message)
+    return ResponseEntity
+      .status(HttpStatus.UNPROCESSABLE_ENTITY)
+      .body(
+        ErrorResponse(
+          status = HttpStatus.UNPROCESSABLE_ENTITY.value(),
           userMessage = e.message,
           developerMessage = e.message,
         ),
