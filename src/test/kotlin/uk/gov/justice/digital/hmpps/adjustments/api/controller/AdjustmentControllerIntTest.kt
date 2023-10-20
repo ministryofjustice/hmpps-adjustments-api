@@ -140,6 +140,21 @@ class AdjustmentControllerIntTest : SqsIntegrationTestBase() {
   }
 
   @Test
+  fun findByPerson_NoActiveSentences() {
+    val result = webTestClient
+      .get()
+      .uri("/adjustments?person=${PrisonApiExtension.NO_ACTIVE_SENTENCE_PRISONER_ID}")
+      .headers(
+        setAdjustmentsMaintainerAuth(),
+      )
+      .exchange()
+      .expectStatus().isOk
+      .expectBodyList<AdjustmentDto>()
+      .returnResult()
+      .responseBody!!
+  }
+
+  @Test
   @Transactional
   fun update() {
     val id = createAnAdjustment().also {
