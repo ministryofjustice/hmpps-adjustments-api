@@ -8,6 +8,7 @@ import org.awaitility.kotlin.untilCallTo
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.core.ParameterizedTypeReference
+import org.springframework.http.HttpStatusCode
 import org.springframework.http.MediaType
 import org.springframework.test.context.jdbc.Sql
 import org.springframework.test.web.reactive.server.expectBodyList
@@ -141,17 +142,14 @@ class AdjustmentControllerIntTest : SqsIntegrationTestBase() {
 
   @Test
   fun findByPerson_NoActiveSentences() {
-    val result = webTestClient
+    webTestClient
       .get()
       .uri("/adjustments?person=${PrisonApiExtension.NO_ACTIVE_SENTENCE_PRISONER_ID}")
       .headers(
         setAdjustmentsMaintainerAuth(),
       )
       .exchange()
-      .expectStatus().isOk
-      .expectBodyList<AdjustmentDto>()
-      .returnResult()
-      .responseBody!!
+      .expectStatus().isEqualTo(422)
   }
 
   @Test
