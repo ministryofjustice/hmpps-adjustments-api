@@ -9,6 +9,7 @@ import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import uk.gov.justice.digital.hmpps.adjustments.api.client.PrisonApiClient
 import uk.gov.justice.digital.hmpps.adjustments.api.config.AuthAwareAuthenticationToken
+import uk.gov.justice.digital.hmpps.adjustments.api.entity.AdditionalDaysAwarded
 import uk.gov.justice.digital.hmpps.adjustments.api.entity.AdjudicationCharges
 import uk.gov.justice.digital.hmpps.adjustments.api.entity.Adjustment
 import uk.gov.justice.digital.hmpps.adjustments.api.entity.AdjustmentHistory
@@ -69,7 +70,7 @@ class AdjustmentsService(
           null,
         ),
       ),
-      adjudicationCharges = adjudicationCharges(resource),
+      additionalDaysAwarded = additionalDaysAwarded(resource),
       unlawfullyAtLarge = unlawfullyAtLarge(resource),
     )
     adjustment.adjustmentHistory = listOf(
@@ -101,12 +102,24 @@ class AdjustmentsService(
       UnlawfullyAtLarge()
     }
 
-  private fun adjudicationCharges(resource: AdjustmentDto): MutableList<AdjudicationCharges> {
+  private fun additionalDaysAwarded(resource: AdjustmentDto, adjustment: Adjustment? = null): AdditionalDaysAwarded? {
     if (resource.adjustmentType == AdjustmentType.ADDITIONAL_DAYS_AWARDED && resource.additionalDaysAwarded != null) {
-      return resource.additionalDaysAwarded.adjudicationId.map { AdjudicationCharges(it) }.toMutableList()
+      return getAdditionalDaysAwarded(adjustment).apply {
+        adjudicationCharges = resource.additionalDaysAwarded.adjudicationId.map { AdjudicationCharges(it) }.toMutableList()
+        prospective = resource.additionalDaysAwarded.prospective
+      }
     }
-    return mutableListOf()
+    return null
   }
+
+  private fun getAdditionalDaysAwarded(adjustment: Adjustment?) =
+    if (adjustment?.additionalDaysAwarded != null) {
+      adjustment.additionalDaysAwarded!!
+    } else if (adjustment != null) {
+      AdditionalDaysAwarded(adjustment = adjustment)
+    } else {
+      AdditionalDaysAwarded()
+    }
 
   fun get(adjustmentId: UUID): AdjustmentDto {
     val adjustment = adjustmentRepository.findById(adjustmentId)
@@ -152,7 +165,7 @@ class AdjustmentsService(
           persistedLegacyData.type,
         ),
       )
-      adjudicationCharges = adjudicationCharges(resource)
+      additionalDaysAwarded = additionalDaysAwarded(resource, this)
       unlawfullyAtLarge = unlawfullyAtLarge(resource, this)
       adjustmentHistory += AdjustmentHistory(
         changeByUsername = getCurrentAuthentication().principal,
@@ -217,9 +230,10 @@ class AdjustmentsService(
     }
 
   private fun additionalDaysAwardedToDto(adjustment: Adjustment): AdditionalDaysAwardedDto? {
-    if (adjustment.adjudicationCharges.isNotEmpty()) {
+    if (adjustment.additionalDaysAwarded != null) {
       return AdditionalDaysAwardedDto(
-        adjudicationId = adjustment.adjudicationCharges.map { it.adjudicationId },
+        adjudicationId = adjustment.additionalDaysAwarded!!.adjudicationCharges.map { it.adjudicationId },
+        prospective = adjustment.additionalDaysAwarded!!.prospective,
       )
     }
     return null

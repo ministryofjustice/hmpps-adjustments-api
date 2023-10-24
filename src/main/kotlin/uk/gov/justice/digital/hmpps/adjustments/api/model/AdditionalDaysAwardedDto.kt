@@ -6,4 +6,5 @@ import io.swagger.v3.oas.annotations.media.Schema
 data class AdditionalDaysAwardedDto(
   @Schema(description = "The id of the adjudication that resulted in the ADA")
   val adjudicationId: List<Long>,
+  val prospective: Boolean,
 )

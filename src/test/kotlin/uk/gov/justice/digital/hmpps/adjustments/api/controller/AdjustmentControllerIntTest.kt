@@ -34,6 +34,7 @@ import uk.gov.justice.digital.hmpps.adjustments.api.service.EventType
 import uk.gov.justice.digital.hmpps.adjustments.api.wiremock.PrisonApiExtension
 import java.time.LocalDate
 import java.time.LocalDateTime
+import java.time.format.DateTimeFormatter
 import java.util.UUID
 
 class AdjustmentControllerIntTest : SqsIntegrationTestBase() {
@@ -263,36 +264,51 @@ class AdjustmentControllerIntTest : SqsIntegrationTestBase() {
   @Test
   @Transactional
   fun adaAdjustments() {
+    val beforeEarliestSentence = LocalDate.parse(PrisonApiExtension.EARLIEST_SENTENCE_DATE, DateTimeFormatter.ISO_LOCAL_DATE).minusDays(1)
     val createDto = CREATED_ADJUSTMENT.copy(
-      person = "ADA123",
+      fromDate = beforeEarliestSentence,
+      person = PrisonApiExtension.PRISONER_ID,
       adjustmentType = AdjustmentType.ADDITIONAL_DAYS_AWARDED,
       additionalDaysAwarded = AdditionalDaysAwardedDto(
         adjudicationId = listOf(987654321, 23456789),
+        prospective = true,
       ),
     )
     val adjustmentId = postCreateAdjustment(createDto)
 
-    var adjustment = adjustmentRepository.findById(adjustmentId).get()
-    assertThat(adjustment.adjudicationCharges).containsAll(listOf(AdjudicationCharges(987654321), AdjudicationCharges(23456789)))
+    val adjustment = adjustmentRepository.findById(adjustmentId).get()
+    assertThat(adjustment.additionalDaysAwarded!!.adjudicationCharges).containsAll(listOf(AdjudicationCharges(987654321), AdjudicationCharges(23456789)))
+    assertThat(adjustment.additionalDaysAwarded!!.prospective).isTrue
 
     var adjustmentDto = getAdjustmentById(adjustmentId)
-    assertThat(adjustmentDto.additionalDaysAwarded).isEqualTo(AdditionalDaysAwardedDto(listOf(987654321, 23456789)))
+    assertThat(adjustmentDto.additionalDaysAwarded).isEqualTo(AdditionalDaysAwardedDto(listOf(987654321, 23456789), true))
+
+    // Assert that prospective adas before the earliest sentence date are included.
+    var adjustments = getAdjustmentsByPerson(PrisonApiExtension.PRISONER_ID)
+    assertThat(adjustments.contains(adjustmentDto)).isTrue
 
     val updateDto = CREATED_ADJUSTMENT.copy(
+      fromDate = beforeEarliestSentence,
       id = adjustmentId,
-      person = "ADA123",
+      person = PrisonApiExtension.PRISONER_ID,
       adjustmentType = AdjustmentType.ADDITIONAL_DAYS_AWARDED,
       additionalDaysAwarded = AdditionalDaysAwardedDto(
         adjudicationId = listOf(32415555),
+        prospective = false,
       ),
     )
     putAdjustmentUpdate(adjustmentId, updateDto)
 
     adjustmentDto = getAdjustmentById(adjustmentId)
-    assertThat(adjustmentDto.additionalDaysAwarded).isEqualTo(AdditionalDaysAwardedDto(listOf(32415555)))
+    assertThat(adjustmentDto.additionalDaysAwarded).isEqualTo(AdditionalDaysAwardedDto(listOf(32415555), false))
+
+    // Assert that non-prospective adas before the earliest sentence date are not included.
+    adjustments = getAdjustmentsByPerson(PrisonApiExtension.PRISONER_ID)
+    assertThat(adjustments.contains(adjustmentDto)).isFalse
 
     entityManager.refresh(adjustment)
-    assertThat(adjustment.adjudicationCharges).containsAll(listOf(AdjudicationCharges(32415555)))
+    assertThat(adjustment.additionalDaysAwarded!!.adjudicationCharges).containsAll(listOf(AdjudicationCharges(32415555)))
+    assertThat(adjustment.additionalDaysAwarded!!.prospective).isFalse
   }
 
   @Test

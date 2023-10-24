@@ -14,8 +14,16 @@ import java.util.UUID
 @Repository
 interface AdjustmentRepository : JpaRepository<Adjustment, UUID> {
   @Query(
-    "SELECT a FROM Adjustment a WHERE a.person = :person AND a.status = :status " +
-      "AND (a.fromDate IS NULL  OR a.fromDate >= :fromDate OR a.adjustmentType IN (:adjustmentTypes))",
+    "SELECT a FROM Adjustment a" +
+      " LEFT JOIN a.additionalDaysAwarded ada" +
+      " WHERE a.person = :person" +
+      " AND a.status = :status" +
+      " AND (" +
+      " a.fromDate IS NULL" +
+      " OR a.fromDate >= :fromDate" +
+      " OR a.adjustmentType IN (:adjustmentTypes)" +
+      " OR ada.prospective" +
+      ")",
   )
   fun findCurrentAdjustmentsByPerson(
     person: String,

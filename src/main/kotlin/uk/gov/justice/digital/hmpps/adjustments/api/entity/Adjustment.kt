@@ -4,14 +4,11 @@ import com.fasterxml.jackson.annotation.JsonIgnore
 import com.fasterxml.jackson.databind.JsonNode
 import io.hypersistence.utils.hibernate.type.json.JsonType
 import jakarta.persistence.CascadeType
-import jakarta.persistence.CollectionTable
 import jakarta.persistence.Column
-import jakarta.persistence.ElementCollection
 import jakarta.persistence.Entity
 import jakarta.persistence.EnumType
 import jakarta.persistence.Enumerated
 import jakarta.persistence.Id
-import jakarta.persistence.JoinColumn
 import jakarta.persistence.OneToMany
 import jakarta.persistence.OneToOne
 import jakarta.persistence.PrimaryKeyJoinColumn
@@ -61,9 +58,9 @@ data class Adjustment(
   @Enumerated(EnumType.STRING)
   var source: AdjustmentSource = AdjustmentSource.DPS,
 
-  @ElementCollection
-  @CollectionTable(name = "adjudicationCharges", joinColumns = [JoinColumn(name = "adjustmentId")])
-  var adjudicationCharges: MutableList<AdjudicationCharges> = mutableListOf(),
+  @OneToOne(mappedBy = "adjustment", cascade = [CascadeType.ALL])
+  @PrimaryKeyJoinColumn
+  var additionalDaysAwarded: AdditionalDaysAwarded? = null,
 
   @OneToOne(mappedBy = "adjustment", cascade = [CascadeType.ALL])
   @PrimaryKeyJoinColumn
@@ -74,5 +71,6 @@ data class Adjustment(
   init {
     adjustmentHistory.forEach { it.adjustment = this }
     unlawfullyAtLarge?.adjustment = this
+    additionalDaysAwarded?.adjustment = this
   }
 }
