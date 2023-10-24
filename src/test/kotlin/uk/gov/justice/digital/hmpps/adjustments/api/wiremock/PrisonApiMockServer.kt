@@ -22,6 +22,7 @@ class PrisonApiExtension : BeforeAllCallback, AfterAllCallback, BeforeEachCallba
     const val PRISONER_ID = "BCDEFG"
     const val NO_ACTIVE_SENTENCE_PRISONER_ID = "NO_SENTENCES"
     const val NO_ACTIVE_SENTENCE_BOOKING_ID = 2L
+    const val EARLIEST_SENTENCE_DATE = "2015-03-17"
   }
 
   override fun beforeAll(context: ExtensionContext) {
@@ -64,7 +65,7 @@ class PrisonApiMockServer : WireMockServer(WIREMOCK_PORT) {
                     "sentenceCategory": "2003",
                     "sentenceCalculationType": "ADIMP_ORA",
                     "sentenceTypeDescription": "Standard Determinate",
-                    "sentenceDate": "2015-03-17",
+                    "sentenceDate": "${PrisonApiExtension.EARLIEST_SENTENCE_DATE}",
                     "terms": [{
                       "years": 0,
                       "months": 20,
