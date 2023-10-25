@@ -62,6 +62,7 @@ data class AdditionalInformation(
   val id: UUID? = null,
   val offenderNo: String? = null,
   val source: String? = null,
+  val effectiveDays: Boolean = false,
 )
 
 data class HMPPSDomainEvent(

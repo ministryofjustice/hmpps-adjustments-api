@@ -33,10 +33,15 @@ data class Adjustment(
 
   var toDate: LocalDate? = null,
 
+  /* Days specified by the user. */
   var days: Int? = null,
 
+  /* Days between the from and to dates of the adjustment. */
+  var daysCalculated: Int? = null,
+
+  /* Days effective in a calculation. For example remand minus unused days. (NOMIS always records effective days.) */
   @NotNull
-  var daysCalculated: Int = -1,
+  var effectiveDays: Int = -1,
 
   @NotNull
   @Enumerated(EnumType.STRING)

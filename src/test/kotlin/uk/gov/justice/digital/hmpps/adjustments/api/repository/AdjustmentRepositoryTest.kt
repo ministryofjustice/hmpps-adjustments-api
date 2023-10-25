@@ -31,7 +31,7 @@ class AdjustmentRepositoryTest : SqsIntegrationTestBase() {
       toDate = LocalDate.now().plusDays(5),
       adjustmentType = AdjustmentType.REMAND,
       days = 100,
-      daysCalculated = 10,
+      effectiveDays = 10,
       legacyData = JacksonUtil.toJsonNode("{\"something\":false}"),
       source = AdjustmentSource.DPS,
       adjustmentHistory = Lists.newArrayList(
