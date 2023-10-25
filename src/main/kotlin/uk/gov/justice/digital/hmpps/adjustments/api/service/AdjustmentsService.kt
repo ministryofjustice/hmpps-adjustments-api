@@ -24,11 +24,11 @@ import uk.gov.justice.digital.hmpps.adjustments.api.error.ApiValidationException
 import uk.gov.justice.digital.hmpps.adjustments.api.legacy.model.LegacyData
 import uk.gov.justice.digital.hmpps.adjustments.api.model.AdditionalDaysAwardedDto
 import uk.gov.justice.digital.hmpps.adjustments.api.model.AdjustmentDto
-import uk.gov.justice.digital.hmpps.adjustments.api.model.AdjustmentEffectiveDaysDto
 import uk.gov.justice.digital.hmpps.adjustments.api.model.CreateResponseDto
 import uk.gov.justice.digital.hmpps.adjustments.api.model.UnlawfullyAtLargeDto
 import uk.gov.justice.digital.hmpps.adjustments.api.respository.AdjustmentRepository
 import java.time.LocalDate
+import java.time.temporal.ChronoUnit
 import java.util.UUID
 
 @Service
@@ -46,14 +46,15 @@ class AdjustmentsService(
 
   @Transactional
   fun create(resource: AdjustmentDto): CreateResponseDto {
-    if ((resource.toDate == null && resource.days == null) || (resource.toDate != null && resource.days != null)) {
-      throw ApiValidationException("resource must have either toDate or days, not both")
+    if (resource.toDate == null && resource.days == null) {
+      throw ApiValidationException("resource must have either toDate or days.")
     }
+    val daysCalculated: Int? =
+      if (resource.toDate != null) (ChronoUnit.DAYS.between(resource.fromDate, resource.toDate) + 1).toInt() else null
     val adjustment = Adjustment(
       person = resource.person,
-      effectiveDays = resource.daysBetween ?: resource.days!!,
+      daysCalculated = resource.days ?: daysCalculated!!,
       days = resource.days,
-      daysCalculated = resource.daysBetween,
       fromDate = resource.fromDate,
       toDate = resource.toDate,
       source = AdjustmentSource.DPS,
@@ -81,17 +82,6 @@ class AdjustmentsService(
       ),
     )
     return CreateResponseDto(adjustmentRepository.save(adjustment).id)
-  }
-
-  @Transactional
-  fun updateEffectiveDays(adjustmentId: UUID, effectiveDaysDto: AdjustmentEffectiveDaysDto) {
-    val adjustment = adjustmentRepository.findById(adjustmentId)
-      .orElseThrow {
-        EntityNotFoundException("No adjustment found with id $adjustmentId")
-      }
-    adjustment.apply {
-      effectiveDays = effectiveDaysDto.effectiveDays
-    }
   }
 
   private fun unlawfullyAtLarge(adjustmentDto: AdjustmentDto, adjustment: Adjustment? = null): UnlawfullyAtLarge? =
@@ -154,15 +144,13 @@ class AdjustmentsService(
     if (adjustment.adjustmentType != resource.adjustmentType) {
       throw ApiValidationException("The provided adjustment type ${resource.adjustmentType} doesn't match the persisted type ${adjustment.adjustmentType}")
     }
-    if ((resource.toDate == null && resource.days == null) || (resource.toDate != null && resource.days != null)) {
-      throw ApiValidationException("resource must have either toDate or days, not both")
-    }
     val persistedLegacyData = objectMapper.convertValue(adjustment.legacyData, LegacyData::class.java)
     val change = objectToJson(adjustment)
+    val calculated: Int? =
+      if (resource.toDate != null) (ChronoUnit.DAYS.between(resource.fromDate, resource.toDate) + 1).toInt() else null
     adjustment.apply {
+      daysCalculated = resource.days ?: calculated!!
       days = resource.days
-      effectiveDays = resource.daysBetween ?: resource.days!!
-      daysCalculated = resource.daysBetween
       fromDate = resource.fromDate
       toDate = resource.toDate
       source = AdjustmentSource.DPS
@@ -218,8 +206,7 @@ class AdjustmentsService(
     return AdjustmentDto(
       id = adjustment.id,
       person = adjustment.person,
-      days = if (adjustment.toDate != null) null else adjustment.days,
-      effectiveDays = adjustment.effectiveDays,
+      days = adjustment.days ?: adjustment.daysCalculated,
       fromDate = adjustment.fromDate,
       toDate = adjustment.toDate,
       adjustmentType = adjustment.adjustmentType,

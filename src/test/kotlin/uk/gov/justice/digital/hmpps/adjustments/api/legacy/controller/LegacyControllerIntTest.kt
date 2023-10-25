@@ -53,7 +53,7 @@ class LegacyControllerIntTest : SqsIntegrationTestBase() {
     // Created in @BeforeEach.
     val adjustment = adjustmentRepository.findById(CREATED_ID).get()
 
-    assertThat(adjustment.adjustmentType).isEqualTo(AdjustmentType.UNUSED_DEDUCTIONS)
+    assertThat(adjustment.adjustmentType).isEqualTo(AdjustmentType.REMAND)
     assertThat(adjustment.adjustmentHistory).singleElement()
     assertThat(adjustment.adjustmentHistory[0].changeType).isEqualTo(ChangeType.CREATE)
     assertThat(adjustment.adjustmentHistory[0].changeByUsername).isEqualTo("NOMIS")
@@ -63,8 +63,8 @@ class LegacyControllerIntTest : SqsIntegrationTestBase() {
 
     assertThat(adjustment.fromDate).isEqualTo(LocalDate.now().minusDays(5))
     assertThat(adjustment.toDate).isEqualTo(LocalDate.now().minusDays(3))
-    assertThat(adjustment.days).isEqualTo(null)
-    assertThat(adjustment.effectiveDays).isEqualTo(3)
+    assertThat(adjustment.days).isEqualTo(3)
+    assertThat(adjustment.daysCalculated).isEqualTo(3)
 
     val legacyData = objectMapper.convertValue(adjustment.legacyData, LegacyData::class.java)
     assertThat(legacyData).isEqualTo(LegacyData(bookingId = 1, sentenceSequence = 1, postedDate = LocalDate.now(), comment = "Created", type = LegacyAdjustmentType.UR, migration = false))
@@ -144,7 +144,7 @@ class LegacyControllerIntTest : SqsIntegrationTestBase() {
 
     val adjustment = adjustmentRepository.findById(CREATED_ID).get()
 
-    assertThat(adjustment.adjustmentType).isEqualTo(AdjustmentType.UNUSED_DEDUCTIONS)
+    assertThat(adjustment.adjustmentType).isEqualTo(AdjustmentType.REMAND)
     assertThat(adjustment.adjustmentHistory.size).isEqualTo(2)
     assertThat(adjustment.adjustmentHistory[1].changeType).isEqualTo(ChangeType.UPDATE)
     assertThat(adjustment.adjustmentHistory[1].changeByUsername).isEqualTo("NOMIS")
@@ -155,8 +155,9 @@ class LegacyControllerIntTest : SqsIntegrationTestBase() {
 
     assertThat(adjustment.fromDate).isEqualTo(LocalDate.now().minusDays(5).minusYears(1))
     assertThat(adjustment.toDate).isEqualTo(LocalDate.now().minusDays(1).minusYears(1))
-    assertThat(adjustment.effectiveDays).isEqualTo(5)
-    assertThat(adjustment.days).isEqualTo(null)
+    assertThat(adjustment.adjustmentType).isEqualTo(AdjustmentType.REMAND)
+    assertThat(adjustment.days).isEqualTo(5)
+    assertThat(adjustment.daysCalculated).isEqualTo(5)
 
     val legacyData = objectMapper.convertValue(adjustment.legacyData, LegacyData::class.java)
     assertThat(legacyData).isEqualTo(LegacyData(bookingId = 1, sentenceSequence = 1, postedDate = LocalDate.now(), comment = "Updated", type = LegacyAdjustmentType.RX, migration = false))

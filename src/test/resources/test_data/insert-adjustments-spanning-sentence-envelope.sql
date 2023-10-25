@@ -1,19 +1,19 @@
-INSERT INTO adjustment (id,adjustment_type,person,days,effective_days,days_calculated,legacy_data,from_date,to_date,status,source) VALUES
-    ('dfba24ef-a2d4-4b26-af63-4d9494dd5252','UNLAWFULLY_AT_LARGE','BCDEFG',null,3,3,'{"type": "UAL", "comment": "comment added on nomis", "bookingId": 1090016, "migration": false, "postedDate": "2023-07-27", "sentenceSequence": null}','2023-07-27 00:00:00+01','2023-07-29 00:00:00+01','ACTIVE','NOMIS');
-INSERT INTO adjustment (id,adjustment_type,person,days,effective_days,days_calculated,legacy_data,from_date,to_date,status,source) VALUES
-    ('ea492d32-b00d-41b0-bf78-6edea421ea14','RESTORATION_OF_ADDITIONAL_DAYS_AWARDED','BCDEFG',null,3,3,'{"type": "UAL", "comment": "comment added on nomis", "bookingId": 1090016, "migration": false, "postedDate": "2023-07-27", "sentenceSequence": null}','2023-07-27 00:00:00+01','2023-07-29 00:00:00+01','ACTIVE','NOMIS');
-INSERT INTO adjustment (id,adjustment_type,person,days,effective_days,days_calculated,legacy_data,from_date,to_date,status,source) VALUES
-    ('65e8157e-b0c2-449f-b9c6-c149c45965c6','UNLAWFULLY_AT_LARGE','BCDEFG',null,3,3,'{"type": "UAL", "comment": "comment added on nomis", "bookingId": 1090016, "migration": false, "postedDate": "2023-07-27", "sentenceSequence": null}','2015-03-16 00:00:00+01','2023-07-29 00:00:00+01','ACTIVE','NOMIS');
-INSERT INTO adjustment (id,adjustment_type,person,days,effective_days,days_calculated,legacy_data,from_date,to_date,status,source) VALUES
-    ('b4c8956b-2133-456c-bea3-f45b2fffd5a6','RESTORATION_OF_ADDITIONAL_DAYS_AWARDED','BCDEFG',null,3,3,'{"type": "UAL","comment": "comment added on nomis", "bookingId": 1090016, "migration": false, "postedDate": "2023-07-27", "sentenceSequence": null}','2015-03-16 00:00:00+01','2023-07-29 00:00:00+01','ACTIVE','NOMIS');
-INSERT INTO adjustment (id,adjustment_type,person,days,effective_days,days_calculated,legacy_data,from_date,to_date,status,source) VALUES
-    ('9ed2adfa-a81c-493f-94ab-712b77c2b401','UNLAWFULLY_AT_LARGE','BCDEFG',null,3,3,'{"type": "UAL", "comment": "comment added on nomis", "bookingId": 1090016, "migration": false, "postedDate": "2023-07-27", "sentenceSequence": null}','2023-07-27 00:00:00+01','2023-07-29 00:00:00+01','DELETED','NOMIS');
-INSERT INTO adjustment (id,adjustment_type,person,days,effective_days,days_calculated,legacy_data,from_date,to_date,status,source) VALUES
-    ('6111d28b-77db-4b5f-bbd7-34975eee21af','TAGGED_BAIL','BCDEFG',null,3,3,'{"type": "UAL", "comment": "comment added on nomis", "bookingId": 1090016, "migration": false, "postedDate": "2023-07-27", "sentenceSequence": null}',null,null,'ACTIVE','NOMIS');
-INSERT INTO adjustment (id,adjustment_type,person,days,effective_days,days_calculated,legacy_data,from_date,to_date,status,source) VALUES
-    ('f4c4ad21-ea65-4a1b-b1e3-0ce74c6af94b','REMAND','BCDEFG',null,3,3,'{"type": "RX", "comment": "comment added on nomis", "bookingId": 1090016, "migration": false, "postedDate": "2023-07-27", "sentenceSequence": null}','2014-07-27 00:00:00+01','2023-07-29 00:00:00+01','ACTIVE','NOMIS');
-INSERT INTO adjustment (id,adjustment_type,person,days,effective_days,days_calculated,legacy_data,from_date,to_date,status,source) VALUES
-    ('87024fca-56cf-11ee-8c99-0242ac120002','REMAND','BCDEFG',null,3,3,'{"type": "RX", "comment": "comment added on nomis", "bookingId": 1090016, "migration": false, "postedDate": "2023-07-27", "sentenceSequence": null}','2014-07-27 00:00:00+01','2023-07-29 00:00:00+01','INACTIVE','NOMIS');
+INSERT INTO adjustment (id,adjustment_type,person,days,days_calculated,legacy_data,from_date,to_date,status,source) VALUES
+    ('dfba24ef-a2d4-4b26-af63-4d9494dd5252','UNLAWFULLY_AT_LARGE','BCDEFG',3,3,'{"type": "UAL", "comment": "comment added on nomis", "bookingId": 1090016, "migration": false, "postedDate": "2023-07-27", "sentenceSequence": null}','2023-07-27 00:00:00+01','2023-07-29 00:00:00+01','ACTIVE','NOMIS');
+INSERT INTO adjustment (id,adjustment_type,person,days,days_calculated,legacy_data,from_date,to_date,status,source) VALUES
+    ('ea492d32-b00d-41b0-bf78-6edea421ea14','RESTORATION_OF_ADDITIONAL_DAYS_AWARDED','BCDEFG',3,3,'{"type": "UAL", "comment": "comment added on nomis", "bookingId": 1090016, "migration": false, "postedDate": "2023-07-27", "sentenceSequence": null}','2023-07-27 00:00:00+01','2023-07-29 00:00:00+01','ACTIVE','NOMIS');
+INSERT INTO adjustment (id,adjustment_type,person,days,days_calculated,legacy_data,from_date,to_date,status,source) VALUES
+    ('65e8157e-b0c2-449f-b9c6-c149c45965c6','UNLAWFULLY_AT_LARGE','BCDEFG',3,3,'{"type": "UAL", "comment": "comment added on nomis", "bookingId": 1090016, "migration": false, "postedDate": "2023-07-27", "sentenceSequence": null}','2015-03-16 00:00:00+01','2023-07-29 00:00:00+01','ACTIVE','NOMIS');
+INSERT INTO adjustment (id,adjustment_type,person,days,days_calculated,legacy_data,from_date,to_date,status,source) VALUES
+    ('b4c8956b-2133-456c-bea3-f45b2fffd5a6','RESTORATION_OF_ADDITIONAL_DAYS_AWARDED','BCDEFG',3,3,'{"type": "UAL","comment": "comment added on nomis", "bookingId": 1090016, "migration": false, "postedDate": "2023-07-27", "sentenceSequence": null}','2015-03-16 00:00:00+01','2023-07-29 00:00:00+01','ACTIVE','NOMIS');
+INSERT INTO adjustment (id,adjustment_type,person,days,days_calculated,legacy_data,from_date,to_date,status,source) VALUES
+    ('9ed2adfa-a81c-493f-94ab-712b77c2b401','UNLAWFULLY_AT_LARGE','BCDEFG',3,3,'{"type": "UAL", "comment": "comment added on nomis", "bookingId": 1090016, "migration": false, "postedDate": "2023-07-27", "sentenceSequence": null}','2023-07-27 00:00:00+01','2023-07-29 00:00:00+01','DELETED','NOMIS');
+INSERT INTO adjustment (id,adjustment_type,person,days,days_calculated,legacy_data,from_date,to_date,status,source) VALUES
+    ('6111d28b-77db-4b5f-bbd7-34975eee21af','TAGGED_BAIL','BCDEFG',3,3,'{"type": "UAL", "comment": "comment added on nomis", "bookingId": 1090016, "migration": false, "postedDate": "2023-07-27", "sentenceSequence": null}',null,null,'ACTIVE','NOMIS');
+INSERT INTO adjustment (id,adjustment_type,person,days,days_calculated,legacy_data,from_date,to_date,status,source) VALUES
+    ('f4c4ad21-ea65-4a1b-b1e3-0ce74c6af94b','REMAND','BCDEFG',3,3,'{"type": "RX", "comment": "comment added on nomis", "bookingId": 1090016, "migration": false, "postedDate": "2023-07-27", "sentenceSequence": null}','2014-07-27 00:00:00+01','2023-07-29 00:00:00+01','ACTIVE','NOMIS');
+INSERT INTO adjustment (id,adjustment_type,person,days,days_calculated,legacy_data,from_date,to_date,status,source) VALUES
+    ('87024fca-56cf-11ee-8c99-0242ac120002','REMAND','BCDEFG',3,3,'{"type": "RX", "comment": "comment added on nomis", "bookingId": 1090016, "migration": false, "postedDate": "2023-07-27", "sentenceSequence": null}','2014-07-27 00:00:00+01','2023-07-29 00:00:00+01','INACTIVE','NOMIS');
 
 INSERT INTO adjustment_history (id,adjustment_id,change_at,change_by_username,change,change_type,change_source) VALUES
   ('dfba24ef-a2d4-4b26-af63-4d9494dd5252','dfba24ef-a2d4-4b26-af63-4d9494dd5252','2023-07-27 10:36:07.815798+01','current-ual','{}','CREATE','NOMIS'),
