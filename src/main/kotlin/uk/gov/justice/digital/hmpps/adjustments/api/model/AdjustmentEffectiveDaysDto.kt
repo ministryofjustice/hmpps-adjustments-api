@@ -3,7 +3,7 @@ package uk.gov.justice.digital.hmpps.adjustments.api.model
 import io.swagger.v3.oas.annotations.media.Schema
 import java.util.UUID
 
-@Schema(description = "The adjustment and its identifier")
+@Schema(description = "Details of the adjustment and the number of effective days within a calculation.")
 data class AdjustmentEffectiveDaysDto(
   @Schema(description = "The ID of the adjustment")
   val id: UUID,

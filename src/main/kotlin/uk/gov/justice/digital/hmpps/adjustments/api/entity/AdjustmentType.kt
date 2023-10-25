@@ -10,8 +10,4 @@ enum class AdjustmentType {
   SPECIAL_REMISSION,
   UNUSED_DEDUCTIONS,
   ;
-
-  fun canHaveUnusedPart(): Boolean {
-    return this == REMAND || this == TAGGED_BAIL
-  }
 }
