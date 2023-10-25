@@ -71,11 +71,12 @@ class LegacyAndAdjustmentsControllerIntTest : SqsIntegrationTestBase() {
 
     assertThat(adjustment.fromDate).isEqualTo(LocalDate.now().minusDays(5))
     assertThat(adjustment.toDate).isEqualTo(LocalDate.now().plusDays(2))
-    assertThat(adjustment.days).isEqualTo(8)
-    assertThat(adjustment.effectiveDays).isEqualTo(2)
+    assertThat(adjustment.days).isNull()
+    assertThat(adjustment.daysCalculated).isEqualTo(8)
+    assertThat(adjustment.effectiveDays).isEqualTo(8)
 
     val legacyData = objectMapper.convertValue(adjustment.legacyData, LegacyData::class.java)
-    assertThat(legacyData).isEqualTo(LegacyData(bookingId = 1, sentenceSequence = 1, postedDate = LocalDate.now(), comment = "Created", type = LegacyAdjustmentType.UR, migration = false))
+    assertThat(legacyData).isEqualTo(LegacyData(bookingId = 1, sentenceSequence = 1, postedDate = LocalDate.now(), comment = "Created", type = LegacyAdjustmentType.RSR, migration = false))
   }
 
   @Test
@@ -152,7 +153,7 @@ class LegacyAndAdjustmentsControllerIntTest : SqsIntegrationTestBase() {
       bookingId = 1,
       sentenceSequence = 1,
       offenderNo = "ABC123",
-      adjustmentType = LegacyAdjustmentType.UR,
+      adjustmentType = LegacyAdjustmentType.RSR,
       adjustmentDate = LocalDate.now(),
       adjustmentFromDate = LocalDate.now().minusDays(5),
       adjustmentDays = 3,
@@ -169,7 +170,6 @@ class LegacyAndAdjustmentsControllerIntTest : SqsIntegrationTestBase() {
       fromDate = LocalDate.now().minusDays(5),
       toDate = LocalDate.now().plusDays(2),
       days = null,
-      effectiveDays = 2,
       additionalDaysAwarded = null,
       unlawfullyAtLarge = null,
       lastUpdatedDate = LocalDateTime.now(),

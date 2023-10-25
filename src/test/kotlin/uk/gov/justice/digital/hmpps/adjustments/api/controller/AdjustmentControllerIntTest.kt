@@ -25,6 +25,7 @@ import uk.gov.justice.digital.hmpps.adjustments.api.integration.SqsIntegrationTe
 import uk.gov.justice.digital.hmpps.adjustments.api.legacy.model.LegacyData
 import uk.gov.justice.digital.hmpps.adjustments.api.model.AdditionalDaysAwardedDto
 import uk.gov.justice.digital.hmpps.adjustments.api.model.AdjustmentDto
+import uk.gov.justice.digital.hmpps.adjustments.api.model.AdjustmentEffectiveDaysDto
 import uk.gov.justice.digital.hmpps.adjustments.api.model.CreateResponseDto
 import uk.gov.justice.digital.hmpps.adjustments.api.model.UnlawfullyAtLargeDto
 import uk.gov.justice.digital.hmpps.adjustments.api.model.ValidationCode
@@ -61,8 +62,8 @@ class AdjustmentControllerIntTest : SqsIntegrationTestBase() {
 
     assertThat(adjustment.fromDate).isEqualTo(LocalDate.now().minusDays(5))
     assertThat(adjustment.toDate).isEqualTo(LocalDate.now().minusDays(2))
-    assertThat(adjustment.days).isEqualTo(4)
-    assertThat(adjustment.effectiveDays).isEqualTo(2)
+    assertThat(adjustment.daysCalculated).isEqualTo(4)
+    assertThat(adjustment.effectiveDays).isEqualTo(4)
 
     val legacyData = objectMapper.convertValue(adjustment.legacyData, LegacyData::class.java)
     assertThat(legacyData).isEqualTo(
@@ -101,7 +102,7 @@ class AdjustmentControllerIntTest : SqsIntegrationTestBase() {
     assertThat(result)
       .usingRecursiveComparison()
       .ignoringFieldsMatchingRegexes("lastUpdatedDate")
-      .isEqualTo(CREATED_ADJUSTMENT.copy(id = id, days = 4, lastUpdatedBy = "Test User", status = ACTIVE))
+      .isEqualTo(CREATED_ADJUSTMENT.copy(id = id, effectiveDays = 4, lastUpdatedBy = "Test User", status = ACTIVE))
     awaitAtMost30Secs untilCallTo { getNumberOfMessagesCurrentlyOnQueue() } matches { it == 0 }
   }
 
@@ -131,7 +132,7 @@ class AdjustmentControllerIntTest : SqsIntegrationTestBase() {
         CREATED_ADJUSTMENT.copy(
           id = id,
           person = person,
-          days = 4,
+          effectiveDays = 4,
           lastUpdatedBy = "Test User",
           status = ACTIVE,
         ),
@@ -178,8 +179,9 @@ class AdjustmentControllerIntTest : SqsIntegrationTestBase() {
 
     assertThat(adjustment.fromDate).isEqualTo(LocalDate.now().minusDays(5).minusYears(1))
     assertThat(adjustment.toDate).isEqualTo(LocalDate.now().minusDays(2).minusYears(1))
-    assertThat(adjustment.days).isEqualTo(4)
-    assertThat(adjustment.effectiveDays).isEqualTo(2)
+    assertThat(adjustment.days).isNull()
+    assertThat(adjustment.daysCalculated).isEqualTo(4)
+    assertThat(adjustment.effectiveDays).isEqualTo(4)
 
     val legacyData = objectMapper.convertValue(adjustment.legacyData, LegacyData::class.java)
     assertThat(legacyData).isEqualTo(
@@ -197,6 +199,33 @@ class AdjustmentControllerIntTest : SqsIntegrationTestBase() {
     assertThat(latestMessage).contains(adjustment.id.toString())
     assertThat(latestMessage).contains(EventType.ADJUSTMENT_UPDATED.value)
     assertThat(latestMessage).contains(AdjustmentSource.DPS.name)
+  }
+
+  @Test
+  @Transactional
+  fun updateEffectiveDays() {
+    val id = createAnAdjustment().also {
+      cleanQueue()
+    }
+    postAdjustmentEffectiveDaysUpdate(
+      id,
+      AdjustmentEffectiveDaysDto(
+        id,
+        2,
+        CREATED_ADJUSTMENT.person,
+      ),
+    )
+
+    val adjustment = adjustmentRepository.findById(id).get()
+
+    assertThat(adjustment.daysCalculated).isEqualTo(4)
+    assertThat(adjustment.effectiveDays).isEqualTo(2)
+    awaitAtMost30Secs untilCallTo { getNumberOfMessagesCurrentlyOnQueue() } matches { it == 1 }
+    val latestMessage: String = getLatestMessage()!!.messages()[0].body()
+    assertThat(latestMessage).contains(adjustment.id.toString())
+    assertThat(latestMessage).contains(EventType.ADJUSTMENT_UPDATED.value)
+    assertThat(latestMessage).contains(AdjustmentSource.DPS.name)
+    assertThat(latestMessage).contains("\\\"effectiveDays\\\":true")
   }
 
   @Test
@@ -338,7 +367,7 @@ class AdjustmentControllerIntTest : SqsIntegrationTestBase() {
           person = "UAL123",
           adjustmentType = UNLAWFULLY_AT_LARGE,
           unlawfullyAtLarge = UnlawfullyAtLargeDto(type = RECALL),
-          days = 4,
+          effectiveDays = 4,
           lastUpdatedBy = "Test User",
           status = ACTIVE,
         ),
@@ -495,6 +524,22 @@ class AdjustmentControllerIntTest : SqsIntegrationTestBase() {
       .exchange()
       .expectStatus().isOk
   }
+  private fun postAdjustmentEffectiveDaysUpdate(
+    adjustmentId: UUID,
+    updateDto: AdjustmentEffectiveDaysDto,
+  ) {
+    webTestClient
+      .post()
+      .uri("/adjustments/$adjustmentId/effective-days")
+      .headers(
+        setAdjustmentsMaintainerAuth(),
+      )
+      .bodyValue(
+        updateDto,
+      )
+      .exchange()
+      .expectStatus().isOk
+  }
 
   companion object {
     private val CREATED_ADJUSTMENT = AdjustmentDto(
@@ -506,7 +551,6 @@ class AdjustmentControllerIntTest : SqsIntegrationTestBase() {
       toDate = LocalDate.now().minusDays(2),
       fromDate = LocalDate.now().minusDays(5),
       days = null,
-      effectiveDays = 2,
       additionalDaysAwarded = null,
       unlawfullyAtLarge = null,
       lastUpdatedDate = LocalDateTime.now(),

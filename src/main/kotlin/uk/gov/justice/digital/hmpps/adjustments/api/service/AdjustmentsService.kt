@@ -18,18 +18,17 @@ import uk.gov.justice.digital.hmpps.adjustments.api.entity.AdjustmentStatus.ACTI
 import uk.gov.justice.digital.hmpps.adjustments.api.entity.AdjustmentStatus.DELETED
 import uk.gov.justice.digital.hmpps.adjustments.api.entity.AdjustmentType
 import uk.gov.justice.digital.hmpps.adjustments.api.entity.AdjustmentType.UNLAWFULLY_AT_LARGE
-import uk.gov.justice.digital.hmpps.adjustments.api.entity.AdjustmentType.UNUSED_DEDUCTIONS
 import uk.gov.justice.digital.hmpps.adjustments.api.entity.ChangeType
 import uk.gov.justice.digital.hmpps.adjustments.api.entity.UnlawfullyAtLarge
 import uk.gov.justice.digital.hmpps.adjustments.api.error.ApiValidationException
 import uk.gov.justice.digital.hmpps.adjustments.api.legacy.model.LegacyData
 import uk.gov.justice.digital.hmpps.adjustments.api.model.AdditionalDaysAwardedDto
 import uk.gov.justice.digital.hmpps.adjustments.api.model.AdjustmentDto
+import uk.gov.justice.digital.hmpps.adjustments.api.model.AdjustmentEffectiveDaysDto
 import uk.gov.justice.digital.hmpps.adjustments.api.model.CreateResponseDto
 import uk.gov.justice.digital.hmpps.adjustments.api.model.UnlawfullyAtLargeDto
 import uk.gov.justice.digital.hmpps.adjustments.api.respository.AdjustmentRepository
 import java.time.LocalDate
-import java.time.temporal.ChronoUnit
 import java.util.UUID
 
 @Service
@@ -50,10 +49,9 @@ class AdjustmentsService(
     if ((resource.toDate == null && resource.days == null) || (resource.toDate != null && resource.days != null)) {
       throw ApiValidationException("resource must have either toDate or days, not both")
     }
-    val adjustmentDays = resource.days ?: resource.daysBetween!!
     val adjustment = Adjustment(
       person = resource.person,
-      effectiveDays = if (resource.adjustmentType.canHaveUnusedPart()) calculateEffectiveDays(resource, adjustmentDays) else adjustmentDays,
+      effectiveDays = resource.daysBetween ?: resource.days!!,
       days = resource.days,
       daysCalculated = resource.daysBetween,
       fromDate = resource.fromDate,
@@ -82,19 +80,18 @@ class AdjustmentsService(
         adjustment = adjustment,
       ),
     )
-    if (resource.adjustmentType == UNUSED_DEDUCTIONS) {
-      recalculateEffectiveDays(resource.person)
-    }
     return CreateResponseDto(adjustmentRepository.save(adjustment).id)
   }
 
-  private fun recalculateEffectiveDays(person: String) {
-  // TODO and deal with events.
-  }
-
-  private fun calculateEffectiveDays(resource: AdjustmentDto, adjustmentDays: Int): Int {
-    //TODO
-    return adjustmentDays
+  @Transactional
+  fun updateEffectiveDays(adjustmentId: UUID, effectiveDaysDto: AdjustmentEffectiveDaysDto) {
+    val adjustment = adjustmentRepository.findById(adjustmentId)
+      .orElseThrow {
+        EntityNotFoundException("No adjustment found with id $adjustmentId")
+      }
+    adjustment.apply {
+      effectiveDays = effectiveDaysDto.effectiveDays
+    }
   }
 
   private fun unlawfullyAtLarge(adjustmentDto: AdjustmentDto, adjustment: Adjustment? = null): UnlawfullyAtLarge? =
@@ -160,13 +157,11 @@ class AdjustmentsService(
     if ((resource.toDate == null && resource.days == null) || (resource.toDate != null && resource.days != null)) {
       throw ApiValidationException("resource must have either toDate or days, not both")
     }
-
-    val adjustmentDays = resource.days ?: resource.daysBetween!!
     val persistedLegacyData = objectMapper.convertValue(adjustment.legacyData, LegacyData::class.java)
     val change = objectToJson(adjustment)
     adjustment.apply {
-      effectiveDays = if (resource.adjustmentType.canHaveUnusedPart()) calculateEffectiveDays(resource, adjustmentDays) else adjustmentDays
       days = resource.days
+      effectiveDays = resource.daysBetween ?: resource.days!!
       daysCalculated = resource.daysBetween
       fromDate = resource.fromDate
       toDate = resource.toDate
@@ -192,9 +187,6 @@ class AdjustmentsService(
         adjustment = adjustment,
       )
     }
-    if (resource.adjustmentType == UNUSED_DEDUCTIONS) {
-      recalculateEffectiveDays(resource.person)
-    }
   }
 
   @Transactional
@@ -213,9 +205,6 @@ class AdjustmentsService(
         change = change,
         adjustment = adjustment,
       )
-    }
-    if (adjustment.adjustmentType == UNUSED_DEDUCTIONS || adjustment.adjustmentType.canHaveUnusedPart()) {
-      recalculateEffectiveDays(adjustment.person)
     }
   }
 

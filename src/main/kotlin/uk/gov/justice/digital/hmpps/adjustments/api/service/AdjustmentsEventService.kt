@@ -36,6 +36,20 @@ class AdjustmentsEventService(
     )
   }
 
+  fun updateEffectiveDays(id: UUID, person: String, source: AdjustmentSource) {
+    snsService.publishDomainEvent(
+      EventType.ADJUSTMENT_UPDATED,
+      "An adjustment's effective calculation days has been updated",
+      LocalDateTime.now(),
+      AdditionalInformation(
+        id,
+        person,
+        source.toString(),
+        true,
+      ),
+    )
+  }
+
   fun delete(id: UUID, person: String, source: AdjustmentSource) {
     snsService.publishDomainEvent(
       EventType.ADJUSTMENT_DELETED,
