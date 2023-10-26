@@ -32,7 +32,7 @@ data class AdjustmentDto(
   val unlawfullyAtLarge: UnlawfullyAtLargeDto?,
 
   // View only fields
-  @Schema(description = "The prison where the prisoner was located at the time the adjustment was created (a 3 character code identifying the prison)", example = "LDS")
+  @Schema(description = "The prison where the prisoner was located at the time the adjustment was created (a 3 character code identifying the prison)", example = "LDS", readOnly = true)
   val prisonId: String? = null,
   @Schema(description = "The name name of the prison where the prisoner was located at the time the adjustment was created ", example = "Leeds", readOnly = true)
   val prisonName: String? = null,
@@ -42,14 +42,11 @@ data class AdjustmentDto(
   val status: AdjustmentStatus? = null,
   @Schema(description = "The date and time this adjustment was last updated", readOnly = true)
   val lastUpdatedDate: LocalDateTime? = null,
-  @Schema(description = "The number of days effective in a calculation. (for example remand minus any unused deductions)")
+  @Schema(description = "The number of days effective in a calculation. (for example remand minus any unused deductions)", readOnly = true)
   val effectiveDays: Int? = null,
 ) {
-  val totalDays: Int?
-    get() {
-      return days ?: daysBetween
-    }
 
+  @get:Schema(description = "The days between the from and two date", readOnly = true)
   val daysBetween: Int?
     get() {
       return if (this.fromDate == null || this.toDate == null) {
