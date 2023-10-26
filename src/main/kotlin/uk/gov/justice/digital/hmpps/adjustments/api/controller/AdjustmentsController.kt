@@ -20,6 +20,7 @@ import org.springframework.web.bind.annotation.ResponseStatus
 import org.springframework.web.bind.annotation.RestController
 import uk.gov.justice.digital.hmpps.adjustments.api.entity.AdjustmentSource
 import uk.gov.justice.digital.hmpps.adjustments.api.model.AdjustmentDto
+import uk.gov.justice.digital.hmpps.adjustments.api.model.AdjustmentEffectiveDaysDto
 import uk.gov.justice.digital.hmpps.adjustments.api.model.CreateResponseDto
 import uk.gov.justice.digital.hmpps.adjustments.api.model.ValidationMessage
 import uk.gov.justice.digital.hmpps.adjustments.api.service.AdjustmentsEventService
@@ -118,6 +119,30 @@ class AdjustmentsController(
   ) {
     adjustmentsService.update(adjustmentId, adjustment).also {
       eventService.update(adjustmentId, adjustment.person, AdjustmentSource.DPS)
+    }
+  }
+
+  @PostMapping("/{adjustmentId}/effective-days")
+  @Operation(
+    summary = "Update the effective calculable days for and adjustment",
+    description = "Update an adjustment's effective days.",
+  )
+  @ApiResponses(
+    value = [
+      ApiResponse(responseCode = "200", description = "Adjustment update"),
+      ApiResponse(responseCode = "401", description = "Unauthorised, requires a valid Oauth2 token"),
+      ApiResponse(responseCode = "404", description = "Adjustment not found"),
+    ],
+  )
+  @PreAuthorize("hasRole('ADJUSTMENTS_MAINTAINER')")
+  fun updateEffectiveDays(
+    @Parameter(required = true, description = "The adjustment UUID")
+    @PathVariable("adjustmentId")
+    adjustmentId: UUID,
+    @RequestBody adjustment: AdjustmentEffectiveDaysDto,
+  ) {
+    adjustmentsService.updateEffectiveDays(adjustmentId, adjustment).also {
+      eventService.updateEffectiveDays(adjustmentId, adjustment.person, AdjustmentSource.DPS)
     }
   }
 

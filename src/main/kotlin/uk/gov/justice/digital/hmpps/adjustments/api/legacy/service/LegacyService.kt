@@ -32,8 +32,7 @@ class LegacyService(
   fun create(resource: LegacyAdjustment, migration: Boolean): LegacyAdjustmentCreatedResponse {
     val adjustment = Adjustment(
       person = resource.offenderNo,
-      daysCalculated = resource.adjustmentDays,
-      days = resource.adjustmentDays,
+      effectiveDays = resource.adjustmentDays,
       fromDate = resource.adjustmentFromDate,
       toDate = resource.adjustmentFromDate?.plusDays(resource.adjustmentDays.toLong() - 1),
       source = AdjustmentSource.NOMIS,
@@ -61,7 +60,7 @@ class LegacyService(
     val legacyData = objectMapper.convertValue(adjustment.legacyData, LegacyData::class.java)
     return LegacyAdjustment(
       offenderNo = adjustment.person,
-      adjustmentDays = adjustment.days ?: adjustment.daysCalculated,
+      adjustmentDays = adjustment.effectiveDays,
       adjustmentFromDate = adjustment.fromDate,
       adjustmentDate = legacyData.postedDate,
       adjustmentType = transform(adjustment.adjustmentType, legacyData),
@@ -80,8 +79,7 @@ class LegacyService(
       }
     val change = objectToJson(adjustment)
     adjustment.apply {
-      daysCalculated = resource.adjustmentDays
-      days = resource.adjustmentDays
+      effectiveDays = resource.adjustmentDays
       fromDate = resource.adjustmentFromDate
       toDate = resource.adjustmentFromDate?.plusDays(resource.adjustmentDays.toLong() - 1)
       source = AdjustmentSource.NOMIS
@@ -129,6 +127,7 @@ class LegacyService(
       AdjustmentType.ADDITIONAL_DAYS_AWARDED -> LegacyAdjustmentType.ADA
       AdjustmentType.RESTORATION_OF_ADDITIONAL_DAYS_AWARDED -> LegacyAdjustmentType.RADA
       AdjustmentType.SPECIAL_REMISSION -> LegacyAdjustmentType.SREM
+      AdjustmentType.UNUSED_DEDUCTIONS -> LegacyAdjustmentType.UR
     }
   }
 
@@ -141,7 +140,7 @@ class LegacyService(
       LegacyAdjustmentType.RST -> AdjustmentType.TAGGED_BAIL
       LegacyAdjustmentType.RX -> AdjustmentType.REMAND
       LegacyAdjustmentType.S240A -> AdjustmentType.TAGGED_BAIL
-      LegacyAdjustmentType.UR -> AdjustmentType.REMAND
+      LegacyAdjustmentType.UR -> AdjustmentType.UNUSED_DEDUCTIONS
       LegacyAdjustmentType.LAL -> AdjustmentType.LAWFULLY_AT_LARGE
       LegacyAdjustmentType.SREM -> AdjustmentType.SPECIAL_REMISSION
     }
