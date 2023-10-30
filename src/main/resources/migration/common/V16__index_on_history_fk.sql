@@ -1,0 +1,1 @@
+CREATE INDEX idx_history_to_adjustment_fk ON adjustment_history(adjustment_id);
