@@ -18,6 +18,7 @@ import org.springframework.web.bind.annotation.RequestMapping
 import org.springframework.web.bind.annotation.RequestParam
 import org.springframework.web.bind.annotation.ResponseStatus
 import org.springframework.web.bind.annotation.RestController
+import uk.gov.justice.digital.hmpps.adjustments.api.client.CalculateReleaseDatesApiClient
 import uk.gov.justice.digital.hmpps.adjustments.api.entity.AdjustmentSource
 import uk.gov.justice.digital.hmpps.adjustments.api.model.AdjustmentDto
 import uk.gov.justice.digital.hmpps.adjustments.api.model.AdjustmentEffectiveDaysDto
@@ -35,6 +36,7 @@ class AdjustmentsController(
   val adjustmentsService: AdjustmentsService,
   val eventService: AdjustmentsEventService,
   val validationService: ValidationService,
+  val calculateReleaseDatesApiClient: CalculateReleaseDatesApiClient,
 ) {
 
   @PostMapping
@@ -53,6 +55,8 @@ class AdjustmentsController(
   fun create(@RequestBody adjustment: AdjustmentDto): CreateResponseDto {
     return adjustmentsService.create(adjustment).also {
       eventService.create(it.adjustmentId, adjustment.person, AdjustmentSource.DPS)
+    }.also {
+      calculateReleaseDatesApiClient.calculateUnusedDeductions(adjustment.person)
     }
   }
 
@@ -119,6 +123,8 @@ class AdjustmentsController(
   ) {
     adjustmentsService.update(adjustmentId, adjustment).also {
       eventService.update(adjustmentId, adjustment.person, AdjustmentSource.DPS)
+    }.also {
+      calculateReleaseDatesApiClient.calculateUnusedDeductions(adjustment.person)
     }
   }
 
@@ -143,6 +149,8 @@ class AdjustmentsController(
   ) {
     adjustmentsService.updateEffectiveDays(adjustmentId, adjustment).also {
       eventService.updateEffectiveDays(adjustmentId, adjustment.person, AdjustmentSource.DPS)
+    }.also {
+      calculateReleaseDatesApiClient.calculateUnusedDeductions(adjustment.person)
     }
   }
 
@@ -167,6 +175,7 @@ class AdjustmentsController(
     adjustmentsService.get(adjustmentId).also {
       adjustmentsService.delete(adjustmentId)
       eventService.delete(adjustmentId, it.person, AdjustmentSource.DPS)
+      calculateReleaseDatesApiClient.calculateUnusedDeductions(it.person)
     }
   }
 

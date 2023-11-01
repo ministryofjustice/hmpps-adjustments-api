@@ -48,6 +48,10 @@ prison:
   api:
     url: http://localhost:8332
 
+calculate-release-dates:
+  api:
+    url: http://localhost:8333
+
 hmpps.sqs:
   reactiveApi: true
   provider: localstack
