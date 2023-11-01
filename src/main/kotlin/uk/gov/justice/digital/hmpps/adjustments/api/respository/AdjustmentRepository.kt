@@ -8,6 +8,7 @@ import uk.gov.justice.digital.hmpps.adjustments.api.entity.AdjustmentStatus
 import uk.gov.justice.digital.hmpps.adjustments.api.entity.AdjustmentType
 import uk.gov.justice.digital.hmpps.adjustments.api.entity.AdjustmentType.REMAND
 import uk.gov.justice.digital.hmpps.adjustments.api.entity.AdjustmentType.TAGGED_BAIL
+import uk.gov.justice.digital.hmpps.adjustments.api.entity.AdjustmentType.UNUSED_DEDUCTIONS
 import java.time.LocalDate
 import java.util.UUID
 
@@ -28,7 +29,7 @@ interface AdjustmentRepository : JpaRepository<Adjustment, UUID> {
   fun findCurrentAdjustmentsByPerson(
     person: String,
     fromDate: LocalDate,
-    adjustmentTypes: List<AdjustmentType>? = listOf(REMAND, TAGGED_BAIL),
+    adjustmentTypes: List<AdjustmentType>? = listOf(REMAND, TAGGED_BAIL, UNUSED_DEDUCTIONS),
     status: AdjustmentStatus = AdjustmentStatus.ACTIVE,
   ): List<Adjustment>
 }
