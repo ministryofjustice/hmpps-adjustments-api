@@ -68,7 +68,7 @@ class AdjustmentsController(
       ApiResponse(responseCode = "404", description = "Adjustment not found"),
     ],
   )
-  @PreAuthorize("(hasRole('ADJUSTMENTS_MAINTAINER') and hasRole('RELEASE_DATES_CALCULATOR')) or hasRole('VIEW_SENTENCE_ADJUSTMENTS')")
+  @PreAuthorize("(hasRole('git ') and hasRole('RELEASE_DATES_CALCULATOR')) or hasRole('VIEW_SENTENCE_ADJUSTMENTS')")
   fun findByPerson(
     @Parameter(required = true, description = "The noms ID of the person")
     @RequestParam("person")
