@@ -13,20 +13,11 @@ import org.springframework.web.reactive.function.client.WebClient
 class WebClientConfiguration(
   @Value("\${hmpps.auth.url}") private val oauthApiUrl: String,
   @Value("\${prison.api.url}") private val prisonApiUri: String,
-  @Value("\${calculate-release-dates.api.url}") private val calculateReleaseDatesApiUrl: String,
 ) {
   @Bean
   fun prisonApiWebClient(): WebClient {
     return WebClient.builder()
       .baseUrl(prisonApiUri)
-      .filter(addAuthHeaderFilterFunction())
-      .build()
-  }
-
-  @Bean
-  fun calculateReleaseDatesApiWebClient(): WebClient {
-    return WebClient.builder()
-      .baseUrl(calculateReleaseDatesApiUrl)
       .filter(addAuthHeaderFilterFunction())
       .build()
   }
