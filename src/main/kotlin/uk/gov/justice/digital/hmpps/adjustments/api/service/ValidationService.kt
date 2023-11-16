@@ -70,9 +70,9 @@ class ValidationService(
         (
           adjustments.filter { it.adjustmentType === AdjustmentType.RESTORATION_OF_ADDITIONAL_DAYS_AWARDED }
             .filter { adjustment.id == null || adjustment.id != it.id }
-            .map { it.days!! }
+            .map { it.days ?: it.effectiveDays!! }
             .reduceOrNull { acc, it -> acc + it } ?: 0
-          ) + adjustment.days!!
+          ) + adjustment.days
 
       if (adaDays < radaDays) {
         validationMessages.add(ValidationMessage(ValidationCode.MORE_RADAS_THAN_ADAS))

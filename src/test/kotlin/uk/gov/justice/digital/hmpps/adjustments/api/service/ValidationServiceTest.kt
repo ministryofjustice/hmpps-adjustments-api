@@ -45,7 +45,7 @@ class ValidationServiceTest {
   private val EXISTING_RADA = EXISTING_ADA.copy(
     id = UUID.randomUUID(),
     adjustmentType = AdjustmentType.RESTORATION_OF_ADDITIONAL_DAYS_AWARDED,
-    days = 20,
+    effectiveDays = 20,
   )
 
   @BeforeEach
