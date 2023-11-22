@@ -9,4 +9,5 @@ data class LegacyData(
   val comment: String? = null,
   val type: LegacyAdjustmentType? = null,
   val migration: Boolean = false,
+  val chargeIds: List<Long> = emptyList(),
 )

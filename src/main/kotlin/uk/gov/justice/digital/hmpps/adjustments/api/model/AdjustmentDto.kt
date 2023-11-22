@@ -14,8 +14,6 @@ data class AdjustmentDto(
   val id: UUID?,
   @Schema(description = "The NOMIS booking ID of the adjustment")
   val bookingId: Long,
-  @Schema(description = "The NOMIS sentence sequence of the adjustment")
-  val sentenceSequence: Int?,
   @Schema(description = "The NOMIS ID of the person this adjustment applies to")
   val person: String,
   @Schema(description = "The type of adjustment")
@@ -26,6 +24,8 @@ data class AdjustmentDto(
   val fromDate: LocalDate?,
   @Schema(description = "The number of adjustment days")
   val days: Int?,
+  @Schema(description = "The details of a remand adjustment")
+  val remand: RemandDto?,
   @Schema(description = "The details of an additional days awarded adjustments (ADA)")
   val additionalDaysAwarded: AdditionalDaysAwardedDto?,
   @Schema(description = "Additional details of a UAL adjustment")
@@ -44,6 +44,8 @@ data class AdjustmentDto(
   val lastUpdatedDate: LocalDateTime? = null,
   @Schema(description = "The number of days effective in a calculation. (for example remand minus any unused deductions)", readOnly = true)
   val effectiveDays: Int? = null,
+  @Schema(description = "The NOMIS sentence sequence of the adjustment")
+  val sentenceSequence: Int? = null,
 ) {
 
   @get:Schema(description = "The days between the from and two date", readOnly = true)
