@@ -5,9 +5,11 @@ import jakarta.transaction.Transactional
 import org.assertj.core.api.Assertions.assertThat
 import org.awaitility.kotlin.matches
 import org.awaitility.kotlin.untilCallTo
+import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.core.ParameterizedTypeReference
+import org.springframework.http.HttpStatusCode
 import org.springframework.http.MediaType
 import org.springframework.test.context.jdbc.Sql
 import org.springframework.test.web.reactive.server.expectBodyList
@@ -27,6 +29,7 @@ import uk.gov.justice.digital.hmpps.adjustments.api.model.AdditionalDaysAwardedD
 import uk.gov.justice.digital.hmpps.adjustments.api.model.AdjustmentDto
 import uk.gov.justice.digital.hmpps.adjustments.api.model.AdjustmentEffectiveDaysDto
 import uk.gov.justice.digital.hmpps.adjustments.api.model.CreateResponseDto
+import uk.gov.justice.digital.hmpps.adjustments.api.model.RemandDto
 import uk.gov.justice.digital.hmpps.adjustments.api.model.UnlawfullyAtLargeDto
 import uk.gov.justice.digital.hmpps.adjustments.api.model.ValidationCode
 import uk.gov.justice.digital.hmpps.adjustments.api.model.ValidationMessage
@@ -46,392 +49,464 @@ class AdjustmentControllerIntTest : SqsIntegrationTestBase() {
   @Autowired
   lateinit var entityManager: EntityManager
 
-  @Test
-  @Transactional
-  fun create() {
-    val id = createAnAdjustment()
-    val adjustment = adjustmentRepository.findById(id).get()
-
-    assertThat(adjustment.adjustmentType).isEqualTo(AdjustmentType.REMAND)
-    assertThat(adjustment.adjustmentHistory).singleElement()
-    assertThat(adjustment.adjustmentHistory[0].changeType).isEqualTo(ChangeType.CREATE)
-    assertThat(adjustment.adjustmentHistory[0].changeByUsername).isEqualTo("Test User")
-    assertThat(adjustment.adjustmentHistory[0].changeSource).isEqualTo(AdjustmentSource.DPS)
-    assertThat(adjustment.source).isEqualTo(AdjustmentSource.DPS)
-    assertThat(adjustment.status).isEqualTo(ACTIVE)
-
-    assertThat(adjustment.fromDate).isEqualTo(LocalDate.now().minusDays(5))
-    assertThat(adjustment.toDate).isEqualTo(LocalDate.now().minusDays(2))
-    assertThat(adjustment.daysCalculated).isEqualTo(4)
-    assertThat(adjustment.effectiveDays).isEqualTo(4)
-
-    val legacyData = objectMapper.convertValue(adjustment.legacyData, LegacyData::class.java)
-    assertThat(legacyData).isEqualTo(
-      LegacyData(
-        bookingId = 1,
-        sentenceSequence = 1,
-        postedDate = LocalDate.now(),
-        comment = null,
-        type = null,
-      ),
-    )
-
-    awaitAtMost30Secs untilCallTo { getNumberOfMessagesCurrentlyOnQueue() } matches { it == 1 }
-    val latestMessage: String = getLatestMessage()!!.messages()[0].body()
-    assertThat(latestMessage).contains(adjustment.id.toString())
-    assertThat(latestMessage).contains(EventType.ADJUSTMENT_CREATED.value)
-    assertThat(latestMessage).contains(AdjustmentSource.DPS.name)
-  }
-
-  @Test
-  fun get() {
-    val id = createAnAdjustment().also {
-      cleanQueue()
+  @Nested
+  inner class RemandTests {
+    @Test
+    fun create() {
+      webTestClient
+        .post()
+        .uri("/adjustments")
+        .headers(setAdjustmentsMaintainerAuth())
+        .contentType(MediaType.APPLICATION_JSON)
+        .bodyValue(CREATED_ADJUSTMENT.copy(remand = RemandDto(listOf(98765432))))
+        .exchange()
+        .expectStatus().isBadRequest
     }
-    val result = webTestClient
-      .get()
-      .uri("/adjustments/$id")
-      .headers(
-        setViewAdjustmentsAuth(),
-      )
-      .exchange()
-      .expectStatus().isOk
-      .returnResult(AdjustmentDto::class.java)
-      .responseBody.blockFirst()!!
+    @Test
+    @Transactional
+    fun `Create remand adjustment where charge ids do not exist`() {
+      val id = createAnAdjustment()
+      val adjustment = adjustmentRepository.findById(id).get()
 
-    assertThat(result)
-      .usingRecursiveComparison()
-      .ignoringFieldsMatchingRegexes("lastUpdatedDate")
-      .isEqualTo(CREATED_ADJUSTMENT.copy(id = id, effectiveDays = 4, lastUpdatedBy = "Test User", status = ACTIVE))
-    awaitAtMost30Secs untilCallTo { getNumberOfMessagesCurrentlyOnQueue() } matches { it == 0 }
-  }
+      assertThat(adjustment.adjustmentType).isEqualTo(AdjustmentType.REMAND)
+      assertThat(adjustment.adjustmentHistory).singleElement()
+      assertThat(adjustment.adjustmentHistory[0].changeType).isEqualTo(ChangeType.CREATE)
+      assertThat(adjustment.adjustmentHistory[0].changeByUsername).isEqualTo("Test User")
+      assertThat(adjustment.adjustmentHistory[0].changeSource).isEqualTo(AdjustmentSource.DPS)
+      assertThat(adjustment.source).isEqualTo(AdjustmentSource.DPS)
+      assertThat(adjustment.status).isEqualTo(ACTIVE)
 
-  @Test
-  fun findByPerson() {
-    val person = "BCDEFG"
-    val id = createAnAdjustment(person).also {
-      cleanQueue()
-    }
-    val result = webTestClient
-      .get()
-      .uri("/adjustments?person=$person")
-      .headers(
-        setAdjustmentsMaintainerAuth(),
-      )
-      .exchange()
-      .expectStatus().isOk
-      .expectBodyList<AdjustmentDto>()
-      .returnResult()
-      .responseBody!!
+      assertThat(adjustment.fromDate).isEqualTo(LocalDate.now().minusDays(5))
+      assertThat(adjustment.toDate).isEqualTo(LocalDate.now().minusDays(2))
+      assertThat(adjustment.daysCalculated).isEqualTo(4)
+      assertThat(adjustment.effectiveDays).isEqualTo(4)
 
-    assertThat(result.size).isEqualTo(1)
-    assertThat(result[0])
-      .usingRecursiveComparison()
-      .ignoringFieldsMatchingRegexes("lastUpdatedDate")
-      .isEqualTo(
-        CREATED_ADJUSTMENT.copy(
-          id = id,
-          person = person,
-          effectiveDays = 4,
-          lastUpdatedBy = "Test User",
-          status = ACTIVE,
+      val legacyData = objectMapper.convertValue(adjustment.legacyData, LegacyData::class.java)
+      assertThat(legacyData).isEqualTo(
+        LegacyData(
+          bookingId = PrisonApiExtension.BOOKING_ID,
+          sentenceSequence = 1,
+          postedDate = LocalDate.now(),
+          comment = null,
+          type = null,
+          chargeIds = listOf(9991),
         ),
       )
 
-    awaitAtMost30Secs untilCallTo { getNumberOfMessagesCurrentlyOnQueue() } matches { it == 0 }
-  }
-
-  @Test
-  fun findByPerson_NoActiveSentences() {
-    webTestClient
-      .get()
-      .uri("/adjustments?person=${PrisonApiExtension.NO_ACTIVE_SENTENCE_PRISONER_ID}")
-      .headers(
-        setAdjustmentsMaintainerAuth(),
-      )
-      .exchange()
-      .expectStatus().isEqualTo(422)
-  }
-
-  @Test
-  @Transactional
-  fun update() {
-    val id = createAnAdjustment().also {
-      cleanQueue()
+      awaitAtMost30Secs untilCallTo { getNumberOfMessagesCurrentlyOnQueue() } matches { it == 1 }
+      val latestMessage: String = getLatestMessage()!!.messages()[0].body()
+      assertThat(latestMessage).contains(adjustment.id.toString())
+      assertThat(latestMessage).contains(EventType.ADJUSTMENT_CREATED.value)
+      assertThat(latestMessage).contains(AdjustmentSource.DPS.name)
     }
-    putAdjustmentUpdate(
-      id,
-      CREATED_ADJUSTMENT.copy(
-        fromDate = CREATED_ADJUSTMENT.fromDate!!.minusYears(1),
-        toDate = CREATED_ADJUSTMENT.toDate!!.minusYears(1),
-      ),
-    )
 
-    val adjustment = adjustmentRepository.findById(id).get()
+    @Test
+    fun get() {
+      val id = createAnAdjustment().also {
+        cleanQueue()
+      }
+      val result = webTestClient
+        .get()
+        .uri("/adjustments/$id")
+        .headers(
+          setViewAdjustmentsAuth(),
+        )
+        .exchange()
+        .expectStatus().isOk
+        .returnResult(AdjustmentDto::class.java)
+        .responseBody.blockFirst()!!
 
-    assertThat(adjustment.adjustmentType).isEqualTo(AdjustmentType.REMAND)
-    assertThat(adjustment.adjustmentHistory.size).isEqualTo(2)
-    assertThat(adjustment.adjustmentHistory[1].changeType).isEqualTo(ChangeType.UPDATE)
-    assertThat(adjustment.adjustmentHistory[1].changeByUsername).isEqualTo("Test User")
-    assertThat(adjustment.adjustmentHistory[1].changeSource).isEqualTo(AdjustmentSource.DPS)
-    assertThat(adjustment.source).isEqualTo(AdjustmentSource.DPS)
-    assertThat(adjustment.status).isEqualTo(ACTIVE)
-
-    assertThat(adjustment.fromDate).isEqualTo(LocalDate.now().minusDays(5).minusYears(1))
-    assertThat(adjustment.toDate).isEqualTo(LocalDate.now().minusDays(2).minusYears(1))
-    assertThat(adjustment.days).isNull()
-    assertThat(adjustment.daysCalculated).isEqualTo(4)
-    assertThat(adjustment.effectiveDays).isEqualTo(4)
-
-    val legacyData = objectMapper.convertValue(adjustment.legacyData, LegacyData::class.java)
-    assertThat(legacyData).isEqualTo(
-      LegacyData(
-        bookingId = 1,
-        sentenceSequence = 1,
-        postedDate = LocalDate.now(),
-        comment = null,
-        type = null,
-      ),
-    )
-
-    awaitAtMost30Secs untilCallTo { getNumberOfMessagesCurrentlyOnQueue() } matches { it == 1 }
-    val latestMessage: String = getLatestMessage()!!.messages()[0].body()
-    assertThat(latestMessage).contains(adjustment.id.toString())
-    assertThat(latestMessage).contains(EventType.ADJUSTMENT_UPDATED.value)
-    assertThat(latestMessage).contains(AdjustmentSource.DPS.name)
-  }
-
-  @Test
-  @Transactional
-  fun updateEffectiveDays() {
-    val id = createAnAdjustment().also {
-      cleanQueue()
+      assertThat(result)
+        .usingRecursiveComparison()
+        .ignoringFieldsMatchingRegexes("lastUpdatedDate")
+        .isEqualTo(
+          CREATED_ADJUSTMENT.copy(
+            id = id,
+            effectiveDays = 4,
+            lastUpdatedBy = "Test User",
+            status = ACTIVE,
+            sentenceSequence = 1,
+          ),
+        )
+      awaitAtMost30Secs untilCallTo { getNumberOfMessagesCurrentlyOnQueue() } matches { it == 0 }
     }
-    postAdjustmentEffectiveDaysUpdate(
-      id,
-      AdjustmentEffectiveDaysDto(
+
+    @Test
+    @Transactional
+    fun update() {
+      val id = createAnAdjustment().also {
+        cleanQueue()
+      }
+      putAdjustmentUpdate(
         id,
-        2,
-        CREATED_ADJUSTMENT.person,
-      ),
-    )
-
-    val adjustment = adjustmentRepository.findById(id).get()
-
-    assertThat(adjustment.daysCalculated).isEqualTo(4)
-    assertThat(adjustment.effectiveDays).isEqualTo(2)
-    awaitAtMost30Secs untilCallTo { getNumberOfMessagesCurrentlyOnQueue() } matches { it == 1 }
-    val latestMessage: String = getLatestMessage()!!.messages()[0].body()
-    assertThat(latestMessage).contains(adjustment.id.toString())
-    assertThat(latestMessage).contains(EventType.ADJUSTMENT_UPDATED.value)
-    assertThat(latestMessage).contains(AdjustmentSource.DPS.name)
-    assertThat(latestMessage).contains("\\\"effectiveDays\\\":true")
-  }
-
-  @Test
-  fun `update with different adjustment type`() {
-    val id = createAnAdjustment().also {
-      cleanQueue()
-    }
-
-    val result = webTestClient
-      .put()
-      .uri("/adjustments/$id")
-      .headers(
-        setAdjustmentsMaintainerAuth(),
-      )
-      .bodyValue(
         CREATED_ADJUSTMENT.copy(
-          adjustmentType = UNLAWFULLY_AT_LARGE,
+          fromDate = CREATED_ADJUSTMENT.fromDate!!.minusYears(1),
+          toDate = CREATED_ADJUSTMENT.toDate!!.minusYears(1),
         ),
       )
-      .exchange()
-      .expectStatus().isBadRequest
-      .returnResult(ErrorResponse::class.java)
-      .responseBody.blockFirst()!!
-    assertThat(result.userMessage).isEqualTo("The provided adjustment type UNLAWFULLY_AT_LARGE doesn't match the persisted type REMAND")
-    awaitAtMost30Secs untilCallTo { getNumberOfMessagesCurrentlyOnQueue() } matches { it == 0 }
-  }
 
-  @Test
-  @Transactional
-  fun delete() {
-    val id = createAnAdjustment().also {
-      cleanQueue()
+      val adjustment = adjustmentRepository.findById(id).get()
+
+      assertThat(adjustment.adjustmentType).isEqualTo(AdjustmentType.REMAND)
+      assertThat(adjustment.adjustmentHistory.size).isEqualTo(2)
+      assertThat(adjustment.adjustmentHistory[1].changeType).isEqualTo(ChangeType.UPDATE)
+      assertThat(adjustment.adjustmentHistory[1].changeByUsername).isEqualTo("Test User")
+      assertThat(adjustment.adjustmentHistory[1].changeSource).isEqualTo(AdjustmentSource.DPS)
+      assertThat(adjustment.source).isEqualTo(AdjustmentSource.DPS)
+      assertThat(adjustment.status).isEqualTo(ACTIVE)
+
+      assertThat(adjustment.fromDate).isEqualTo(LocalDate.now().minusDays(5).minusYears(1))
+      assertThat(adjustment.toDate).isEqualTo(LocalDate.now().minusDays(2).minusYears(1))
+      assertThat(adjustment.days).isNull()
+      assertThat(adjustment.daysCalculated).isEqualTo(4)
+      assertThat(adjustment.effectiveDays).isEqualTo(4)
+
+      val legacyData = objectMapper.convertValue(adjustment.legacyData, LegacyData::class.java)
+      assertThat(legacyData).isEqualTo(
+        LegacyData(
+          bookingId = PrisonApiExtension.BOOKING_ID,
+          sentenceSequence = 1,
+          postedDate = LocalDate.now(),
+          comment = null,
+          type = null,
+          chargeIds = listOf(9991),
+        ),
+      )
+
+      awaitAtMost30Secs untilCallTo { getNumberOfMessagesCurrentlyOnQueue() } matches { it == 1 }
+      val latestMessage: String = getLatestMessage()!!.messages()[0].body()
+      assertThat(latestMessage).contains(adjustment.id.toString())
+      assertThat(latestMessage).contains(EventType.ADJUSTMENT_UPDATED.value)
+      assertThat(latestMessage).contains(AdjustmentSource.DPS.name)
     }
-    webTestClient
-      .delete()
-      .uri("/adjustments/$id")
-      .headers(
-        setAdjustmentsMaintainerAuth(),
+
+    @Test
+    @Transactional
+    fun updateEffectiveDays() {
+      val id = createAnAdjustment().also {
+        cleanQueue()
+      }
+      postAdjustmentEffectiveDaysUpdate(
+        id,
+        AdjustmentEffectiveDaysDto(
+          id,
+          2,
+          CREATED_ADJUSTMENT.person,
+        ),
       )
-      .exchange()
-      .expectStatus().isOk
 
-    val adjustment = adjustmentRepository.findById(id).get()
+      val adjustment = adjustmentRepository.findById(id).get()
 
-    assertThat(adjustment.status).isEqualTo(DELETED)
-    assertThat(adjustment.adjustmentHistory.size).isEqualTo(2)
-    assertThat(adjustment.adjustmentHistory[1].changeType).isEqualTo(ChangeType.DELETE)
+      assertThat(adjustment.daysCalculated).isEqualTo(4)
+      assertThat(adjustment.effectiveDays).isEqualTo(2)
+      awaitAtMost30Secs untilCallTo { getNumberOfMessagesCurrentlyOnQueue() } matches { it == 1 }
+      val latestMessage: String = getLatestMessage()!!.messages()[0].body()
+      assertThat(latestMessage).contains(adjustment.id.toString())
+      assertThat(latestMessage).contains(EventType.ADJUSTMENT_UPDATED.value)
+      assertThat(latestMessage).contains(AdjustmentSource.DPS.name)
+      assertThat(latestMessage).contains("\\\"effectiveDays\\\":true")
+    }
 
-    webTestClient
-      .get()
-      .uri("/adjustments/$id")
-      .headers(
-        setAdjustmentsMaintainerAuth(),
-      )
-      .exchange()
-      .expectStatus().isNotFound
+    @Test
+    fun `update with different adjustment type`() {
+      val id = createAnAdjustment().also {
+        cleanQueue()
+      }
 
-    awaitAtMost30Secs untilCallTo { getNumberOfMessagesCurrentlyOnQueue() } matches { it == 1 }
-    val latestMessage: String = getLatestMessage()!!.messages()[0].body()
-    assertThat(latestMessage).contains(adjustment.id.toString())
-    assertThat(latestMessage).contains(EventType.ADJUSTMENT_DELETED.value)
-    assertThat(latestMessage).contains(AdjustmentSource.DPS.name)
+      val result = webTestClient
+        .put()
+        .uri("/adjustments/$id")
+        .headers(
+          setAdjustmentsMaintainerAuth(),
+        )
+        .bodyValue(
+          CREATED_ADJUSTMENT.copy(
+            adjustmentType = UNLAWFULLY_AT_LARGE,
+          ),
+        )
+        .exchange()
+        .expectStatus().isBadRequest
+        .returnResult(ErrorResponse::class.java)
+        .responseBody.blockFirst()!!
+      assertThat(result.userMessage).isEqualTo("The provided adjustment type UNLAWFULLY_AT_LARGE doesn't match the persisted type REMAND")
+      awaitAtMost30Secs untilCallTo { getNumberOfMessagesCurrentlyOnQueue() } matches { it == 0 }
+    }
+
+    @Test
+    @Transactional
+    fun delete() {
+      val id = createAnAdjustment().also {
+        cleanQueue()
+      }
+      webTestClient
+        .delete()
+        .uri("/adjustments/$id")
+        .headers(
+          setAdjustmentsMaintainerAuth(),
+        )
+        .exchange()
+        .expectStatus().isOk
+
+      val adjustment = adjustmentRepository.findById(id).get()
+
+      assertThat(adjustment.status).isEqualTo(DELETED)
+      assertThat(adjustment.adjustmentHistory.size).isEqualTo(2)
+      assertThat(adjustment.adjustmentHistory[1].changeType).isEqualTo(ChangeType.DELETE)
+
+      webTestClient
+        .get()
+        .uri("/adjustments/$id")
+        .headers(
+          setAdjustmentsMaintainerAuth(),
+        )
+        .exchange()
+        .expectStatus().isNotFound
+
+      awaitAtMost30Secs untilCallTo { getNumberOfMessagesCurrentlyOnQueue() } matches { it == 1 }
+      val latestMessage: String = getLatestMessage()!!.messages()[0].body()
+      assertThat(latestMessage).contains(adjustment.id.toString())
+      assertThat(latestMessage).contains(EventType.ADJUSTMENT_DELETED.value)
+      assertThat(latestMessage).contains(AdjustmentSource.DPS.name)
+    }
   }
 
-  @Test
-  @Transactional
-  fun adaAdjustments() {
-    val beforeEarliestSentence = LocalDate.parse(PrisonApiExtension.EARLIEST_SENTENCE_DATE, DateTimeFormatter.ISO_LOCAL_DATE).minusDays(1)
-    val createDto = CREATED_ADJUSTMENT.copy(
-      fromDate = beforeEarliestSentence,
-      person = PrisonApiExtension.PRISONER_ID,
-      adjustmentType = AdjustmentType.ADDITIONAL_DAYS_AWARDED,
-      additionalDaysAwarded = AdditionalDaysAwardedDto(
-        adjudicationId = listOf(987654321, 23456789),
-        prospective = true,
-      ),
+  @Nested
+  inner class FindByTests {
+    @Test
+    @Sql(
+      "classpath:test_data/reset-data.sql",
     )
-    val adjustmentId = postCreateAdjustment(createDto)
+    fun findByPerson() {
+      val id = createAnAdjustment().also {
+        cleanQueue()
+      }
+      val result = webTestClient
+        .get()
+        .uri("/adjustments?person=${PrisonApiExtension.PRISONER_ID}")
+        .headers(
+          setAdjustmentsMaintainerAuth(),
+        )
+        .exchange()
+        .expectStatus().isOk
+        .expectBodyList<AdjustmentDto>()
+        .returnResult()
+        .responseBody!!
 
-    val adjustment = adjustmentRepository.findById(adjustmentId).get()
-    assertThat(adjustment.additionalDaysAwarded!!.adjudicationCharges).containsAll(listOf(AdjudicationCharges(987654321), AdjudicationCharges(23456789)))
-    assertThat(adjustment.additionalDaysAwarded!!.prospective).isTrue
+      assertThat(result.size).isEqualTo(1)
+      assertThat(result[0])
+        .usingRecursiveComparison()
+        .ignoringFieldsMatchingRegexes("lastUpdatedDate")
+        .isEqualTo(
+          CREATED_ADJUSTMENT.copy(
+            id = id,
+            person = PrisonApiExtension.PRISONER_ID,
+            effectiveDays = 4,
+            lastUpdatedBy = "Test User",
+            status = ACTIVE,
+            sentenceSequence = 1,
+          ),
+        )
 
-    var adjustmentDto = getAdjustmentById(adjustmentId)
-    assertThat(adjustmentDto.additionalDaysAwarded).isEqualTo(AdditionalDaysAwardedDto(listOf(987654321, 23456789), true))
+      awaitAtMost30Secs untilCallTo { getNumberOfMessagesCurrentlyOnQueue() } matches { it == 0 }
+    }
 
-    // Assert that prospective adas before the earliest sentence date are included.
-    var adjustments = getAdjustmentsByPerson(PrisonApiExtension.PRISONER_ID)
-    assertThat(adjustments.contains(adjustmentDto)).isTrue
-
-    val updateDto = CREATED_ADJUSTMENT.copy(
-      fromDate = beforeEarliestSentence,
-      id = adjustmentId,
-      person = PrisonApiExtension.PRISONER_ID,
-      adjustmentType = AdjustmentType.ADDITIONAL_DAYS_AWARDED,
-      additionalDaysAwarded = AdditionalDaysAwardedDto(
-        adjudicationId = listOf(32415555),
-        prospective = false,
-      ),
-    )
-    putAdjustmentUpdate(adjustmentId, updateDto)
-
-    adjustmentDto = getAdjustmentById(adjustmentId)
-    assertThat(adjustmentDto.additionalDaysAwarded).isEqualTo(AdditionalDaysAwardedDto(listOf(32415555), false))
-
-    // Assert that non-prospective adas before the earliest sentence date are not included.
-    adjustments = getAdjustmentsByPerson(PrisonApiExtension.PRISONER_ID)
-    assertThat(adjustments.contains(adjustmentDto)).isFalse
-
-    entityManager.refresh(adjustment)
-    assertThat(adjustment.additionalDaysAwarded!!.adjudicationCharges).containsAll(listOf(AdjudicationCharges(32415555)))
-    assertThat(adjustment.additionalDaysAwarded!!.prospective).isFalse
+    @Test
+    fun findByPerson_NoActiveSentences() {
+      webTestClient
+        .get()
+        .uri("/adjustments?person=${PrisonApiExtension.NO_ACTIVE_SENTENCE_PRISONER_ID}")
+        .headers(
+          setAdjustmentsMaintainerAuth(),
+        )
+        .exchange()
+        .expectStatus().isEqualTo(422)
+    }
   }
 
-  @Test
-  fun `Create a UAL Adjustment, then update it`() {
-    val adjustmentId = postCreateAdjustment(
-      CREATED_ADJUSTMENT.copy(
-        person = "UAL123",
-        adjustmentType = UNLAWFULLY_AT_LARGE,
-        unlawfullyAtLarge = UnlawfullyAtLargeDto(type = RECALL),
-      ),
-    )
+  @Nested
+  inner class AdaTests {
+    @Test
+    @Transactional
+    fun adaAdjustments() {
+      val beforeEarliestSentence =
+        LocalDate.parse(PrisonApiExtension.EARLIEST_SENTENCE_DATE, DateTimeFormatter.ISO_LOCAL_DATE).minusDays(1)
+      val createDto = CREATED_ADJUSTMENT.copy(
+        fromDate = beforeEarliestSentence,
+        person = PrisonApiExtension.PRISONER_ID,
+        adjustmentType = AdjustmentType.ADDITIONAL_DAYS_AWARDED,
+        additionalDaysAwarded = AdditionalDaysAwardedDto(
+          adjudicationId = listOf(987654321, 23456789),
+          prospective = true,
+        ),
+      )
+      val adjustmentId = postCreateAdjustment(createDto)
 
-    val adjustment = adjustmentRepository.findById(adjustmentId).get()
+      val adjustment = adjustmentRepository.findById(adjustmentId).get()
+      assertThat(adjustment.additionalDaysAwarded!!.adjudicationCharges).containsAll(
+        listOf(
+          AdjudicationCharges(
+            987654321,
+          ),
+          AdjudicationCharges(23456789),
+        ),
+      )
+      assertThat(adjustment.additionalDaysAwarded!!.prospective).isTrue
 
-    assertThat(adjustment.unlawfullyAtLarge).isNotNull
-    assertThat(adjustment.unlawfullyAtLarge!!.type).isEqualTo(RECALL)
-    assertThat(adjustment.unlawfullyAtLarge!!.adjustmentId).isEqualTo(adjustmentId)
+      var adjustmentDto = getAdjustmentById(adjustmentId)
+      assertThat(adjustmentDto.additionalDaysAwarded).isEqualTo(
+        AdditionalDaysAwardedDto(
+          listOf(987654321, 23456789),
+          true,
+        ),
+      )
 
-    val createdAdjustment = getAdjustmentById(adjustmentId)
+      // Assert that prospective adas before the earliest sentence date are included.
+      var adjustments = getAdjustmentsByPerson(PrisonApiExtension.PRISONER_ID)
+      assertThat(adjustments.contains(adjustmentDto)).isTrue
 
-    assertThat(createdAdjustment)
-      .usingRecursiveComparison()
-      .ignoringFieldsMatchingRegexes("lastUpdatedDate")
-      .isEqualTo(
+      val updateDto = CREATED_ADJUSTMENT.copy(
+        fromDate = beforeEarliestSentence,
+        id = adjustmentId,
+        person = PrisonApiExtension.PRISONER_ID,
+        adjustmentType = AdjustmentType.ADDITIONAL_DAYS_AWARDED,
+        additionalDaysAwarded = AdditionalDaysAwardedDto(
+          adjudicationId = listOf(32415555),
+          prospective = false,
+        ),
+      )
+      putAdjustmentUpdate(adjustmentId, updateDto)
+
+      adjustmentDto = getAdjustmentById(adjustmentId)
+      assertThat(adjustmentDto.additionalDaysAwarded).isEqualTo(AdditionalDaysAwardedDto(listOf(32415555), false))
+
+      // Assert that non-prospective adas before the earliest sentence date are not included.
+      adjustments = getAdjustmentsByPerson(PrisonApiExtension.PRISONER_ID)
+      assertThat(adjustments.contains(adjustmentDto)).isFalse
+
+      entityManager.refresh(adjustment)
+      assertThat(adjustment.additionalDaysAwarded!!.adjudicationCharges).containsAll(listOf(AdjudicationCharges(32415555)))
+      assertThat(adjustment.additionalDaysAwarded!!.prospective).isFalse
+    }
+  }
+
+  @Nested
+  inner class UalTests {
+
+    @Test
+    fun `Create a UAL Adjustment, then update it`() {
+      val adjustmentId = postCreateAdjustment(
         CREATED_ADJUSTMENT.copy(
-          id = adjustmentId,
           person = "UAL123",
           adjustmentType = UNLAWFULLY_AT_LARGE,
           unlawfullyAtLarge = UnlawfullyAtLargeDto(type = RECALL),
-          effectiveDays = 4,
-          lastUpdatedBy = "Test User",
-          status = ACTIVE,
+          remand = null,
         ),
       )
 
-    val updateDto = createdAdjustment.copy(days = null, unlawfullyAtLarge = UnlawfullyAtLargeDto(type = ESCAPE))
-    putAdjustmentUpdate(adjustmentId, updateDto)
-    val updatedAdjustment = getAdjustmentById(adjustmentId)
-    assertThat(updatedAdjustment)
-      .usingRecursiveComparison()
-      .ignoringFieldsMatchingRegexes("lastUpdatedDate")
-      .isEqualTo(createdAdjustment.copy(unlawfullyAtLarge = UnlawfullyAtLargeDto(type = ESCAPE)))
-  }
+      val adjustment = adjustmentRepository.findById(adjustmentId).get()
 
-  @Test
-  @Sql(
-    "classpath:test_data/reset-data.sql",
-    "classpath:test_data/insert-nomis-ual.sql",
-  )
-  fun `Update a UAL Adjustment that has no UAL type (eg migrated from NOMIS) - update the type and prison`() {
-    val adjustmentId = UUID.fromString("dfba24ef-a2d4-4b26-af63-4d9494dd5252")
-    val adjustment = getAdjustmentById(adjustmentId)
+      assertThat(adjustment.unlawfullyAtLarge).isNotNull
+      assertThat(adjustment.unlawfullyAtLarge!!.type).isEqualTo(RECALL)
+      assertThat(adjustment.unlawfullyAtLarge!!.adjustmentId).isEqualTo(adjustmentId)
 
-    putAdjustmentUpdate(adjustment.id!!, adjustment.copy(unlawfullyAtLarge = UnlawfullyAtLargeDto(type = RECALL), prisonId = "MRG"))
+      val createdAdjustment = getAdjustmentById(adjustmentId)
 
-    val updatedAdjustment = getAdjustmentById(adjustmentId)
-    assertThat(updatedAdjustment.copy(days = null))
-      .usingRecursiveComparison()
-      .ignoringFieldsMatchingRegexes("lastUpdatedDate")
-      .isEqualTo(adjustment.copy(lastUpdatedBy = "Test User", unlawfullyAtLarge = UnlawfullyAtLargeDto(type = RECALL), prisonId = "MRG", prisonName = "Moorgate"))
-  }
+      assertThat(createdAdjustment)
+        .usingRecursiveComparison()
+        .ignoringFieldsMatchingRegexes("lastUpdatedDate")
+        .isEqualTo(
+          CREATED_ADJUSTMENT.copy(
+            id = adjustmentId,
+            person = "UAL123",
+            adjustmentType = UNLAWFULLY_AT_LARGE,
+            unlawfullyAtLarge = UnlawfullyAtLargeDto(type = RECALL),
+            remand = null,
+            effectiveDays = 4,
+            lastUpdatedBy = "Test User",
+            status = ACTIVE,
+          ),
+        )
 
-  @Test
-  @Sql(
-    "classpath:test_data/reset-data.sql",
-    "classpath:test_data/insert-adjustments-spanning-sentence-envelope.sql",
-  )
-  fun `Get adjustments by person where some have been deleted, and some fall outside of the sentence envelope`() {
-    // The sentence envelope start date is 2015-03-17 (set in prison-api mock call)
-    val person = "BCDEFG"
-    val result = getAdjustmentsByPerson(person)
+      val updateDto = createdAdjustment.copy(days = null, unlawfullyAtLarge = UnlawfullyAtLargeDto(type = ESCAPE))
+      putAdjustmentUpdate(adjustmentId, updateDto)
+      val updatedAdjustment = getAdjustmentById(adjustmentId)
+      assertThat(updatedAdjustment)
+        .usingRecursiveComparison()
+        .ignoringFieldsMatchingRegexes("lastUpdatedDate")
+        .isEqualTo(createdAdjustment.copy(unlawfullyAtLarge = UnlawfullyAtLargeDto(type = ESCAPE)))
+    }
 
-    assertThat(result.map { it.lastUpdatedBy })
-      .usingRecursiveComparison()
-      .ignoringCollectionOrder()
-      .isEqualTo(listOf("current-ual", "current-rada", "tagged-bail-no-dates", "remand-before-sentence"))
-  }
+    @Test
+    @Sql(
+      "classpath:test_data/reset-data.sql",
+      "classpath:test_data/insert-nomis-ual.sql",
+    )
+    fun `Update a UAL Adjustment that has no UAL type (eg migrated from NOMIS) - update the type and prison`() {
+      val adjustmentId = UUID.fromString("dfba24ef-a2d4-4b26-af63-4d9494dd5252")
+      val adjustment = getAdjustmentById(adjustmentId)
 
-  @Test
-  @Sql(
-    "classpath:test_data/reset-data.sql",
-    "classpath:test_data/insert-adjustment-with-prison.sql",
-  )
-  fun `Get adjustment details where a prison is associated)`() {
-    val adjustmentId = UUID.fromString("dfba24ef-a2d4-4b26-af63-4d9494dd5252")
-    val adjustment = getAdjustmentById(adjustmentId)
+      putAdjustmentUpdate(
+        adjustment.id!!,
+        adjustment.copy(unlawfullyAtLarge = UnlawfullyAtLargeDto(type = RECALL), prisonId = "MRG"),
+      )
 
-    putAdjustmentUpdate(adjustment.id!!, adjustment.copy(days = null, unlawfullyAtLarge = UnlawfullyAtLargeDto(type = RECALL)))
+      val updatedAdjustment = getAdjustmentById(adjustmentId)
+      assertThat(updatedAdjustment.copy(days = null))
+        .usingRecursiveComparison()
+        .ignoringFieldsMatchingRegexes("lastUpdatedDate")
+        .isEqualTo(
+          adjustment.copy(
+            lastUpdatedBy = "Test User",
+            unlawfullyAtLarge = UnlawfullyAtLargeDto(type = RECALL),
+            prisonId = "MRG",
+            prisonName = "Moorgate",
+          ),
+        )
+    }
 
-    val updatedAdjustment = getAdjustmentById(adjustmentId)
-    assertThat(updatedAdjustment)
-      .usingRecursiveComparison()
-      .ignoringFieldsMatchingRegexes("lastUpdatedDate")
-      .isEqualTo(adjustment.copy(lastUpdatedBy = "Test User", unlawfullyAtLarge = UnlawfullyAtLargeDto(type = RECALL), prisonId = "LDS", prisonName = "Leeds"))
+    @Test
+    @Sql(
+      "classpath:test_data/reset-data.sql",
+      "classpath:test_data/insert-adjustments-spanning-sentence-envelope.sql",
+    )
+    fun `Get adjustments by person where some have been deleted, and some fall outside of the sentence envelope`() {
+      // The sentence envelope start date is 2015-03-17 (set in prison-api mock call)
+      val person = "BCDEFG"
+      val result = getAdjustmentsByPerson(person)
+
+      assertThat(result.map { it.lastUpdatedBy })
+        .usingRecursiveComparison()
+        .ignoringCollectionOrder()
+        .isEqualTo(listOf("current-ual", "current-rada", "tagged-bail-no-dates", "remand-before-sentence"))
+    }
+
+    @Test
+    @Sql(
+      "classpath:test_data/reset-data.sql",
+      "classpath:test_data/insert-adjustment-with-prison.sql",
+    )
+    fun `Get adjustment details where a prison is associated)`() {
+      val adjustmentId = UUID.fromString("dfba24ef-a2d4-4b26-af63-4d9494dd5252")
+      val adjustment = getAdjustmentById(adjustmentId)
+
+      putAdjustmentUpdate(
+        adjustment.id!!,
+        adjustment.copy(days = null, unlawfullyAtLarge = UnlawfullyAtLargeDto(type = RECALL)),
+      )
+
+      val updatedAdjustment = getAdjustmentById(adjustmentId)
+      assertThat(updatedAdjustment)
+        .usingRecursiveComparison()
+        .ignoringFieldsMatchingRegexes("lastUpdatedDate")
+        .isEqualTo(
+          adjustment.copy(
+            lastUpdatedBy = "Test User",
+            unlawfullyAtLarge = UnlawfullyAtLargeDto(type = RECALL),
+            prisonId = "LDS",
+            prisonName = "Leeds",
+          ),
+        )
+    }
   }
 
   private fun getAdjustmentsByPerson(person: String): List<AdjustmentDto> =
@@ -465,7 +540,7 @@ class AdjustmentControllerIntTest : SqsIntegrationTestBase() {
     .returnResult(AdjustmentDto::class.java)
     .responseBody.blockFirst()!!
 
-  private fun createAnAdjustment(person: String = "ABC123"): UUID {
+  private fun createAnAdjustment(): UUID {
     return webTestClient
       .post()
       .uri("/adjustments")
@@ -473,7 +548,7 @@ class AdjustmentControllerIntTest : SqsIntegrationTestBase() {
         setAdjustmentsMaintainerAuth(),
       )
       .contentType(MediaType.APPLICATION_JSON)
-      .bodyValue(CREATED_ADJUSTMENT.copy(person = person))
+      .bodyValue(CREATED_ADJUSTMENT.copy())
       .exchange()
       .expectStatus().isCreated
       .returnResult(CreateResponseDto::class.java)
@@ -544,15 +619,15 @@ class AdjustmentControllerIntTest : SqsIntegrationTestBase() {
   companion object {
     private val CREATED_ADJUSTMENT = AdjustmentDto(
       id = null,
-      bookingId = 1,
-      sentenceSequence = 1,
-      person = "ABC123",
+      bookingId = PrisonApiExtension.BOOKING_ID,
+      person = PrisonApiExtension.PRISONER_ID,
       adjustmentType = AdjustmentType.REMAND,
       toDate = LocalDate.now().minusDays(2),
       fromDate = LocalDate.now().minusDays(5),
       days = null,
       additionalDaysAwarded = null,
       unlawfullyAtLarge = null,
+      remand = RemandDto(chargeId = listOf(9991)),
       lastUpdatedDate = LocalDateTime.now(),
     )
   }

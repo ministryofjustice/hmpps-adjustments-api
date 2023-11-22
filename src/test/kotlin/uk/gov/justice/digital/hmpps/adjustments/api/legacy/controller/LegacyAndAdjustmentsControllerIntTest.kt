@@ -15,7 +15,9 @@ import uk.gov.justice.digital.hmpps.adjustments.api.legacy.model.LegacyAdjustmen
 import uk.gov.justice.digital.hmpps.adjustments.api.legacy.model.LegacyAdjustmentType
 import uk.gov.justice.digital.hmpps.adjustments.api.legacy.model.LegacyData
 import uk.gov.justice.digital.hmpps.adjustments.api.model.AdjustmentDto
+import uk.gov.justice.digital.hmpps.adjustments.api.model.RemandDto
 import uk.gov.justice.digital.hmpps.adjustments.api.respository.AdjustmentRepository
+import uk.gov.justice.digital.hmpps.adjustments.api.wiremock.PrisonApiExtension
 import java.time.LocalDate
 import java.time.LocalDateTime
 
@@ -76,7 +78,7 @@ class LegacyAndAdjustmentsControllerIntTest : SqsIntegrationTestBase() {
     assertThat(adjustment.effectiveDays).isEqualTo(8)
 
     val legacyData = objectMapper.convertValue(adjustment.legacyData, LegacyData::class.java)
-    assertThat(legacyData).isEqualTo(LegacyData(bookingId = 1, sentenceSequence = 1, postedDate = LocalDate.now(), comment = "Created", type = LegacyAdjustmentType.RSR, migration = false))
+    assertThat(legacyData).isEqualTo(LegacyData(bookingId = 123, sentenceSequence = 1, postedDate = LocalDate.now(), comment = "Created", type = LegacyAdjustmentType.RSR, migration = false, chargeIds = listOf(9991)))
   }
 
   @Test
@@ -163,15 +165,15 @@ class LegacyAndAdjustmentsControllerIntTest : SqsIntegrationTestBase() {
 
     private val ADJUSTMENT = AdjustmentDto(
       id = null,
-      bookingId = 1,
-      sentenceSequence = 1,
-      person = "ABC123",
+      bookingId = PrisonApiExtension.BOOKING_ID,
+      person = PrisonApiExtension.PRISONER_ID,
       adjustmentType = AdjustmentType.REMAND,
       fromDate = LocalDate.now().minusDays(5),
       toDate = LocalDate.now().plusDays(2),
       days = null,
       additionalDaysAwarded = null,
       unlawfullyAtLarge = null,
+      remand = RemandDto(chargeId = listOf(9991)),
       lastUpdatedDate = LocalDateTime.now(),
     )
   }

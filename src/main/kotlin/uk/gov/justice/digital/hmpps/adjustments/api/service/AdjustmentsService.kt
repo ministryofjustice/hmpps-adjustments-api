@@ -17,6 +17,7 @@ import uk.gov.justice.digital.hmpps.adjustments.api.entity.AdjustmentSource
 import uk.gov.justice.digital.hmpps.adjustments.api.entity.AdjustmentStatus.ACTIVE
 import uk.gov.justice.digital.hmpps.adjustments.api.entity.AdjustmentStatus.DELETED
 import uk.gov.justice.digital.hmpps.adjustments.api.entity.AdjustmentType
+import uk.gov.justice.digital.hmpps.adjustments.api.entity.AdjustmentType.REMAND
 import uk.gov.justice.digital.hmpps.adjustments.api.entity.AdjustmentType.UNLAWFULLY_AT_LARGE
 import uk.gov.justice.digital.hmpps.adjustments.api.entity.ChangeType
 import uk.gov.justice.digital.hmpps.adjustments.api.entity.UnlawfullyAtLarge
@@ -26,6 +27,7 @@ import uk.gov.justice.digital.hmpps.adjustments.api.model.AdditionalDaysAwardedD
 import uk.gov.justice.digital.hmpps.adjustments.api.model.AdjustmentDto
 import uk.gov.justice.digital.hmpps.adjustments.api.model.AdjustmentEffectiveDaysDto
 import uk.gov.justice.digital.hmpps.adjustments.api.model.CreateResponseDto
+import uk.gov.justice.digital.hmpps.adjustments.api.model.RemandDto
 import uk.gov.justice.digital.hmpps.adjustments.api.model.UnlawfullyAtLargeDto
 import uk.gov.justice.digital.hmpps.adjustments.api.respository.AdjustmentRepository
 import java.time.LocalDate
@@ -63,10 +65,11 @@ class AdjustmentsService(
       legacyData = objectToJson(
         LegacyData(
           resource.bookingId,
-          resource.sentenceSequence,
+          sentenceSequence(resource),
           LocalDate.now(),
           null,
           null,
+          chargeIds = resource.remand?.chargeId ?: emptyList(),
         ),
       ),
       additionalDaysAwarded = additionalDaysAwarded(resource),
@@ -171,10 +174,11 @@ class AdjustmentsService(
       legacyData = objectToJson(
         LegacyData(
           resource.bookingId,
-          resource.sentenceSequence,
+          sentenceSequence(resource),
           persistedLegacyData.postedDate,
           persistedLegacyData.comment,
           persistedLegacyData.type,
+          chargeIds = resource.remand?.chargeId ?: emptyList(),
         ),
       )
       additionalDaysAwarded = additionalDaysAwarded(resource, this)
@@ -187,6 +191,18 @@ class AdjustmentsService(
         adjustment = adjustment,
       )
     }
+  }
+
+  private fun sentenceSequence(resource: AdjustmentDto): Int? {
+    if (resource.remand != null && resource.adjustmentType == REMAND) {
+      val sentences = prisonService.getSentencesAndOffences(resource.bookingId)
+      val matchingSentences = sentences.filter { it.offences.any { off -> resource.remand.chargeId.contains(off.offenderChargeId) } }
+      if (matchingSentences.isEmpty()) {
+        throw ApiValidationException("No matching sentences for charge ids ${resource.remand.chargeId.joinToString()}}")
+      }
+      return matchingSentences.maxBy { it.sentenceDate }.sentenceSequence
+    }
+    return null
   }
 
   @Transactional
@@ -227,12 +243,20 @@ class AdjustmentsService(
       bookingId = legacyData.bookingId,
       additionalDaysAwarded = additionalDaysAwardedToDto(adjustment),
       unlawfullyAtLarge = unlawfullyAtLargeDto(adjustment),
+      remand = remandDto(adjustment, legacyData),
       lastUpdatedBy = adjustment.adjustmentHistory.last().changeByUsername,
       lastUpdatedDate = adjustment.adjustmentHistory.last().changeAt,
       status = adjustment.status,
       prisonId = adjustment.prisonId,
       prisonName = prisonDescription,
     )
+  }
+
+  private fun remandDto(adjustment: Adjustment, legacyData: LegacyData): RemandDto? {
+    if (adjustment.adjustmentType === REMAND && legacyData.chargeIds.isNotEmpty()) {
+      return RemandDto(legacyData.chargeIds)
+    }
+    return null
   }
 
   private fun unlawfullyAtLargeDto(adjustment: Adjustment): UnlawfullyAtLargeDto? =
