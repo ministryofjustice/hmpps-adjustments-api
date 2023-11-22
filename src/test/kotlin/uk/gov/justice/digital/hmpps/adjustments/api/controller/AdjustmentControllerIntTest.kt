@@ -9,7 +9,6 @@ import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.core.ParameterizedTypeReference
-import org.springframework.http.HttpStatusCode
 import org.springframework.http.MediaType
 import org.springframework.test.context.jdbc.Sql
 import org.springframework.test.web.reactive.server.expectBodyList
@@ -62,6 +61,7 @@ class AdjustmentControllerIntTest : SqsIntegrationTestBase() {
         .exchange()
         .expectStatus().isBadRequest
     }
+
     @Test
     @Transactional
     fun `Create remand adjustment where charge ids do not exist`() {
