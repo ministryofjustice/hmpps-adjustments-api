@@ -202,7 +202,7 @@ class AdjustmentsService(
       }
       return matchingSentences.maxBy { it.sentenceDate }.sentenceSequence
     }
-    return null
+    return resource.sentenceSequence
   }
 
   @Transactional
