@@ -39,6 +39,7 @@ class ValidationServiceTest {
     effectiveDays = null,
     additionalDaysAwarded = null,
     unlawfullyAtLarge = null,
+    remand = null,
     lastUpdatedDate = LocalDateTime.now(),
   )
 
@@ -46,6 +47,12 @@ class ValidationServiceTest {
     id = UUID.randomUUID(),
     adjustmentType = AdjustmentType.RESTORATION_OF_ADDITIONAL_DAYS_AWARDED,
     days = 20,
+  )
+
+  private val EXISTING_NOMIS_RADA = EXISTING_RADA.copy(
+    id = UUID.randomUUID(),
+    days = null,
+    effectiveDays = 20,
   )
 
   @BeforeEach
@@ -61,6 +68,13 @@ class ValidationServiceTest {
 
     @Test
     fun `RADA days valid`() {
+      val result = validationService.validate(VALID_NEW_RADA)
+      assertThat(result).isEmpty()
+    }
+
+    @Test
+    fun `RADA days valid if existing rada is from NOMIS`() {
+      whenever(adjustmentService.findCurrentAdjustments(PERSON, START_OF_SENTENCE_ENVELOPE)).thenReturn(listOf(EXISTING_ADA, EXISTING_NOMIS_RADA))
       val result = validationService.validate(VALID_NEW_RADA)
       assertThat(result).isEmpty()
     }
