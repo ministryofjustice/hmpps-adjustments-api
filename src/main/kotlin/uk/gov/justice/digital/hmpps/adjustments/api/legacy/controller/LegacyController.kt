@@ -47,7 +47,7 @@ class LegacyController(
   @PreAuthorize("hasRole('SENTENCE_ADJUSTMENTS_SYNCHRONISATION')")
   fun create(@RequestBody adjustment: LegacyAdjustment): LegacyAdjustmentCreatedResponse {
     return legacyService.create(adjustment, migration = false).also {
-      eventService.create(it.adjustmentId, adjustment.offenderNo, AdjustmentSource.NOMIS)
+      eventService.create(listOf(it.adjustmentId), adjustment.offenderNo, AdjustmentSource.NOMIS)
     }
   }
 

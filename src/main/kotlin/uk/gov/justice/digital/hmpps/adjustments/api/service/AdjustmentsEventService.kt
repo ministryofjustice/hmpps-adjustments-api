@@ -10,17 +10,20 @@ class AdjustmentsEventService(
   private val snsService: SnsService,
 ) {
 
-  fun create(id: UUID, person: String, source: AdjustmentSource) {
-    snsService.publishDomainEvent(
-      EventType.ADJUSTMENT_CREATED,
-      "An adjustment has been created",
-      LocalDateTime.now(),
-      AdditionalInformation(
-        id,
-        person,
-        source.toString(),
-      ),
-    )
+  fun create(ids: List<UUID>, person: String, source: AdjustmentSource) {
+    ids.forEachIndexed { index, it ->
+      snsService.publishDomainEvent(
+        EventType.ADJUSTMENT_CREATED,
+        "An adjustment has been created",
+        LocalDateTime.now(),
+        AdditionalInformation(
+          it,
+          person,
+          source.toString(),
+          lastEvent = (ids.size - 1) == index,
+        ),
+      )
+    }
   }
 
   fun update(id: UUID, person: String, source: AdjustmentSource) {

@@ -51,20 +51,20 @@ class AdjustmentControllerIntTest : SqsIntegrationTestBase() {
   @Nested
   inner class RemandTests {
     @Test
-    fun create() {
+    fun `Create remand adjustment where charge ids do not exist`() {
       webTestClient
         .post()
         .uri("/adjustments")
         .headers(setAdjustmentsMaintainerAuth())
         .contentType(MediaType.APPLICATION_JSON)
-        .bodyValue(CREATED_ADJUSTMENT.copy(remand = RemandDto(listOf(98765432))))
+        .bodyValue(listOf(CREATED_ADJUSTMENT.copy(remand = RemandDto(listOf(98765432)))))
         .exchange()
         .expectStatus().isBadRequest
     }
 
     @Test
     @Transactional
-    fun `Create remand adjustment where charge ids do not exist`() {
+    fun create() {
       val id = createAnAdjustment()
       val adjustment = adjustmentRepository.findById(id).get()
 
@@ -98,6 +98,27 @@ class AdjustmentControllerIntTest : SqsIntegrationTestBase() {
       assertThat(latestMessage).contains(adjustment.id.toString())
       assertThat(latestMessage).contains(EventType.ADJUSTMENT_CREATED.value)
       assertThat(latestMessage).contains(AdjustmentSource.DPS.name)
+      assertThat(latestMessage).contains("\\\"lastEvent\\\":true")
+    }
+
+    @Test
+    fun createMany() {
+      postCreateAdjustments(
+        listOf(
+          CREATED_ADJUSTMENT.copy(),
+          CREATED_ADJUSTMENT.copy(
+            fromDate = CREATED_ADJUSTMENT.fromDate!!.minusYears(1),
+            toDate = CREATED_ADJUSTMENT.toDate!!.minusYears(1),
+          ),
+        ),
+      )
+
+      awaitAtMost30Secs untilCallTo { getNumberOfMessagesCurrentlyOnQueue() } matches { it == 2 }
+      val messages = getLatestMessage()!!.messages()
+      val first = messages.find { it.body().contains("\\\"lastEvent\\\":false") }
+      assertThat(first).isNotNull
+      val second = messages.find { it.body().contains("\\\"lastEvent\\\":true") }
+      assertThat(second).isNotNull
     }
 
     @Test
@@ -178,6 +199,7 @@ class AdjustmentControllerIntTest : SqsIntegrationTestBase() {
       assertThat(latestMessage).contains(adjustment.id.toString())
       assertThat(latestMessage).contains(EventType.ADJUSTMENT_UPDATED.value)
       assertThat(latestMessage).contains(AdjustmentSource.DPS.name)
+      assertThat(latestMessage).contains("\\\"lastEvent\\\":true")
     }
 
     @Test
@@ -205,6 +227,7 @@ class AdjustmentControllerIntTest : SqsIntegrationTestBase() {
       assertThat(latestMessage).contains(EventType.ADJUSTMENT_UPDATED.value)
       assertThat(latestMessage).contains(AdjustmentSource.DPS.name)
       assertThat(latestMessage).contains("\\\"effectiveDays\\\":true")
+      assertThat(latestMessage).contains("\\\"lastEvent\\\":true")
     }
 
     @Test
@@ -267,6 +290,7 @@ class AdjustmentControllerIntTest : SqsIntegrationTestBase() {
       assertThat(latestMessage).contains(adjustment.id.toString())
       assertThat(latestMessage).contains(EventType.ADJUSTMENT_DELETED.value)
       assertThat(latestMessage).contains(AdjustmentSource.DPS.name)
+      assertThat(latestMessage).contains("\\\"lastEvent\\\":true")
     }
   }
 
@@ -339,7 +363,7 @@ class AdjustmentControllerIntTest : SqsIntegrationTestBase() {
           prospective = true,
         ),
       )
-      val adjustmentId = postCreateAdjustment(createDto)
+      val adjustmentId = postCreateAdjustments(listOf(createDto))[0]
 
       val adjustment = adjustmentRepository.findById(adjustmentId).get()
       assertThat(adjustment.additionalDaysAwarded!!.adjudicationCharges).containsAll(
@@ -394,14 +418,16 @@ class AdjustmentControllerIntTest : SqsIntegrationTestBase() {
 
     @Test
     fun `Create a UAL Adjustment, then update it`() {
-      val adjustmentId = postCreateAdjustment(
-        CREATED_ADJUSTMENT.copy(
-          person = "UAL123",
-          adjustmentType = UNLAWFULLY_AT_LARGE,
-          unlawfullyAtLarge = UnlawfullyAtLargeDto(type = RECALL),
-          remand = null,
+      val adjustmentId = postCreateAdjustments(
+        listOf(
+          CREATED_ADJUSTMENT.copy(
+            person = "UAL123",
+            adjustmentType = UNLAWFULLY_AT_LARGE,
+            unlawfullyAtLarge = UnlawfullyAtLargeDto(type = RECALL),
+            remand = null,
+          ),
         ),
-      )
+      )[0]
 
       val adjustment = adjustmentRepository.findById(adjustmentId).get()
 
@@ -520,16 +546,16 @@ class AdjustmentControllerIntTest : SqsIntegrationTestBase() {
       .returnResult()
       .responseBody
 
-  private fun postCreateAdjustment(adjustmentDto: AdjustmentDto) = webTestClient
+  private fun postCreateAdjustments(adjustmentDtos: List<AdjustmentDto>) = webTestClient
     .post()
     .uri("/adjustments")
     .headers(setAdjustmentsMaintainerAuth())
     .contentType(MediaType.APPLICATION_JSON)
-    .bodyValue(adjustmentDto)
+    .bodyValue(adjustmentDtos)
     .exchange()
     .expectStatus().isCreated
     .returnResult(CreateResponseDto::class.java)
-    .responseBody.blockFirst()!!.adjustmentId
+    .responseBody.blockFirst()!!.adjustmentIds
 
   private fun getAdjustmentById(adjustmentId: UUID) = webTestClient
     .get()
@@ -548,11 +574,11 @@ class AdjustmentControllerIntTest : SqsIntegrationTestBase() {
         setAdjustmentsMaintainerAuth(),
       )
       .contentType(MediaType.APPLICATION_JSON)
-      .bodyValue(CREATED_ADJUSTMENT.copy())
+      .bodyValue(listOf(CREATED_ADJUSTMENT.copy()))
       .exchange()
       .expectStatus().isCreated
       .returnResult(CreateResponseDto::class.java)
-      .responseBody.blockFirst()!!.adjustmentId
+      .responseBody.blockFirst()!!.adjustmentIds[0]
   }
 
   @Test

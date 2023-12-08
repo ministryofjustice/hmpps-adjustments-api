@@ -63,6 +63,7 @@ data class AdditionalInformation(
   val offenderNo: String? = null,
   val source: String? = null,
   val effectiveDays: Boolean = false,
+  val lastEvent: Boolean = true,
 )
 
 data class HMPPSDomainEvent(

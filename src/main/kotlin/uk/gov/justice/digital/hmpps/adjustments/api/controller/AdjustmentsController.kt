@@ -41,18 +41,18 @@ class AdjustmentsController(
   @ResponseStatus(HttpStatus.CREATED)
   @PreAuthorize("hasRole('ADJUSTMENTS_MAINTAINER') and hasRole('RELEASE_DATES_CALCULATOR')")
   @Operation(
-    summary = "Create an adjustments",
-    description = "Create an adjustment.",
+    summary = "Create adjustments",
+    description = "Create adjustment.",
   )
   @ApiResponses(
     value = [
-      ApiResponse(responseCode = "201", description = "Adjustment created"),
+      ApiResponse(responseCode = "201", description = "Adjustments created"),
       ApiResponse(responseCode = "401", description = "Unauthorised, requires a valid Oauth2 token"),
     ],
   )
-  fun create(@RequestBody adjustment: AdjustmentDto): CreateResponseDto {
-    return adjustmentsService.create(adjustment).also {
-      eventService.create(it.adjustmentId, adjustment.person, AdjustmentSource.DPS)
+  fun create(@RequestBody adjustments: List<AdjustmentDto>): CreateResponseDto {
+    return adjustmentsService.create(adjustments).also {
+      eventService.create(it.adjustmentIds, adjustments[0].person, AdjustmentSource.DPS)
     }
   }
 
