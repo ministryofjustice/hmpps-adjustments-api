@@ -100,6 +100,7 @@ class AdjustmentControllerIntTest : SqsIntegrationTestBase() {
       assertThat(latestMessage).contains(AdjustmentSource.DPS.name)
       assertThat(latestMessage).contains("\\\"lastEvent\\\":true")
     }
+
     @Test
     fun createMany() {
       postCreateAdjustments(
