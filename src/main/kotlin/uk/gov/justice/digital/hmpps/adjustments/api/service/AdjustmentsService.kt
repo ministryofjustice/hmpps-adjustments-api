@@ -47,7 +47,11 @@ class AdjustmentsService(
       ?: throw IllegalStateException("User is not authenticated")
 
   @Transactional
-  fun create(resource: AdjustmentDto): CreateResponseDto {
+  fun create(resource: List<AdjustmentDto>): CreateResponseDto {
+    return CreateResponseDto(resource.map { create(it) })
+  }
+
+  private fun create(resource: AdjustmentDto): UUID {
     if ((resource.toDate == null && resource.days == null) || (resource.toDate != null && resource.days != null)) {
       throw ApiValidationException("resource must have either toDate or days, not both")
     }
@@ -83,7 +87,7 @@ class AdjustmentsService(
         adjustment = adjustment,
       ),
     )
-    return CreateResponseDto(adjustmentRepository.save(adjustment).id)
+    return adjustmentRepository.save(adjustment).id
   }
 
   @Transactional
