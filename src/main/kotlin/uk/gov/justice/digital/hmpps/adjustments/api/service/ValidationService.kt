@@ -1,6 +1,7 @@
 package uk.gov.justice.digital.hmpps.adjustments.api.service
 
 import org.springframework.stereotype.Service
+import uk.gov.justice.digital.hmpps.adjustments.api.entity.AdjustmentStatus
 import uk.gov.justice.digital.hmpps.adjustments.api.entity.AdjustmentType
 import uk.gov.justice.digital.hmpps.adjustments.api.model.AdjustmentDto
 import uk.gov.justice.digital.hmpps.adjustments.api.model.ValidationCode
@@ -62,7 +63,7 @@ class ValidationService(
     val validationMessages = mutableListOf<ValidationMessage>()
 
     if (adjustment.days != null && adjustment.days > 0) {
-      val adjustments = adjustmentService.findCurrentAdjustments(adjustment.person, startOfSentenceEnvelope)
+      val adjustments = adjustmentService.findCurrentAdjustments(adjustment.person, AdjustmentStatus.ACTIVE, startOfSentenceEnvelope)
       val adaDays = adjustments.filter { it.adjustmentType === AdjustmentType.ADDITIONAL_DAYS_AWARDED }
         .map { it.days!! }
         .reduceOrNull { acc, it -> acc + it } ?: 0

@@ -14,8 +14,11 @@ import uk.gov.justice.digital.hmpps.adjustments.api.entity.AdjudicationCharges
 import uk.gov.justice.digital.hmpps.adjustments.api.entity.Adjustment
 import uk.gov.justice.digital.hmpps.adjustments.api.entity.AdjustmentHistory
 import uk.gov.justice.digital.hmpps.adjustments.api.entity.AdjustmentSource
+import uk.gov.justice.digital.hmpps.adjustments.api.entity.AdjustmentStatus
 import uk.gov.justice.digital.hmpps.adjustments.api.entity.AdjustmentStatus.ACTIVE
 import uk.gov.justice.digital.hmpps.adjustments.api.entity.AdjustmentStatus.DELETED
+import uk.gov.justice.digital.hmpps.adjustments.api.entity.AdjustmentStatus.INACTIVE
+import uk.gov.justice.digital.hmpps.adjustments.api.entity.AdjustmentStatus.INACTIVE_WHEN_DELETED
 import uk.gov.justice.digital.hmpps.adjustments.api.entity.AdjustmentType
 import uk.gov.justice.digital.hmpps.adjustments.api.entity.AdjustmentType.REMAND
 import uk.gov.justice.digital.hmpps.adjustments.api.entity.AdjustmentType.UNLAWFULLY_AT_LARGE
@@ -140,16 +143,16 @@ class AdjustmentsService(
 
   fun get(adjustmentId: UUID): AdjustmentDto {
     val adjustment = adjustmentRepository.findById(adjustmentId)
-      .map { if (it.status == DELETED) null else it }
+      .map { if (it.status == DELETED || it.status == INACTIVE_WHEN_DELETED) null else it }
       .orElseThrow {
         EntityNotFoundException("No adjustment found with id $adjustmentId")
       }!!
     return mapToDto(adjustment)
   }
 
-  fun findCurrentAdjustments(person: String, startOfSentenceEnvelope: LocalDate? = null): List<AdjustmentDto> {
+  fun findCurrentAdjustments(person: String, status: AdjustmentStatus, startOfSentenceEnvelope: LocalDate? = null): List<AdjustmentDto> {
     val fromDate = startOfSentenceEnvelope ?: prisonService.getStartOfSentenceEnvelope(person)
-    return adjustmentRepository.findCurrentAdjustmentsByPerson(person, fromDate).map { mapToDto(it) }
+    return adjustmentRepository.findCurrentAdjustmentsByPerson(person, fromDate, status).map { mapToDto(it) }
   }
 
   @Transactional
@@ -217,7 +220,7 @@ class AdjustmentsService(
       }
     val change = objectToJson(adjustment)
     adjustment.apply {
-      status = DELETED
+      status = if (this.status == INACTIVE) INACTIVE_WHEN_DELETED else DELETED
       adjustmentHistory += AdjustmentHistory(
         changeByUsername = getCurrentAuthentication().principal,
         changeType = ChangeType.DELETE,

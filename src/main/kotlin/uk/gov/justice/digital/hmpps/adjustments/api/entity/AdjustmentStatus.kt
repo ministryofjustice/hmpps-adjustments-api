@@ -4,4 +4,5 @@ enum class AdjustmentStatus {
   ACTIVE,
   INACTIVE,
   DELETED,
+  INACTIVE_WHEN_DELETED,
 }

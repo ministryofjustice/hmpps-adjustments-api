@@ -15,6 +15,7 @@ import org.springframework.test.web.reactive.server.expectBodyList
 import uk.gov.justice.digital.hmpps.adjustments.api.config.ErrorResponse
 import uk.gov.justice.digital.hmpps.adjustments.api.entity.AdjudicationCharges
 import uk.gov.justice.digital.hmpps.adjustments.api.entity.AdjustmentSource
+import uk.gov.justice.digital.hmpps.adjustments.api.entity.AdjustmentStatus
 import uk.gov.justice.digital.hmpps.adjustments.api.entity.AdjustmentStatus.ACTIVE
 import uk.gov.justice.digital.hmpps.adjustments.api.entity.AdjustmentStatus.DELETED
 import uk.gov.justice.digital.hmpps.adjustments.api.entity.AdjustmentType
@@ -509,6 +510,38 @@ class AdjustmentControllerIntTest : SqsIntegrationTestBase() {
     @Test
     @Sql(
       "classpath:test_data/reset-data.sql",
+      "classpath:test_data/insert-adjustments-spanning-sentence-envelope.sql",
+    )
+    fun `Get adjustments by person filter for adjustments before sentence envelope`() {
+      // The sentence envelope start date is 2015-03-17 (set in prison-api mock call)
+      val person = "BCDEFG"
+      val result = getAdjustmentsByPerson(person, startOfSentenceEnvelope = LocalDate.of(2000, 1, 1))
+
+      assertThat(result.map { it.lastUpdatedBy })
+        .usingRecursiveComparison()
+        .ignoringCollectionOrder()
+        .isEqualTo(listOf("current-ual", "current-rada", "tagged-bail-no-dates", "remand-before-sentence", "expired-ual", "expired-rada"))
+    }
+
+    @Test
+    @Sql(
+      "classpath:test_data/reset-data.sql",
+      "classpath:test_data/insert-adjustments-spanning-sentence-envelope.sql",
+    )
+    fun `Get adjustments by person filter for deleted adjustments`() {
+      // The sentence envelope start date is 2015-03-17 (set in prison-api mock call)
+      val person = "BCDEFG"
+      val result = getAdjustmentsByPerson(person, status = DELETED)
+
+      assertThat(result.map { it.lastUpdatedBy })
+        .usingRecursiveComparison()
+        .ignoringCollectionOrder()
+        .isEqualTo(listOf("deleted-ual"))
+    }
+
+    @Test
+    @Sql(
+      "classpath:test_data/reset-data.sql",
       "classpath:test_data/insert-adjustment-with-prison.sql",
     )
     fun `Get adjustment details where a prison is associated)`() {
@@ -535,10 +568,10 @@ class AdjustmentControllerIntTest : SqsIntegrationTestBase() {
     }
   }
 
-  private fun getAdjustmentsByPerson(person: String): List<AdjustmentDto> =
+  private fun getAdjustmentsByPerson(person: String, status: AdjustmentStatus? = null, startOfSentenceEnvelope: LocalDate? = null): List<AdjustmentDto> =
     webTestClient
       .get()
-      .uri("/adjustments?person=$person")
+      .uri("/adjustments?person=$person${if (status != null) "&status=$status" else ""}${if (startOfSentenceEnvelope != null) "&sentenceEnvelopeDate=$startOfSentenceEnvelope" else ""}")
       .headers(setAdjustmentsMaintainerAuth())
       .exchange()
       .expectStatus().isOk

@@ -29,7 +29,7 @@ interface AdjustmentRepository : JpaRepository<Adjustment, UUID> {
   fun findCurrentAdjustmentsByPerson(
     person: String,
     fromDate: LocalDate,
+    status: AdjustmentStatus,
     adjustmentTypes: List<AdjustmentType>? = listOf(REMAND, TAGGED_BAIL, UNUSED_DEDUCTIONS),
-    status: AdjustmentStatus = AdjustmentStatus.ACTIVE,
   ): List<Adjustment>
 }
