@@ -6,6 +6,7 @@ import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.whenever
+import uk.gov.justice.digital.hmpps.adjustments.api.entity.AdjustmentStatus
 import uk.gov.justice.digital.hmpps.adjustments.api.entity.AdjustmentType
 import uk.gov.justice.digital.hmpps.adjustments.api.enums.UnlawfullyAtLargeType
 import uk.gov.justice.digital.hmpps.adjustments.api.model.AdjustmentDto
@@ -58,7 +59,7 @@ class ValidationServiceTest {
   @BeforeEach
   fun init() {
     whenever(prisonService.getStartOfSentenceEnvelope(BOOKING_ID)).thenReturn(START_OF_SENTENCE_ENVELOPE)
-    whenever(adjustmentService.findCurrentAdjustments(PERSON, START_OF_SENTENCE_ENVELOPE)).thenReturn(listOf(EXISTING_ADA, EXISTING_RADA))
+    whenever(adjustmentService.findCurrentAdjustments(PERSON, AdjustmentStatus.ACTIVE, START_OF_SENTENCE_ENVELOPE)).thenReturn(listOf(EXISTING_ADA, EXISTING_RADA))
   }
 
   @Nested
@@ -74,7 +75,7 @@ class ValidationServiceTest {
 
     @Test
     fun `RADA days valid if existing rada is from NOMIS`() {
-      whenever(adjustmentService.findCurrentAdjustments(PERSON, START_OF_SENTENCE_ENVELOPE)).thenReturn(listOf(EXISTING_ADA, EXISTING_NOMIS_RADA))
+      whenever(adjustmentService.findCurrentAdjustments(PERSON, AdjustmentStatus.ACTIVE, START_OF_SENTENCE_ENVELOPE)).thenReturn(listOf(EXISTING_ADA, EXISTING_NOMIS_RADA))
       val result = validationService.validate(VALID_NEW_RADA)
       assertThat(result).isEmpty()
     }

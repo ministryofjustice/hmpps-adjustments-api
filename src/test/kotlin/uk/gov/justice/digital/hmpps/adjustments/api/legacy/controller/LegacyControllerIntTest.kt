@@ -183,7 +183,7 @@ class LegacyControllerIntTest : SqsIntegrationTestBase() {
 
     val adjustment = adjustmentRepository.findById(CREATED_ID).get()
 
-    assertThat(adjustment.status).isEqualTo(AdjustmentStatus.DELETED)
+    assertThat(adjustment.status).isEqualTo(AdjustmentStatus.INACTIVE_WHEN_DELETED)
     assertThat(adjustment.adjustmentHistory.size).isEqualTo(2)
     assertThat(adjustment.adjustmentHistory[1].changeType).isEqualTo(ChangeType.DELETE)
 

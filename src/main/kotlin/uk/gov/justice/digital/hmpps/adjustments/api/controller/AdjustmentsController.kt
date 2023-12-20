@@ -19,6 +19,7 @@ import org.springframework.web.bind.annotation.RequestParam
 import org.springframework.web.bind.annotation.ResponseStatus
 import org.springframework.web.bind.annotation.RestController
 import uk.gov.justice.digital.hmpps.adjustments.api.entity.AdjustmentSource
+import uk.gov.justice.digital.hmpps.adjustments.api.entity.AdjustmentStatus
 import uk.gov.justice.digital.hmpps.adjustments.api.model.AdjustmentDto
 import uk.gov.justice.digital.hmpps.adjustments.api.model.AdjustmentEffectiveDaysDto
 import uk.gov.justice.digital.hmpps.adjustments.api.model.CreateResponseDto
@@ -26,6 +27,7 @@ import uk.gov.justice.digital.hmpps.adjustments.api.model.ValidationMessage
 import uk.gov.justice.digital.hmpps.adjustments.api.service.AdjustmentsEventService
 import uk.gov.justice.digital.hmpps.adjustments.api.service.AdjustmentsService
 import uk.gov.justice.digital.hmpps.adjustments.api.service.ValidationService
+import java.time.LocalDate
 import java.util.UUID
 
 @RestController
@@ -73,8 +75,14 @@ class AdjustmentsController(
     @Parameter(required = true, description = "The noms ID of the person")
     @RequestParam("person")
     person: String,
+    @Parameter(required = false, description = "The status of adjustments. Defaults to ACTIVE")
+    @RequestParam("status")
+    status: AdjustmentStatus?,
+    @Parameter(required = false, description = "The earliest sentence date to filter adjustments by. Defaults to earliest active sentence date")
+    @RequestParam("sentenceEnvelopeDate")
+    sentenceEnvelopeDate: LocalDate?,
   ): List<AdjustmentDto> {
-    return adjustmentsService.findCurrentAdjustments(person)
+    return adjustmentsService.findCurrentAdjustments(person, status ?: AdjustmentStatus.ACTIVE, sentenceEnvelopeDate)
   }
 
   @GetMapping("/{adjustmentId}")

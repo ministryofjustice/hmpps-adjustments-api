@@ -12,6 +12,7 @@ import uk.gov.justice.digital.hmpps.adjustments.api.entity.AdjustmentSource
 import uk.gov.justice.digital.hmpps.adjustments.api.entity.AdjustmentStatus.ACTIVE
 import uk.gov.justice.digital.hmpps.adjustments.api.entity.AdjustmentStatus.DELETED
 import uk.gov.justice.digital.hmpps.adjustments.api.entity.AdjustmentStatus.INACTIVE
+import uk.gov.justice.digital.hmpps.adjustments.api.entity.AdjustmentStatus.INACTIVE_WHEN_DELETED
 import uk.gov.justice.digital.hmpps.adjustments.api.entity.AdjustmentType
 import uk.gov.justice.digital.hmpps.adjustments.api.entity.ChangeType
 import uk.gov.justice.digital.hmpps.adjustments.api.legacy.model.LegacyAdjustment
@@ -53,7 +54,7 @@ class LegacyService(
 
   fun get(adjustmentId: UUID): LegacyAdjustment {
     val adjustment = adjustmentRepository.findById(adjustmentId)
-      .map { if (it.status == DELETED) null else it }
+      .map { if (it.status == DELETED || it.status == INACTIVE_WHEN_DELETED) null else it }
       .orElseThrow {
         EntityNotFoundException("No adjustment found with id $adjustmentId")
       }!!
@@ -103,7 +104,7 @@ class LegacyService(
       }
     val change = objectToJson(adjustment)
     adjustment.apply {
-      status = DELETED
+      status = if (this.status == INACTIVE) INACTIVE_WHEN_DELETED else DELETED
       adjustmentHistory += AdjustmentHistory(
         changeByUsername = "NOMIS",
         changeType = ChangeType.DELETE,
