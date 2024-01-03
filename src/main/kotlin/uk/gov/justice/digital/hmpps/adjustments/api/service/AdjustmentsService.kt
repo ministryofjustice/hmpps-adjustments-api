@@ -229,7 +229,9 @@ class AdjustmentsService(
         }
         SentenceInfo(matchingSentences.maxBy { it.sentenceDate })
       } else {
-        SentenceInfo(sentences.find { it.sentenceSequence == resource.sentenceSequence }!!)
+        val matchingSentence = sentences.find { it.sentenceSequence == resource.sentenceSequence }
+          ?: throw ApiValidationException("No matching sentences for sentence sequence ${resource.sentenceSequence}")
+        SentenceInfo(matchingSentence)
       }
     }
     return null
