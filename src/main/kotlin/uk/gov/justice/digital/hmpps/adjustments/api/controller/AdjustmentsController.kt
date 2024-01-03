@@ -23,6 +23,7 @@ import uk.gov.justice.digital.hmpps.adjustments.api.entity.AdjustmentStatus
 import uk.gov.justice.digital.hmpps.adjustments.api.model.AdjustmentDto
 import uk.gov.justice.digital.hmpps.adjustments.api.model.AdjustmentEffectiveDaysDto
 import uk.gov.justice.digital.hmpps.adjustments.api.model.CreateResponseDto
+import uk.gov.justice.digital.hmpps.adjustments.api.model.RestoreAdjustmentsDto
 import uk.gov.justice.digital.hmpps.adjustments.api.model.ValidationMessage
 import uk.gov.justice.digital.hmpps.adjustments.api.service.AdjustmentsEventService
 import uk.gov.justice.digital.hmpps.adjustments.api.service.AdjustmentsService
@@ -127,6 +128,29 @@ class AdjustmentsController(
   ) {
     adjustmentsService.update(adjustmentId, adjustment).also {
       eventService.update(adjustmentId, adjustment.person, AdjustmentSource.DPS)
+    }
+  }
+
+  @PostMapping("/restore")
+  @Operation(
+    summary = "Restore a deleted adjustment",
+    description = "Restore a deleted adjustment",
+  )
+  @ApiResponses(
+    value = [
+      ApiResponse(responseCode = "200", description = "Adjustment restored"),
+      ApiResponse(responseCode = "401", description = "Unauthorised, requires a valid Oauth2 token"),
+      ApiResponse(responseCode = "404", description = "Adjustment not found"),
+    ],
+  )
+  @PreAuthorize("hasRole('ADJUSTMENTS_MAINTAINER')")
+  fun restore(
+    @Parameter(required = true, description = "The adjustment UUID")
+    @RequestBody
+    adjustments: RestoreAdjustmentsDto,
+  ) {
+    adjustmentsService.restore(adjustments).also {
+      eventService.create(adjustments.ids, it[0].person, AdjustmentSource.DPS)
     }
   }
 

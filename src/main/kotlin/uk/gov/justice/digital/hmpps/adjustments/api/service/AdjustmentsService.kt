@@ -21,16 +21,20 @@ import uk.gov.justice.digital.hmpps.adjustments.api.entity.AdjustmentStatus.INAC
 import uk.gov.justice.digital.hmpps.adjustments.api.entity.AdjustmentStatus.INACTIVE_WHEN_DELETED
 import uk.gov.justice.digital.hmpps.adjustments.api.entity.AdjustmentType
 import uk.gov.justice.digital.hmpps.adjustments.api.entity.AdjustmentType.REMAND
+import uk.gov.justice.digital.hmpps.adjustments.api.entity.AdjustmentType.TAGGED_BAIL
 import uk.gov.justice.digital.hmpps.adjustments.api.entity.AdjustmentType.UNLAWFULLY_AT_LARGE
 import uk.gov.justice.digital.hmpps.adjustments.api.entity.ChangeType
 import uk.gov.justice.digital.hmpps.adjustments.api.entity.UnlawfullyAtLarge
 import uk.gov.justice.digital.hmpps.adjustments.api.error.ApiValidationException
+import uk.gov.justice.digital.hmpps.adjustments.api.legacy.model.LegacyAdjustmentType
 import uk.gov.justice.digital.hmpps.adjustments.api.legacy.model.LegacyData
 import uk.gov.justice.digital.hmpps.adjustments.api.model.AdditionalDaysAwardedDto
 import uk.gov.justice.digital.hmpps.adjustments.api.model.AdjustmentDto
 import uk.gov.justice.digital.hmpps.adjustments.api.model.AdjustmentEffectiveDaysDto
 import uk.gov.justice.digital.hmpps.adjustments.api.model.CreateResponseDto
 import uk.gov.justice.digital.hmpps.adjustments.api.model.RemandDto
+import uk.gov.justice.digital.hmpps.adjustments.api.model.RestoreAdjustmentsDto
+import uk.gov.justice.digital.hmpps.adjustments.api.model.SentenceInfo
 import uk.gov.justice.digital.hmpps.adjustments.api.model.UnlawfullyAtLargeDto
 import uk.gov.justice.digital.hmpps.adjustments.api.respository.AdjustmentRepository
 import java.time.LocalDate
@@ -58,6 +62,7 @@ class AdjustmentsService(
     if ((resource.toDate == null && resource.days == null) || (resource.toDate != null && resource.days != null)) {
       throw ApiValidationException("resource must have either toDate or days, not both")
     }
+    val sentenceInfo = sentenceInfo(resource)
     val adjustment = Adjustment(
       person = resource.person,
       effectiveDays = resource.daysBetween ?: resource.days!!,
@@ -72,10 +77,10 @@ class AdjustmentsService(
       legacyData = objectToJson(
         LegacyData(
           resource.bookingId,
-          sentenceSequence(resource),
+          sentenceInfo?.sentenceSequence,
           LocalDate.now(),
           null,
-          null,
+          legacyType(resource.adjustmentType, sentenceInfo),
           chargeIds = resource.remand?.chargeId ?: emptyList(),
         ),
       ),
@@ -169,6 +174,7 @@ class AdjustmentsService(
     }
     val persistedLegacyData = objectMapper.convertValue(adjustment.legacyData, LegacyData::class.java)
     val change = objectToJson(adjustment)
+    val sentenceInfo = sentenceInfo(resource)
     adjustment.apply {
       days = resource.days
       effectiveDays = resource.daysBetween ?: resource.days!!
@@ -181,10 +187,10 @@ class AdjustmentsService(
       legacyData = objectToJson(
         LegacyData(
           resource.bookingId,
-          sentenceSequence(resource),
+          sentenceInfo?.sentenceSequence,
           persistedLegacyData.postedDate,
           persistedLegacyData.comment,
-          persistedLegacyData.type,
+          legacyType(resource.adjustmentType, sentenceInfo),
           chargeIds = resource.remand?.chargeId ?: emptyList(),
         ),
       )
@@ -200,16 +206,33 @@ class AdjustmentsService(
     }
   }
 
-  private fun sentenceSequence(resource: AdjustmentDto): Int? {
-    if (resource.remand != null && resource.adjustmentType == REMAND) {
-      val sentences = prisonService.getSentencesAndOffences(resource.bookingId)
-      val matchingSentences = sentences.filter { it.offences.any { off -> resource.remand.chargeId.contains(off.offenderChargeId) } }
-      if (matchingSentences.isEmpty()) {
-        throw ApiValidationException("No matching sentences for charge ids ${resource.remand.chargeId.joinToString()}}")
+  private fun legacyType(type: AdjustmentType, sentenceInfo: SentenceInfo?): LegacyAdjustmentType? {
+    if (sentenceInfo?.recall == true) {
+      if (type == REMAND) {
+        return LegacyAdjustmentType.RSR
       }
-      return matchingSentences.maxBy { it.sentenceDate }.sentenceSequence
+      if (type == TAGGED_BAIL) {
+        return LegacyAdjustmentType.RST
+      }
     }
-    return resource.sentenceSequence
+    return null
+  }
+
+  private fun sentenceInfo(resource: AdjustmentDto): SentenceInfo? {
+    if (resource.adjustmentType.isSentenceType()) {
+      val sentences = prisonService.getSentencesAndOffences(resource.bookingId)
+      return if (resource.remand != null && resource.adjustmentType == REMAND) {
+        val matchingSentences =
+          sentences.filter { it.offences.any { off -> resource.remand.chargeId.contains(off.offenderChargeId) } }
+        if (matchingSentences.isEmpty()) {
+          throw ApiValidationException("No matching sentences for charge ids ${resource.remand.chargeId.joinToString()}}")
+        }
+        SentenceInfo(matchingSentences.maxBy { it.sentenceDate })
+      } else {
+        SentenceInfo(sentences.find { it.sentenceSequence == resource.sentenceSequence }!!)
+      }
+    }
+    return null
   }
 
   @Transactional
@@ -281,5 +304,12 @@ class AdjustmentsService(
       )
     }
     return null
+  }
+
+  @Transactional
+  fun restore(resource: RestoreAdjustmentsDto): List<AdjustmentDto> {
+    val adjustments = adjustmentRepository.findAllById(resource.ids).map { mapToDto(it) }
+    adjustments.forEach { update(it.id!!, it) }
+    return adjustments
   }
 }
