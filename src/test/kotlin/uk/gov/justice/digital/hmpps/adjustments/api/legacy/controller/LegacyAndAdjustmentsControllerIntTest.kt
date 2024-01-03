@@ -157,14 +157,14 @@ class LegacyAndAdjustmentsControllerIntTest : SqsIntegrationTestBase() {
 
   @Test
   fun `Recall scenario`() {
-    // Adjustment create in DPS
+    // Adjustment created in DPS
     val adjustment = ADJUSTMENT.copy(
       person = PrisonApiExtension.RECALL_PRISONER_ID,
       bookingId = PrisonApiExtension.RECALL_BOOKING_ID,
     )
     val id = postCreateAdjustments(listOf(adjustment))[0]
 
-    // Person release adjustment made inactive in NOMIS
+    // Person released. adjustment made inactive in NOMIS
     val legacyAdjustment = getLegacyAdjustment(id)
     updateLegacyAdjustment(id, legacyAdjustment.copy(active = false))
 
