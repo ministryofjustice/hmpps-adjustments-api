@@ -4,7 +4,9 @@ import jakarta.transaction.Transactional
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
+import org.springframework.http.MediaType
 import org.springframework.test.annotation.Rollback
+import org.springframework.test.web.reactive.server.expectBodyList
 import uk.gov.justice.digital.hmpps.adjustments.api.entity.AdjustmentSource
 import uk.gov.justice.digital.hmpps.adjustments.api.entity.AdjustmentStatus
 import uk.gov.justice.digital.hmpps.adjustments.api.entity.AdjustmentType
@@ -15,11 +17,14 @@ import uk.gov.justice.digital.hmpps.adjustments.api.legacy.model.LegacyAdjustmen
 import uk.gov.justice.digital.hmpps.adjustments.api.legacy.model.LegacyAdjustmentType
 import uk.gov.justice.digital.hmpps.adjustments.api.legacy.model.LegacyData
 import uk.gov.justice.digital.hmpps.adjustments.api.model.AdjustmentDto
+import uk.gov.justice.digital.hmpps.adjustments.api.model.CreateResponseDto
 import uk.gov.justice.digital.hmpps.adjustments.api.model.RemandDto
+import uk.gov.justice.digital.hmpps.adjustments.api.model.RestoreAdjustmentsDto
 import uk.gov.justice.digital.hmpps.adjustments.api.respository.AdjustmentRepository
 import uk.gov.justice.digital.hmpps.adjustments.api.wiremock.PrisonApiExtension
 import java.time.LocalDate
 import java.time.LocalDateTime
+import java.util.UUID
 
 /*
 This is testing the sync between NOMIS and our service.
@@ -78,7 +83,7 @@ class LegacyAndAdjustmentsControllerIntTest : SqsIntegrationTestBase() {
     assertThat(adjustment.effectiveDays).isEqualTo(8)
 
     val legacyData = objectMapper.convertValue(adjustment.legacyData, LegacyData::class.java)
-    assertThat(legacyData).isEqualTo(LegacyData(bookingId = 123, sentenceSequence = 1, postedDate = LocalDate.now(), comment = "Created", type = LegacyAdjustmentType.RSR, migration = false, chargeIds = listOf(9991)))
+    assertThat(legacyData).isEqualTo(LegacyData(bookingId = 123, sentenceSequence = 1, postedDate = LocalDate.now(), comment = "Created", type = null, migration = false, chargeIds = listOf(9991)))
   }
 
   @Test
@@ -149,6 +154,96 @@ class LegacyAndAdjustmentsControllerIntTest : SqsIntegrationTestBase() {
       .exchange()
       .expectStatus().isOk
   }
+
+  @Test
+  fun `Recall scenario`() {
+    // Adjustment created in DPS
+    val adjustment = ADJUSTMENT.copy(
+      person = PrisonApiExtension.RECALL_PRISONER_ID,
+      bookingId = PrisonApiExtension.RECALL_BOOKING_ID,
+    )
+    val id = postCreateAdjustments(listOf(adjustment))[0]
+
+    // Person released. adjustment made inactive in NOMIS
+    val legacyAdjustment = getLegacyAdjustment(id)
+    updateLegacyAdjustment(id, legacyAdjustment.copy(active = false))
+
+    // Person recalled. In NOMIS their sentence will be deleted which also deletes the adjustment
+    deleteLegacyAdjustment(id)
+
+    // User comes to DPS and is shown inactive deleted adjustments
+    val adjustments = getAdjustmentsByPerson(PrisonApiExtension.RECALL_PRISONER_ID, AdjustmentStatus.INACTIVE_WHEN_DELETED)
+    assertThat(adjustments.size).isEqualTo(1)
+    assertThat(adjustments[0].id).isEqualTo(id)
+
+    // User selects to restore adjustment as recall type
+    postRestoreAdjustment(RestoreAdjustmentsDto(listOf(id)))
+    assertThat(legacyAdjustment.adjustmentType).isEqualTo(LegacyAdjustmentType.RSR)
+    assertThat(legacyAdjustment.active).isEqualTo(true)
+  }
+  private fun postRestoreAdjustment(restoreDto: RestoreAdjustmentsDto) = webTestClient
+    .post()
+    .uri("/adjustments/restore")
+    .headers(setAdjustmentsMaintainerAuth())
+    .contentType(MediaType.APPLICATION_JSON)
+    .bodyValue(restoreDto)
+    .exchange()
+    .expectStatus().isOk
+
+  private fun getAdjustmentsByPerson(person: String, status: AdjustmentStatus? = null, startOfSentenceEnvelope: LocalDate? = null): List<AdjustmentDto> =
+    webTestClient
+      .get()
+      .uri("/adjustments?person=$person${if (status != null) "&status=$status" else ""}${if (startOfSentenceEnvelope != null) "&sentenceEnvelopeDate=$startOfSentenceEnvelope" else ""}")
+      .headers(setAdjustmentsMaintainerAuth())
+      .exchange()
+      .expectStatus().isOk
+      .expectBodyList<AdjustmentDto>()
+      .returnResult()
+      .responseBody
+
+  private fun deleteLegacyAdjustment(id: UUID) = webTestClient
+    .delete()
+    .uri("/legacy/adjustments/$id")
+    .headers(
+      setLegacySynchronisationAuth(),
+    )
+    .header("Content-Type", LegacyController.LEGACY_CONTENT_TYPE)
+    .exchange()
+    .expectStatus().isOk
+
+  private fun postCreateAdjustments(adjustmentDtos: List<AdjustmentDto>) = webTestClient
+    .post()
+    .uri("/adjustments")
+    .headers(setAdjustmentsMaintainerAuth())
+    .contentType(MediaType.APPLICATION_JSON)
+    .bodyValue(adjustmentDtos)
+    .exchange()
+    .expectStatus().isCreated
+    .returnResult(CreateResponseDto::class.java)
+    .responseBody.blockFirst()!!.adjustmentIds
+
+  private fun getLegacyAdjustment(id: UUID) = webTestClient
+    .get()
+    .uri("/legacy/adjustments/$id")
+    .headers(
+      setViewAdjustmentsAuth(),
+    )
+    .header("Content-Type", LegacyController.LEGACY_CONTENT_TYPE)
+    .exchange()
+    .expectStatus().isOk
+    .returnResult(LegacyAdjustment::class.java)
+    .responseBody.blockFirst()!!
+
+  private fun updateLegacyAdjustment(id: UUID, legacyAdjustment: LegacyAdjustment) = webTestClient
+    .put()
+    .uri("/legacy/adjustments/$id")
+    .headers(
+      setLegacySynchronisationAuth(),
+    )
+    .header("Content-Type", LegacyController.LEGACY_CONTENT_TYPE)
+    .bodyValue(legacyAdjustment)
+    .exchange()
+    .expectStatus().isOk
 
   companion object {
     private val LEGACY_ADJUSTMENT = LegacyAdjustment(
