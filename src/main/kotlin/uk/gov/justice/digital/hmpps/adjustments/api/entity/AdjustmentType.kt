@@ -11,7 +11,6 @@ enum class AdjustmentType {
   UNUSED_DEDUCTIONS,
   ;
 
-
   fun isSentenceType(): Boolean {
     return this == REMAND || this == TAGGED_BAIL || this == UNUSED_DEDUCTIONS
   }

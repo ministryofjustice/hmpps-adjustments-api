@@ -7,7 +7,6 @@ import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.http.MediaType
 import org.springframework.test.annotation.Rollback
 import org.springframework.test.web.reactive.server.expectBodyList
-import software.amazon.awssdk.core.internal.retry.SdkDefaultRetrySetting.Legacy
 import uk.gov.justice.digital.hmpps.adjustments.api.entity.AdjustmentSource
 import uk.gov.justice.digital.hmpps.adjustments.api.entity.AdjustmentStatus
 import uk.gov.justice.digital.hmpps.adjustments.api.entity.AdjustmentType
@@ -158,26 +157,26 @@ class LegacyAndAdjustmentsControllerIntTest : SqsIntegrationTestBase() {
 
   @Test
   fun `Recall scenario`() {
-    //Adjustment create in DPS
+    // Adjustment create in DPS
     val adjustment = ADJUSTMENT.copy(
       person = PrisonApiExtension.RECALL_PRISONER_ID,
-      bookingId = PrisonApiExtension.RECALL_BOOKING_ID
+      bookingId = PrisonApiExtension.RECALL_BOOKING_ID,
     )
     val id = postCreateAdjustments(listOf(adjustment))[0]
 
-    //Person release adjustment made inactive in NOMIS
+    // Person release adjustment made inactive in NOMIS
     val legacyAdjustment = getLegacyAdjustment(id)
     updateLegacyAdjustment(id, legacyAdjustment.copy(active = false))
 
-    //Person recalled. In NOMIS their sentence will be deleted which also deletes the adjustment
+    // Person recalled. In NOMIS their sentence will be deleted which also deletes the adjustment
     deleteLegacyAdjustment(id)
 
-    //User comes to DPS and is shown inactive deleted adjustments
+    // User comes to DPS and is shown inactive deleted adjustments
     val adjustments = getAdjustmentsByPerson(PrisonApiExtension.RECALL_PRISONER_ID, AdjustmentStatus.INACTIVE_WHEN_DELETED)
     assertThat(adjustments.size).isEqualTo(1)
     assertThat(adjustments[0].id).isEqualTo(id)
 
-    //User selects to restore adjustment as recall type
+    // User selects to restore adjustment as recall type
     postRestoreAdjustment(RestoreAdjustmentsDto(listOf(id)))
     assertThat(legacyAdjustment.adjustmentType).isEqualTo(LegacyAdjustmentType.RSR)
     assertThat(legacyAdjustment.active).isEqualTo(true)
@@ -203,14 +202,14 @@ class LegacyAndAdjustmentsControllerIntTest : SqsIntegrationTestBase() {
       .responseBody
 
   private fun deleteLegacyAdjustment(id: UUID) = webTestClient
-      .delete()
-      .uri("/legacy/adjustments/$id")
-      .headers(
-        setLegacySynchronisationAuth(),
-      )
-      .header("Content-Type", LegacyController.LEGACY_CONTENT_TYPE)
-      .exchange()
-      .expectStatus().isOk
+    .delete()
+    .uri("/legacy/adjustments/$id")
+    .headers(
+      setLegacySynchronisationAuth(),
+    )
+    .header("Content-Type", LegacyController.LEGACY_CONTENT_TYPE)
+    .exchange()
+    .expectStatus().isOk
 
   private fun postCreateAdjustments(adjustmentDtos: List<AdjustmentDto>) = webTestClient
     .post()
@@ -222,7 +221,6 @@ class LegacyAndAdjustmentsControllerIntTest : SqsIntegrationTestBase() {
     .expectStatus().isCreated
     .returnResult(CreateResponseDto::class.java)
     .responseBody.blockFirst()!!.adjustmentIds
-
 
   private fun getLegacyAdjustment(id: UUID) = webTestClient
     .get()
@@ -236,7 +234,7 @@ class LegacyAndAdjustmentsControllerIntTest : SqsIntegrationTestBase() {
     .returnResult(LegacyAdjustment::class.java)
     .responseBody.blockFirst()!!
 
-  private fun updateLegacyAdjustment(id: UUID, legacyAdjustment: LegacyAdjustment) =  webTestClient
+  private fun updateLegacyAdjustment(id: UUID, legacyAdjustment: LegacyAdjustment) = webTestClient
     .put()
     .uri("/legacy/adjustments/$id")
     .headers(
