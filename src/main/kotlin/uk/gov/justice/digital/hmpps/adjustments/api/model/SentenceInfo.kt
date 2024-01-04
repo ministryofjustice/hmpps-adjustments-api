@@ -14,6 +14,11 @@ data class SentenceInfo(
     }
 
     private val recallTypes = listOf(
+      "LR",
+      "LR_ORA",
+      "LR_YOI_ORA",
+      "LR_SEC91_ORA",
+      "LRSEC250_ORA",
       "LR_EDS18",
       "LR_EDS21",
       "LR_EDSU18",
