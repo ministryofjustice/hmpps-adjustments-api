@@ -82,7 +82,7 @@ class LegacyService(
     adjustment.apply {
       effectiveDays = resource.adjustmentDays
       fromDate = resource.adjustmentFromDate
-      toDate = resource.adjustmentFromDate?.plusDays(resource.adjustmentDays.toLong() - 1)
+      toDate = if (this.effectiveDays != this.days || this.effectiveDays != this.daysCalculated) this.toDate else resource.adjustmentFromDate?.plusDays(resource.adjustmentDays.toLong() - 1)
       source = AdjustmentSource.NOMIS
       status = if (resource.active) ACTIVE else INACTIVE
       legacyData = objectToJson(LegacyData(resource.bookingId, resource.sentenceSequence, resource.adjustmentDate, resource.comment, resource.adjustmentType, false))
