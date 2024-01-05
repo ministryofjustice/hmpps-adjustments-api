@@ -185,17 +185,17 @@ class LegacyAndAdjustmentsControllerIntTest : SqsIntegrationTestBase() {
 
   @Test
   fun `Update an adjustment in NOMIS with effective days different to calculated - unused portion`() {
-    //Create an adjustment int DPS with different calculated + effective days.
+    // Create an adjustment int DPS with different calculated + effective days.
     var adjustment = ADJUSTMENT.copy()
     val id = postCreateAdjustments(listOf(adjustment))[0]
     val totalDays = adjustment.daysBetween
     postAdjustmentEffectiveDaysUpdate(id, AdjustmentEffectiveDaysDto(id, 1, adjustment.person))
 
-    //Update the adjustment from NOMIS (set inactive)
+    // Update the adjustment from NOMIS (set inactive)
     val legacyAdjustment = getLegacyAdjustment(id)
     updateLegacyAdjustment(id, legacyAdjustment.copy(active = false))
 
-    //Adjustment should still have same total days
+    // Adjustment should still have same total days
     adjustment = getAdjustmentById(id)
     assertThat(adjustment.daysBetween).isEqualTo(totalDays)
     assertThat(adjustment.status).isEqualTo(AdjustmentStatus.INACTIVE)
