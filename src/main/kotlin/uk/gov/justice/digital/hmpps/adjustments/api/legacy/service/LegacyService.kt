@@ -82,7 +82,7 @@ class LegacyService(
     adjustment.apply {
       effectiveDays = resource.adjustmentDays
       fromDate = resource.adjustmentFromDate
-      toDate = resource.adjustmentFromDate?.plusDays(resource.adjustmentDays.toLong() - 1)
+      toDate = if (adjustmentHasDPSUnusedDeductions(this)) this.toDate else resource.adjustmentFromDate?.plusDays(resource.adjustmentDays.toLong() - 1)
       source = AdjustmentSource.NOMIS
       status = if (resource.active) ACTIVE else INACTIVE
       legacyData = objectToJson(LegacyData(resource.bookingId, resource.sentenceSequence, resource.adjustmentDate, resource.comment, resource.adjustmentType, false))
@@ -94,6 +94,11 @@ class LegacyService(
         adjustment = adjustment,
       )
     }
+  }
+
+  private fun adjustmentHasDPSUnusedDeductions(adjustment: Adjustment): Boolean {
+    val dpsDays = adjustment.days ?: adjustment.daysCalculated
+    return dpsDays != null && adjustment.effectiveDays != dpsDays
   }
 
   @Transactional

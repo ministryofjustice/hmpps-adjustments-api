@@ -17,6 +17,7 @@ import uk.gov.justice.digital.hmpps.adjustments.api.legacy.model.LegacyAdjustmen
 import uk.gov.justice.digital.hmpps.adjustments.api.legacy.model.LegacyAdjustmentType
 import uk.gov.justice.digital.hmpps.adjustments.api.legacy.model.LegacyData
 import uk.gov.justice.digital.hmpps.adjustments.api.model.AdjustmentDto
+import uk.gov.justice.digital.hmpps.adjustments.api.model.AdjustmentEffectiveDaysDto
 import uk.gov.justice.digital.hmpps.adjustments.api.model.CreateResponseDto
 import uk.gov.justice.digital.hmpps.adjustments.api.model.RemandDto
 import uk.gov.justice.digital.hmpps.adjustments.api.model.RestoreAdjustmentsDto
@@ -181,6 +182,50 @@ class LegacyAndAdjustmentsControllerIntTest : SqsIntegrationTestBase() {
     assertThat(legacyAdjustment.adjustmentType).isEqualTo(LegacyAdjustmentType.RSR)
     assertThat(legacyAdjustment.active).isEqualTo(true)
   }
+
+  @Test
+  fun `Update an adjustment in NOMIS with effective days different to calculated - unused portion`() {
+    // Create an adjustment int DPS with different calculated + effective days.
+    var adjustment = ADJUSTMENT.copy()
+    val id = postCreateAdjustments(listOf(adjustment))[0]
+    val totalDays = adjustment.daysBetween
+    postAdjustmentEffectiveDaysUpdate(id, AdjustmentEffectiveDaysDto(id, 1, adjustment.person))
+
+    // Update the adjustment from NOMIS (set inactive)
+    val legacyAdjustment = getLegacyAdjustment(id)
+    updateLegacyAdjustment(id, legacyAdjustment.copy(active = false))
+
+    // Adjustment should still have same total days
+    adjustment = getAdjustmentById(id)
+    assertThat(adjustment.daysBetween).isEqualTo(totalDays)
+    assertThat(adjustment.status).isEqualTo(AdjustmentStatus.INACTIVE)
+  }
+  private fun getAdjustmentById(adjustmentId: UUID) = webTestClient
+    .get()
+    .uri("/adjustments/$adjustmentId")
+    .headers(setAdjustmentsMaintainerAuth())
+    .exchange()
+    .expectStatus().isOk
+    .returnResult(AdjustmentDto::class.java)
+    .responseBody.blockFirst()!!
+
+  private fun postAdjustmentEffectiveDaysUpdate(
+    adjustmentId: UUID,
+    updateDto: AdjustmentEffectiveDaysDto,
+  ) {
+    webTestClient
+      .post()
+      .uri("/adjustments/$adjustmentId/effective-days")
+      .headers(
+        setAdjustmentsMaintainerAuth(),
+      )
+      .bodyValue(
+        updateDto,
+      )
+      .exchange()
+      .expectStatus().isOk
+  }
+
   private fun postRestoreAdjustment(restoreDto: RestoreAdjustmentsDto) = webTestClient
     .post()
     .uri("/adjustments/restore")
