@@ -41,6 +41,7 @@ class ValidationServiceTest {
     additionalDaysAwarded = null,
     unlawfullyAtLarge = null,
     remand = null,
+    taggedBail = null,
     lastUpdatedDate = LocalDateTime.now(),
   )
 

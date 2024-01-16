@@ -10,4 +10,5 @@ data class LegacyData(
   val type: LegacyAdjustmentType? = null,
   val migration: Boolean = false,
   val chargeIds: List<Long> = emptyList(),
+  val caseSequence: Int? = null,
 )

@@ -30,6 +30,8 @@ data class AdjustmentDto(
   val additionalDaysAwarded: AdditionalDaysAwardedDto?,
   @Schema(description = "Additional details of a UAL adjustment")
   val unlawfullyAtLarge: UnlawfullyAtLargeDto?,
+  @Schema(description = "The details of a tagged-bail adjustment")
+  val taggedBail: TaggedBailDto?,
 
   // View only fields
   @Schema(description = "The prison where the prisoner was located at the time the adjustment was created (a 3 character code identifying the prison)", example = "LDS", readOnly = true)
