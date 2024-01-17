@@ -35,6 +35,7 @@ import uk.gov.justice.digital.hmpps.adjustments.api.model.CreateResponseDto
 import uk.gov.justice.digital.hmpps.adjustments.api.model.RemandDto
 import uk.gov.justice.digital.hmpps.adjustments.api.model.RestoreAdjustmentsDto
 import uk.gov.justice.digital.hmpps.adjustments.api.model.SentenceInfo
+import uk.gov.justice.digital.hmpps.adjustments.api.model.TaggedBailDto
 import uk.gov.justice.digital.hmpps.adjustments.api.model.UnlawfullyAtLargeDto
 import uk.gov.justice.digital.hmpps.adjustments.api.respository.AdjustmentRepository
 import java.time.LocalDate
@@ -276,6 +277,7 @@ class AdjustmentsService(
       additionalDaysAwarded = additionalDaysAwardedToDto(adjustment),
       unlawfullyAtLarge = unlawfullyAtLargeDto(adjustment),
       remand = remandDto(adjustment, legacyData),
+      taggedBail = taggedBailDto(adjustment, legacyData),
       lastUpdatedBy = adjustment.adjustmentHistory.last().changeByUsername,
       lastUpdatedDate = adjustment.adjustmentHistory.last().changeAt,
       status = adjustment.status,
@@ -287,6 +289,12 @@ class AdjustmentsService(
   private fun remandDto(adjustment: Adjustment, legacyData: LegacyData): RemandDto? {
     if (adjustment.adjustmentType === REMAND && legacyData.chargeIds.isNotEmpty()) {
       return RemandDto(legacyData.chargeIds)
+    }
+    return null
+  }
+  private fun taggedBailDto(adjustment: Adjustment, legacyData: LegacyData): TaggedBailDto? {
+    if (adjustment.adjustmentType === TAGGED_BAIL && legacyData.caseSequence != null) {
+      return TaggedBailDto(legacyData.caseSequence)
     }
     return null
   }

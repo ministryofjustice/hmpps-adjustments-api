@@ -687,6 +687,7 @@ class AdjustmentControllerIntTest : SqsIntegrationTestBase() {
       additionalDaysAwarded = null,
       unlawfullyAtLarge = null,
       remand = RemandDto(chargeId = listOf(9991)),
+      taggedBail = null,
       lastUpdatedDate = LocalDateTime.now(),
     )
   }
