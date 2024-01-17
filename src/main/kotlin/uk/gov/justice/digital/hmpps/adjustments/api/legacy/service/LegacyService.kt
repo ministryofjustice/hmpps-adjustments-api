@@ -38,8 +38,8 @@ class LegacyService(
       toDate = resource.adjustmentFromDate?.plusDays(resource.adjustmentDays.toLong() - 1),
       source = AdjustmentSource.NOMIS,
       adjustmentType = transform(resource.adjustmentType),
-      status = if (resource.active) ACTIVE else INACTIVE,
-      legacyData = objectToJson(LegacyData(resource.bookingId, resource.sentenceSequence, resource.adjustmentDate, resource.comment, resource.adjustmentType, migration)),
+      status = if (resource.active && !resource.bookingReleased) ACTIVE else INACTIVE,
+      legacyData = objectToJson(LegacyData(resource.bookingId, resource.sentenceSequence, resource.adjustmentDate, resource.comment, resource.adjustmentType, migration, adjustmentActive = resource.active, bookingActive = !resource.bookingReleased)),
       adjustmentHistory = listOf(
         AdjustmentHistory(
           changeByUsername = "NOMIS",
@@ -67,7 +67,8 @@ class LegacyService(
       adjustmentType = transform(adjustment.adjustmentType, legacyData),
       sentenceSequence = legacyData.sentenceSequence,
       bookingId = legacyData.bookingId,
-      active = adjustment.status == ACTIVE,
+      active = legacyData.adjustmentActive,
+      bookingReleased = !legacyData.bookingActive,
       comment = legacyData.comment,
     )
   }
@@ -84,8 +85,8 @@ class LegacyService(
       fromDate = resource.adjustmentFromDate
       toDate = if (adjustmentHasDPSUnusedDeductions(this)) this.toDate else resource.adjustmentFromDate?.plusDays(resource.adjustmentDays.toLong() - 1)
       source = AdjustmentSource.NOMIS
-      status = if (resource.active) ACTIVE else INACTIVE
-      legacyData = objectToJson(LegacyData(resource.bookingId, resource.sentenceSequence, resource.adjustmentDate, resource.comment, resource.adjustmentType, false))
+      status = if (resource.active && !resource.bookingReleased) ACTIVE else INACTIVE
+      legacyData = objectToJson(LegacyData(resource.bookingId, resource.sentenceSequence, resource.adjustmentDate, resource.comment, resource.adjustmentType, false, adjustmentActive = resource.active, bookingActive = !resource.bookingReleased))
       adjustmentHistory += AdjustmentHistory(
         changeByUsername = "NOMIS",
         changeType = ChangeType.UPDATE,

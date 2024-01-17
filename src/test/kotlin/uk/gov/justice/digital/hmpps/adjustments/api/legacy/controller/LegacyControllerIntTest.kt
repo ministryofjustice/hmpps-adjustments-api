@@ -67,7 +67,7 @@ class LegacyControllerIntTest : SqsIntegrationTestBase() {
     assertThat(adjustment.effectiveDays).isEqualTo(3)
 
     val legacyData = objectMapper.convertValue(adjustment.legacyData, LegacyData::class.java)
-    assertThat(legacyData).isEqualTo(LegacyData(bookingId = 1, sentenceSequence = 1, postedDate = LocalDate.now(), comment = "Created", type = LegacyAdjustmentType.UR, migration = false))
+    assertThat(legacyData).isEqualTo(LegacyData(bookingId = 1, sentenceSequence = 1, postedDate = LocalDate.now(), comment = "Created", type = LegacyAdjustmentType.UR, migration = false, adjustmentActive = false))
 
     awaitAtMost30Secs untilCallTo { getNumberOfMessagesCurrentlyOnQueue() } matches { it == 1 }
     val latestMessage: String = getLatestMessage()!!.messages()[0].body()
@@ -203,6 +203,30 @@ class LegacyControllerIntTest : SqsIntegrationTestBase() {
       .expectStatus().isNotFound
   }
 
+  @Test
+  fun create_bookingReleased() {
+    val result = webTestClient
+      .post()
+      .uri("/legacy/adjustments")
+      .headers(
+        setLegacySynchronisationAuth(),
+      )
+      .header("Content-Type", LegacyController.LEGACY_CONTENT_TYPE)
+      .bodyValue(CREATED_ADJUSTMENT.copy(active = true, bookingReleased = true))
+      .exchange()
+      .expectStatus().isCreated
+      .returnResult(LegacyAdjustmentCreatedResponse::class.java)
+      .responseBody.blockFirst()!!
+    CREATED_ID = result.adjustmentId
+    // Created in @BeforeEach.
+    val adjustment = adjustmentRepository.findById(CREATED_ID).get()
+
+    assertThat(adjustment.status).isEqualTo(AdjustmentStatus.INACTIVE)
+
+    val legacyData = objectMapper.convertValue(adjustment.legacyData, LegacyData::class.java)
+    assertThat(legacyData).isEqualTo(LegacyData(bookingId = 1, sentenceSequence = 1, postedDate = LocalDate.now(), comment = "Created", type = LegacyAdjustmentType.UR, migration = false, bookingActive = false, adjustmentActive = true))
+  }
+
   companion object {
     private val CREATED_ADJUSTMENT = LegacyAdjustment(
       bookingId = 1,
@@ -214,6 +238,7 @@ class LegacyControllerIntTest : SqsIntegrationTestBase() {
       adjustmentDays = 3,
       comment = "Created",
       active = false,
+      bookingReleased = false,
     )
   }
 }
