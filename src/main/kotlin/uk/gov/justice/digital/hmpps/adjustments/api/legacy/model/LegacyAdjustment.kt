@@ -23,4 +23,6 @@ data class LegacyAdjustment(
   val comment: String?,
   @Schema(description = "The NOMIS active or inactive flag")
   val active: Boolean,
+  @Schema(description = "Has the prisoner been released from the NOMIS booking")
+  val bookingReleased: Boolean,
 )

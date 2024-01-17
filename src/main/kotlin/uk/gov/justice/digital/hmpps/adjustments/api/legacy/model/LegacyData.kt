@@ -11,4 +11,6 @@ data class LegacyData(
   val migration: Boolean = false,
   val chargeIds: List<Long> = emptyList(),
   val caseSequence: Int? = null,
+  val adjustmentActive: Boolean = true,
+  val bookingActive: Boolean = true,
 )

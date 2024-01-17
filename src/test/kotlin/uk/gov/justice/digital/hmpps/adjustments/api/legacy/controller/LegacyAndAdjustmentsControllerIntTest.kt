@@ -301,6 +301,7 @@ class LegacyAndAdjustmentsControllerIntTest : SqsIntegrationTestBase() {
       adjustmentDays = 3,
       comment = "Created",
       active = false,
+      bookingReleased = false,
     )
 
     private val ADJUSTMENT = AdjustmentDto(
