@@ -68,6 +68,7 @@ class PrisonApiMockServer : WireMockServer(WIREMOCK_PORT) {
                   {
                     "bookingId": 123,
                     "sentenceSequence": 1,
+                    "caseSequence": 9191,
                     "sentenceStatus": "A",
                     "sentenceCategory": "2003",
                     "sentenceCalculationType": "ADIMP_ORA",

@@ -19,6 +19,7 @@ import uk.gov.justice.digital.hmpps.adjustments.api.entity.AdjustmentStatus
 import uk.gov.justice.digital.hmpps.adjustments.api.entity.AdjustmentStatus.ACTIVE
 import uk.gov.justice.digital.hmpps.adjustments.api.entity.AdjustmentStatus.DELETED
 import uk.gov.justice.digital.hmpps.adjustments.api.entity.AdjustmentType
+import uk.gov.justice.digital.hmpps.adjustments.api.entity.AdjustmentType.TAGGED_BAIL
 import uk.gov.justice.digital.hmpps.adjustments.api.entity.AdjustmentType.UNLAWFULLY_AT_LARGE
 import uk.gov.justice.digital.hmpps.adjustments.api.entity.ChangeType
 import uk.gov.justice.digital.hmpps.adjustments.api.enums.UnlawfullyAtLargeType.ESCAPE
@@ -30,6 +31,7 @@ import uk.gov.justice.digital.hmpps.adjustments.api.model.AdjustmentDto
 import uk.gov.justice.digital.hmpps.adjustments.api.model.AdjustmentEffectiveDaysDto
 import uk.gov.justice.digital.hmpps.adjustments.api.model.CreateResponseDto
 import uk.gov.justice.digital.hmpps.adjustments.api.model.RemandDto
+import uk.gov.justice.digital.hmpps.adjustments.api.model.TaggedBailDto
 import uk.gov.justice.digital.hmpps.adjustments.api.model.UnlawfullyAtLargeDto
 import uk.gov.justice.digital.hmpps.adjustments.api.model.ValidationCode
 import uk.gov.justice.digital.hmpps.adjustments.api.model.ValidationMessage
@@ -415,6 +417,82 @@ class AdjustmentControllerIntTest : SqsIntegrationTestBase() {
   }
 
   @Nested
+  inner class TaggedBailTests {
+
+    @Test
+    fun `Create tagged-bail where case sequence does not exist - bad request`() {
+      webTestClient
+        .post()
+        .uri("/adjustments")
+        .headers(setAdjustmentsMaintainerAuth())
+        .contentType(MediaType.APPLICATION_JSON)
+        .bodyValue(
+          listOf(
+            CREATED_ADJUSTMENT.copy(
+              person = "TB123",
+              toDate = null,
+              fromDate = null,
+              days = 987,
+              adjustmentType = TAGGED_BAIL,
+              taggedBail = TaggedBailDto(caseSequence = 99995),
+              remand = null,
+            ),
+          ),
+        )
+        .exchange()
+        .expectStatus().isBadRequest
+    }
+
+    @Test
+    fun `Create a Tagged Bail Adjustment, then update it`() {
+      val adjustmentId = postCreateAdjustments(
+        listOf(
+          CREATED_ADJUSTMENT.copy(
+            person = "TB123",
+            fromDate = null,
+            toDate = null,
+            days = 987,
+            adjustmentType = TAGGED_BAIL,
+            taggedBail = TaggedBailDto(caseSequence = 9191),
+            remand = null,
+            sentenceSequence = null,
+          ),
+        ),
+      )[0]
+
+      val createdAdjustment = getAdjustmentById(adjustmentId)
+
+      assertThat(createdAdjustment)
+        .usingRecursiveComparison()
+        .ignoringFieldsMatchingRegexes("lastUpdatedDate")
+        .isEqualTo(
+          CREATED_ADJUSTMENT.copy(
+            id = adjustmentId,
+            person = "TB123",
+            fromDate = null,
+            toDate = null,
+            adjustmentType = TAGGED_BAIL,
+            taggedBail = TaggedBailDto(caseSequence = 9191),
+            days = 987,
+            effectiveDays = 987,
+            remand = null,
+            lastUpdatedBy = "Test User",
+            status = ACTIVE,
+            sentenceSequence = 1,
+          ),
+        )
+
+      val updateDto = createdAdjustment.copy(days = 986)
+      putAdjustmentUpdate(adjustmentId, updateDto)
+      val updatedAdjustment = getAdjustmentById(adjustmentId)
+      assertThat(updatedAdjustment)
+        .usingRecursiveComparison()
+        .ignoringFieldsMatchingRegexes("lastUpdatedDate")
+        .isEqualTo(createdAdjustment.copy(days = 986, effectiveDays = 986))
+    }
+  }
+
+  @Nested
   inner class UalTests {
 
     @Test
@@ -520,7 +598,16 @@ class AdjustmentControllerIntTest : SqsIntegrationTestBase() {
       assertThat(result.map { it.lastUpdatedBy })
         .usingRecursiveComparison()
         .ignoringCollectionOrder()
-        .isEqualTo(listOf("current-ual", "current-rada", "tagged-bail-no-dates", "remand-before-sentence", "expired-ual", "expired-rada"))
+        .isEqualTo(
+          listOf(
+            "current-ual",
+            "current-rada",
+            "tagged-bail-no-dates",
+            "remand-before-sentence",
+            "expired-ual",
+            "expired-rada",
+          ),
+        )
     }
 
     @Test
@@ -568,7 +655,11 @@ class AdjustmentControllerIntTest : SqsIntegrationTestBase() {
     }
   }
 
-  private fun getAdjustmentsByPerson(person: String, status: AdjustmentStatus? = null, startOfSentenceEnvelope: LocalDate? = null): List<AdjustmentDto> =
+  private fun getAdjustmentsByPerson(
+    person: String,
+    status: AdjustmentStatus? = null,
+    startOfSentenceEnvelope: LocalDate? = null,
+  ): List<AdjustmentDto> =
     webTestClient
       .get()
       .uri("/adjustments?person=$person${if (status != null) "&status=$status" else ""}${if (startOfSentenceEnvelope != null) "&sentenceEnvelopeDate=$startOfSentenceEnvelope" else ""}")
@@ -658,6 +749,7 @@ class AdjustmentControllerIntTest : SqsIntegrationTestBase() {
       .exchange()
       .expectStatus().isOk
   }
+
   private fun postAdjustmentEffectiveDaysUpdate(
     adjustmentId: UUID,
     updateDto: AdjustmentEffectiveDaysDto,
