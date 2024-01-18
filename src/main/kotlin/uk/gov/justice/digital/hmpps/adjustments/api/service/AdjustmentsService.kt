@@ -83,6 +83,7 @@ class AdjustmentsService(
           null,
           legacyType(resource.adjustmentType, sentenceInfo),
           chargeIds = resource.remand?.chargeId ?: emptyList(),
+          caseSequence = resource.taggedBail?.caseSequence
         ),
       ),
       additionalDaysAwarded = additionalDaysAwarded(resource),
