@@ -199,6 +199,7 @@ class AdjustmentsService(
           persistedLegacyData.comment,
           legacyType(resource.adjustmentType, sentenceInfo),
           chargeIds = resource.remand?.chargeId ?: emptyList(),
+          caseSequence = resource.taggedBail?.caseSequence,
         ),
       )
       additionalDaysAwarded = additionalDaysAwarded(resource, this)
