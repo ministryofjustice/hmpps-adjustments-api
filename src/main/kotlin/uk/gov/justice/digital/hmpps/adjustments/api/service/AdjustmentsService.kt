@@ -83,6 +83,7 @@ class AdjustmentsService(
           null,
           legacyType(resource.adjustmentType, sentenceInfo),
           chargeIds = resource.remand?.chargeId ?: emptyList(),
+          caseSequence = resource.taggedBail?.caseSequence,
         ),
       ),
       additionalDaysAwarded = additionalDaysAwarded(resource),
@@ -131,7 +132,8 @@ class AdjustmentsService(
   private fun additionalDaysAwarded(resource: AdjustmentDto, adjustment: Adjustment? = null): AdditionalDaysAwarded? {
     if (resource.adjustmentType == AdjustmentType.ADDITIONAL_DAYS_AWARDED && resource.additionalDaysAwarded != null) {
       return getAdditionalDaysAwarded(adjustment).apply {
-        adjudicationCharges = resource.additionalDaysAwarded.adjudicationId.map { AdjudicationCharges(it) }.toMutableList()
+        adjudicationCharges =
+          resource.additionalDaysAwarded.adjudicationId.map { AdjudicationCharges(it) }.toMutableList()
         prospective = resource.additionalDaysAwarded.prospective
       }
     }
@@ -156,7 +158,11 @@ class AdjustmentsService(
     return mapToDto(adjustment)
   }
 
-  fun findCurrentAdjustments(person: String, status: AdjustmentStatus, startOfSentenceEnvelope: LocalDate? = null): List<AdjustmentDto> {
+  fun findCurrentAdjustments(
+    person: String,
+    status: AdjustmentStatus,
+    startOfSentenceEnvelope: LocalDate? = null,
+  ): List<AdjustmentDto> {
     val fromDate = startOfSentenceEnvelope ?: prisonService.getStartOfSentenceEnvelope(person)
     return adjustmentRepository.findCurrentAdjustmentsByPerson(person, fromDate, status).map { mapToDto(it) }
   }
@@ -193,6 +199,7 @@ class AdjustmentsService(
           persistedLegacyData.comment,
           legacyType(resource.adjustmentType, sentenceInfo),
           chargeIds = resource.remand?.chargeId ?: emptyList(),
+          caseSequence = resource.taggedBail?.caseSequence,
         ),
       )
       additionalDaysAwarded = additionalDaysAwarded(resource, this)
@@ -226,7 +233,13 @@ class AdjustmentsService(
         val matchingSentences =
           sentences.filter { it.offences.any { off -> resource.remand.chargeId.contains(off.offenderChargeId) } }
         if (matchingSentences.isEmpty()) {
-          throw ApiValidationException("No matching sentences for charge ids ${resource.remand.chargeId.joinToString()}}")
+          throw ApiValidationException("No matching sentences for charge ids ${resource.remand.chargeId.joinToString()}")
+        }
+        SentenceInfo(matchingSentences.maxBy { it.sentenceDate })
+      } else if (resource.taggedBail != null && resource.adjustmentType == TAGGED_BAIL) {
+        val matchingSentences = sentences.filter { it.caseSequence == resource.taggedBail.caseSequence }
+        if (matchingSentences.isEmpty()) {
+          throw ApiValidationException("No matching sentences for caseSequence ${resource.taggedBail.caseSequence}")
         }
         SentenceInfo(matchingSentences.maxBy { it.sentenceDate })
       } else {
@@ -292,6 +305,7 @@ class AdjustmentsService(
     }
     return null
   }
+
   private fun taggedBailDto(adjustment: Adjustment, legacyData: LegacyData): TaggedBailDto? {
     if (adjustment.adjustmentType === TAGGED_BAIL && legacyData.caseSequence != null) {
       return TaggedBailDto(legacyData.caseSequence)
