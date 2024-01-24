@@ -43,6 +43,9 @@ class SqsIntegrationTestBase : IntegrationTestBase() {
 
   protected val adjustmentsQueue by lazy { hmppsQueueService.findByQueueId("adjustments") as HmppsQueue }
 
+  protected val prisonerListenerQueue by lazy { hmppsQueueService.findByQueueId("prisonerlistener") as HmppsQueue }
+  internal val prisonerListenerQueueUrl by lazy { prisonerListenerQueue.queueUrl }
+
   fun HmppsSqsProperties.domaineventsTopicConfig() =
     topics["domainevents"] ?: throw MissingTopicException("domainevents has not been loaded from configuration properties")
 
