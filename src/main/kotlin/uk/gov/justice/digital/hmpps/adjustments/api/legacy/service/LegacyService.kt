@@ -19,6 +19,7 @@ import uk.gov.justice.digital.hmpps.adjustments.api.legacy.model.LegacyAdjustmen
 import uk.gov.justice.digital.hmpps.adjustments.api.legacy.model.LegacyAdjustmentCreatedResponse
 import uk.gov.justice.digital.hmpps.adjustments.api.legacy.model.LegacyAdjustmentType
 import uk.gov.justice.digital.hmpps.adjustments.api.legacy.model.LegacyData
+import uk.gov.justice.digital.hmpps.adjustments.api.model.prisonapi.PrisonerDetails
 import uk.gov.justice.digital.hmpps.adjustments.api.respository.AdjustmentRepository
 import java.util.UUID
 
@@ -150,6 +151,40 @@ class LegacyService(
       LegacyAdjustmentType.UR -> AdjustmentType.UNUSED_DEDUCTIONS
       LegacyAdjustmentType.LAL -> AdjustmentType.LAWFULLY_AT_LARGE
       LegacyAdjustmentType.SREM -> AdjustmentType.SPECIAL_REMISSION
+    }
+  }
+
+  @Transactional
+  fun setReleased(prisoner: PrisonerDetails) {
+    val adjustments = adjustmentRepository.findByPerson(prisoner.offenderNo)
+
+    adjustments.forEach {
+      val persistedLegacyData = objectMapper.convertValue(it.legacyData, LegacyData::class.java).copy(
+        bookingActive = false,
+      )
+      if (persistedLegacyData.bookingId == prisoner.bookingId) {
+        it.apply {
+          status = INACTIVE
+          legacyData = objectToJson(persistedLegacyData)
+        }
+      }
+    }
+  }
+
+  @Transactional
+  fun setAdmission(prisoner: PrisonerDetails) {
+    val adjustments = adjustmentRepository.findByPerson(prisoner.offenderNo)
+
+    adjustments.forEach {
+      val persistedLegacyData = objectMapper.convertValue(it.legacyData, LegacyData::class.java).copy(
+        bookingActive = true,
+      )
+      if (persistedLegacyData.bookingId == prisoner.bookingId) {
+        it.apply {
+          status = if (persistedLegacyData.adjustmentActive) ACTIVE else INACTIVE
+          legacyData = objectToJson(persistedLegacyData)
+        }
+      }
     }
   }
 }

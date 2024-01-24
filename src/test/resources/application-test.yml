@@ -7,7 +7,7 @@ spring:
           public-key-location: classpath:local-public-key.pub
 
   datasource:
-    url: 'jdbc:h2:mem:adjustments-db;INIT=create domain if not exists jsonb as CLOB;MODE=PostgreSQL'
+    url: 'jdbc:h2:mem:adjustments-db;INIT=create domain if not exists jsonb as CLOB;MODE=PostgreSQL;DB_CLOSE_DELAY=-1'
     username: adjustments
     password: dummy
 
@@ -52,6 +52,13 @@ hmpps.sqs:
   reactiveApi: true
   provider: localstack
   queues:
+    prisonerlistenter:
+      queueName: "prisonerlistenter-${random.uuid}"
+      dlqName: "prisonerlistenter-dlq-${random.uuid}"
+      subscribeTopicId: domainevents
+      subscribeFilter: "{\"eventType\":[\"prisoner-offender-search.prisoner.released\", \"prisoner-offender-search.prisoner.received\"]}"
+      dlqMaxReceiveCount: 3
+      visibilityTimeout: 120
     adjustments:
       queueName: adjustments-test-event-queue
       dlqName: adjustments-test-event-dlq

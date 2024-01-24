@@ -4,8 +4,8 @@ import io.jsonwebtoken.Jwts
 import io.jsonwebtoken.SignatureAlgorithm
 import org.springframework.context.annotation.Bean
 import org.springframework.http.HttpHeaders
-import org.springframework.security.oauth2.jwt.JwtDecoder
-import org.springframework.security.oauth2.jwt.NimbusJwtDecoder
+import org.springframework.security.oauth2.jwt.NimbusReactiveJwtDecoder
+import org.springframework.security.oauth2.jwt.ReactiveJwtDecoder
 import org.springframework.stereotype.Component
 import java.security.KeyPair
 import java.security.KeyPairGenerator
@@ -15,7 +15,7 @@ import java.util.Date
 import java.util.UUID
 
 @Component
-class JwtAuthHelper() {
+class JwtAuthHelper {
   private val keyPair: KeyPair
 
   init {
@@ -25,7 +25,7 @@ class JwtAuthHelper() {
   }
 
   @Bean
-  fun jwtDecoder(): JwtDecoder = NimbusJwtDecoder.withPublicKey(keyPair.public as RSAPublicKey).build()
+  fun jwtDecoder(): ReactiveJwtDecoder = NimbusReactiveJwtDecoder.withPublicKey(keyPair.public as RSAPublicKey).build()
 
   fun setAuthorisation(
     user: String = "AUTH_ADM",
@@ -41,7 +41,7 @@ class JwtAuthHelper() {
     return { it.set(HttpHeaders.AUTHORIZATION, "Bearer $token") }
   }
 
-  internal fun createJwt(
+  fun createJwt(
     subject: String?,
     scope: List<String>? = listOf(),
     roles: List<String>? = listOf(),
@@ -50,7 +50,7 @@ class JwtAuthHelper() {
   ): String =
     mutableMapOf<String, Any>()
       .also { subject?.let { subject -> it["user_name"] = subject } }
-      .also { it["client_id"] = "calculate-release-dates-admin" }
+      .also { it["client_id"] = "hmpps-incentives-api" }
       .also { roles?.let { roles -> it["authorities"] = roles } }
       .also { scope?.let { scope -> it["scope"] = scope } }
       .let {
@@ -59,7 +59,7 @@ class JwtAuthHelper() {
           .setSubject(subject)
           .addClaims(it.toMap())
           .setExpiration(Date(System.currentTimeMillis() + expiryTime.toMillis()))
-          .signWith(SignatureAlgorithm.RS256, keyPair.private)
+          .signWith(keyPair.private, SignatureAlgorithm.RS256)
           .compact()
       }
 }

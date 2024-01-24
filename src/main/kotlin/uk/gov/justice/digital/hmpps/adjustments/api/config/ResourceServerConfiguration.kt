@@ -2,50 +2,30 @@ package uk.gov.justice.digital.hmpps.adjustments.api.config
 
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
-import org.springframework.http.HttpMethod
-import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity
-import org.springframework.security.config.annotation.web.builders.HttpSecurity
-import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity
-import org.springframework.security.config.annotation.web.invoke
-import org.springframework.security.config.http.SessionCreationPolicy
-import org.springframework.security.web.SecurityFilterChain
-import org.springframework.security.web.header.writers.ReferrerPolicyHeaderWriter
-import org.springframework.security.web.util.matcher.AntPathRequestMatcher
+import org.springframework.security.config.annotation.method.configuration.EnableReactiveMethodSecurity
+import org.springframework.security.config.annotation.web.reactive.EnableWebFluxSecurity
+import org.springframework.security.config.web.server.ServerHttpSecurity
+import org.springframework.security.web.server.SecurityWebFilterChain
 
 @Configuration
-@EnableMethodSecurity
-@EnableWebSecurity
-private class ResourceServerConfiguration {
+@EnableWebFluxSecurity
+@EnableReactiveMethodSecurity(useAuthorizationManager = false)
+class ResourceServerConfiguration {
+
   @Bean
-  fun web(http: HttpSecurity): SecurityFilterChain {
-    http {
-      sessionManagement {
-        sessionCreationPolicy = SessionCreationPolicy.STATELESS
+  fun springSecurityFilterChain(http: ServerHttpSecurity): SecurityWebFilterChain {
+    return http
+      .csrf { it.disable() } // crst not needed an rest api
+      .authorizeExchange {
+        it.pathMatchers(
+          "/webjars/**", "/favicon.ico", "/csrf",
+          "/health/**", "/info", "/h2-console/**",
+          "/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html",
+          "/queue-admin/retry-all-dlqs",
+        ).permitAll()
+          .anyExchange().authenticated()
       }
-      csrf { disable() }
-      headers {
-        referrerPolicy {
-          policy = ReferrerPolicyHeaderWriter.ReferrerPolicy.SAME_ORIGIN
-        }
-      }
-      authorizeHttpRequests {
-        authorize(AntPathRequestMatcher("/webjars/**", HttpMethod.GET.name()), permitAll)
-        authorize(AntPathRequestMatcher("favicon.ico", HttpMethod.GET.name()), permitAll)
-        authorize(AntPathRequestMatcher("/health/**", HttpMethod.GET.name()), permitAll)
-        authorize(AntPathRequestMatcher("/info", HttpMethod.GET.name()), permitAll)
-        authorize(AntPathRequestMatcher("/swagger-resources/**", HttpMethod.GET.name()), permitAll)
-        authorize(AntPathRequestMatcher("/v3/api-docs/**", HttpMethod.GET.name()), permitAll)
-        authorize(AntPathRequestMatcher("/swagger-ui/**", HttpMethod.GET.name()), permitAll)
-        authorize(AntPathRequestMatcher("/swagger-ui.html", HttpMethod.GET.name()), permitAll)
-        authorize(AntPathRequestMatcher("/h2-console/**", HttpMethod.POST.name()), permitAll)
-        authorize(anyRequest, authenticated)
-      }
-      oauth2ResourceServer {
-        jwt {
-          jwtAuthenticationConverter = AuthAwareTokenConverter()
-        }
-      }
-    }
-    return http.build()
+      .oauth2ResourceServer { it.jwt().jwtAuthenticationConverter(AuthAwareTokenConverter()) }
+      .build()
   }
 }

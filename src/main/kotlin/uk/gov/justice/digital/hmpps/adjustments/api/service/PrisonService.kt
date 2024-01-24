@@ -1,5 +1,6 @@
 package uk.gov.justice.digital.hmpps.adjustments.api.service
 
+import kotlinx.coroutines.flow.toList
 import org.springframework.stereotype.Service
 import uk.gov.justice.digital.hmpps.adjustments.api.client.PrisonApiClient
 import uk.gov.justice.digital.hmpps.adjustments.api.error.NoActiveSentencesException
@@ -11,7 +12,7 @@ class PrisonService(
   private val prisonApiClient: PrisonApiClient,
 ) {
 
-  fun getStartOfSentenceEnvelope(bookingId: Long): LocalDate {
+  suspend fun getStartOfSentenceEnvelope(bookingId: Long): LocalDate {
     val sentences = getSentencesAndOffences(bookingId)
     if (sentences.isEmpty()) {
       throw NoActiveSentencesException("No active sentences on the booking $bookingId")
@@ -19,11 +20,12 @@ class PrisonService(
     return sentences.minOf { it.sentenceDate }
   }
 
-  fun getSentencesAndOffences(bookingId: Long, filterActive: Boolean = true): List<SentenceAndOffences> {
+  suspend fun getSentencesAndOffences(bookingId: Long, filterActive: Boolean = true): List<SentenceAndOffences> {
     return prisonApiClient.getSentencesAndOffences(bookingId)
+      .toList(mutableListOf())
       .filter { !filterActive || it.sentenceStatus == "A" }
   }
 
-  fun getStartOfSentenceEnvelope(person: String): LocalDate =
+  suspend fun getStartOfSentenceEnvelope(person: String): LocalDate =
     getStartOfSentenceEnvelope(prisonApiClient.getPrisonerDetail(person).bookingId)
 }

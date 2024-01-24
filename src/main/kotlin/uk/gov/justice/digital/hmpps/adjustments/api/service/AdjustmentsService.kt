@@ -4,11 +4,10 @@ import com.fasterxml.jackson.databind.JsonNode
 import com.fasterxml.jackson.databind.ObjectMapper
 import io.hypersistence.utils.hibernate.type.json.internal.JacksonUtil
 import jakarta.persistence.EntityNotFoundException
-import org.springframework.security.core.context.SecurityContextHolder
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import uk.gov.justice.digital.hmpps.adjustments.api.client.PrisonApiClient
-import uk.gov.justice.digital.hmpps.adjustments.api.config.AuthAwareAuthenticationToken
+import uk.gov.justice.digital.hmpps.adjustments.api.config.AuthenticationFacade
 import uk.gov.justice.digital.hmpps.adjustments.api.entity.AdditionalDaysAwarded
 import uk.gov.justice.digital.hmpps.adjustments.api.entity.AdjudicationCharges
 import uk.gov.justice.digital.hmpps.adjustments.api.entity.Adjustment
@@ -48,18 +47,15 @@ class AdjustmentsService(
   val objectMapper: ObjectMapper,
   private val prisonService: PrisonService,
   private val prisonApiClient: PrisonApiClient,
+  private val authenticationFacade: AuthenticationFacade
 ) {
-
-  fun getCurrentAuthentication(): AuthAwareAuthenticationToken =
-    SecurityContextHolder.getContext().authentication as AuthAwareAuthenticationToken?
-      ?: throw IllegalStateException("User is not authenticated")
 
   @Transactional
   fun create(resource: List<AdjustmentDto>): CreateResponseDto {
     return CreateResponseDto(resource.map { create(it) })
   }
 
-  private fun create(resource: AdjustmentDto): UUID {
+  private suspend fun create(resource: AdjustmentDto): UUID {
     if ((resource.toDate == null && resource.days == null) || (resource.toDate != null && resource.days != null)) {
       throw ApiValidationException("resource must have either toDate or days, not both")
     }
@@ -90,7 +86,7 @@ class AdjustmentsService(
     )
     adjustment.adjustmentHistory = listOf(
       AdjustmentHistory(
-        changeByUsername = getCurrentAuthentication().principal,
+        changeByUsername = authenticationFacade.getUsername(),
         changeType = ChangeType.CREATE,
         changeSource = AdjustmentSource.DPS,
         adjustment = adjustment,
@@ -147,7 +143,7 @@ class AdjustmentsService(
       AdditionalDaysAwarded()
     }
 
-  fun get(adjustmentId: UUID): AdjustmentDto {
+  suspend fun get(adjustmentId: UUID): AdjustmentDto {
     val adjustment = adjustmentRepository.findById(adjustmentId)
       .map { if (it.status == DELETED || it.status == INACTIVE_WHEN_DELETED) null else it }
       .orElseThrow {
@@ -156,13 +152,13 @@ class AdjustmentsService(
     return mapToDto(adjustment)
   }
 
-  fun findCurrentAdjustments(person: String, status: AdjustmentStatus, startOfSentenceEnvelope: LocalDate? = null): List<AdjustmentDto> {
+  suspend fun findCurrentAdjustments(person: String, status: AdjustmentStatus, startOfSentenceEnvelope: LocalDate? = null): List<AdjustmentDto> {
     val fromDate = startOfSentenceEnvelope ?: prisonService.getStartOfSentenceEnvelope(person)
     return adjustmentRepository.findCurrentAdjustmentsByPerson(person, fromDate, status).map { mapToDto(it) }
   }
 
   @Transactional
-  fun update(adjustmentId: UUID, resource: AdjustmentDto) {
+  suspend fun update(adjustmentId: UUID, resource: AdjustmentDto) {
     val adjustment = adjustmentRepository.findById(adjustmentId)
       .orElseThrow {
         EntityNotFoundException("No adjustment found with id $adjustmentId")
@@ -198,7 +194,7 @@ class AdjustmentsService(
       additionalDaysAwarded = additionalDaysAwarded(resource, this)
       unlawfullyAtLarge = unlawfullyAtLarge(resource, this)
       adjustmentHistory += AdjustmentHistory(
-        changeByUsername = getCurrentAuthentication().principal,
+        changeByUsername = authenticationFacade.getUsername(),
         changeType = ChangeType.UPDATE,
         change = change,
         changeSource = AdjustmentSource.DPS,
@@ -219,7 +215,7 @@ class AdjustmentsService(
     return null
   }
 
-  private fun sentenceInfo(resource: AdjustmentDto): SentenceInfo? {
+  private suspend fun sentenceInfo(resource: AdjustmentDto): SentenceInfo? {
     if (resource.adjustmentType.isSentenceType()) {
       val sentences = prisonService.getSentencesAndOffences(resource.bookingId)
       return if (resource.remand != null && resource.adjustmentType == REMAND) {
@@ -239,7 +235,7 @@ class AdjustmentsService(
   }
 
   @Transactional
-  fun delete(adjustmentId: UUID) {
+  suspend fun delete(adjustmentId: UUID) {
     val adjustment = adjustmentRepository.findById(adjustmentId)
       .orElseThrow {
         EntityNotFoundException("No adjustment found with id $adjustmentId")
@@ -248,7 +244,7 @@ class AdjustmentsService(
     adjustment.apply {
       status = if (this.status == INACTIVE) INACTIVE_WHEN_DELETED else DELETED
       adjustmentHistory += AdjustmentHistory(
-        changeByUsername = getCurrentAuthentication().principal,
+        changeByUsername = authenticationFacade.getUsername(),
         changeType = ChangeType.DELETE,
         changeSource = AdjustmentSource.DPS,
         change = change,
@@ -261,7 +257,7 @@ class AdjustmentsService(
     return JacksonUtil.toJsonNode(objectMapper.writeValueAsString(subject))
   }
 
-  private fun mapToDto(adjustment: Adjustment): AdjustmentDto {
+  private suspend fun mapToDto(adjustment: Adjustment): AdjustmentDto {
     val legacyData = objectMapper.convertValue(adjustment.legacyData, LegacyData::class.java)
     val prisonDescription = adjustment.prisonId?.let { prisonApiClient.getPrison(adjustment.prisonId!!).description }
     return AdjustmentDto(
@@ -317,7 +313,7 @@ class AdjustmentsService(
   }
 
   @Transactional
-  fun restore(resource: RestoreAdjustmentsDto): List<AdjustmentDto> {
+  suspend fun restore(resource: RestoreAdjustmentsDto): List<AdjustmentDto> {
     val adjustments = adjustmentRepository.findAllById(resource.ids).map { mapToDto(it) }
     adjustments.forEach { update(it.id!!, it) }
     return adjustments

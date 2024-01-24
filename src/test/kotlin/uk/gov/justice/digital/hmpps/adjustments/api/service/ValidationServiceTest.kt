@@ -58,7 +58,7 @@ class ValidationServiceTest {
   )
 
   @BeforeEach
-  fun init() {
+  suspend fun init() {
     whenever(prisonService.getStartOfSentenceEnvelope(BOOKING_ID)).thenReturn(START_OF_SENTENCE_ENVELOPE)
     whenever(adjustmentService.findCurrentAdjustments(PERSON, AdjustmentStatus.ACTIVE, START_OF_SENTENCE_ENVELOPE)).thenReturn(listOf(EXISTING_ADA, EXISTING_RADA))
   }
@@ -69,32 +69,32 @@ class ValidationServiceTest {
     val VALID_NEW_RADA = EXISTING_RADA.copy(id = null, days = 4)
 
     @Test
-    fun `RADA days valid`() {
+    suspend fun `RADA days valid`() {
       val result = validationService.validate(VALID_NEW_RADA)
       assertThat(result).isEmpty()
     }
 
     @Test
-    fun `RADA days valid if existing rada is from NOMIS`() {
+    suspend fun `RADA days valid if existing rada is from NOMIS`() {
       whenever(adjustmentService.findCurrentAdjustments(PERSON, AdjustmentStatus.ACTIVE, START_OF_SENTENCE_ENVELOPE)).thenReturn(listOf(EXISTING_ADA, EXISTING_NOMIS_RADA))
       val result = validationService.validate(VALID_NEW_RADA)
       assertThat(result).isEmpty()
     }
 
     @Test
-    fun `RADA days missing`() {
+    suspend fun `RADA days missing`() {
       val result = validationService.validate(VALID_NEW_RADA.copy(days = null))
       assertThat(result).isEqualTo(listOf(ValidationMessage(ValidationCode.RADA_DAYS_MUST_BE_POSTIVE)))
     }
 
     @Test
-    fun `RADA days zero`() {
+    suspend fun `RADA days zero`() {
       val result = validationService.validate(VALID_NEW_RADA.copy(days = 0))
       assertThat(result).isEqualTo(listOf(ValidationMessage(ValidationCode.RADA_DAYS_MUST_BE_POSTIVE)))
     }
 
     @Test
-    fun `RADA reduce ADAs by more than 50 percent`() {
+    suspend fun `RADA reduce ADAs by more than 50 percent`() {
       val result = validationService.validate(
         VALID_NEW_RADA.copy(
           days = 10,
@@ -105,7 +105,7 @@ class ValidationServiceTest {
     }
 
     @Test
-    fun `RADA reduce ADAs by more ADAs`() {
+    suspend fun `RADA reduce ADAs by more ADAs`() {
       val result = validationService.validate(
         VALID_NEW_RADA.copy(
           days = 40,
@@ -115,13 +115,13 @@ class ValidationServiceTest {
     }
 
     @Test
-    fun `RADA missing from date`() {
+    suspend fun `RADA missing from date`() {
       val result = validationService.validate(VALID_NEW_RADA.copy(fromDate = null))
       assertThat(result).isEqualTo(listOf(ValidationMessage(ValidationCode.RADA_FROM_DATE_NOT_NULL)))
     }
 
     @Test
-    fun `Future dated radas`() {
+    suspend fun `Future dated radas`() {
       val result = validationService.validate(
         VALID_NEW_RADA.copy(
           fromDate = LocalDate.now().plusDays(1),
@@ -131,7 +131,7 @@ class ValidationServiceTest {
     }
 
     @Test
-    fun `Rada before sentence envelope start`() {
+    suspend fun `Rada before sentence envelope start`() {
       val result = validationService.validate(
         VALID_NEW_RADA.copy(
           fromDate = START_OF_SENTENCE_ENVELOPE.minusDays(1),
@@ -148,19 +148,19 @@ class ValidationServiceTest {
     }
 
     @Test
-    fun `RADA update existing RADA so that days are less than 50 percent`() {
+    suspend fun `RADA update existing RADA so that days are less than 50 percent`() {
       val result = validationService.validate(EXISTING_RADA.copy(days = 24))
       assertThat(result).isEmpty()
     }
 
     @Test
-    fun `RADA update existing RADA so that days are more than 50 percent`() {
+    suspend fun `RADA update existing RADA so that days are more than 50 percent`() {
       val result = validationService.validate(EXISTING_RADA.copy(days = 26))
       assertThat(result).isEqualTo(listOf(ValidationMessage(ValidationCode.RADA_REDUCES_BY_MORE_THAN_HALF)))
     }
 
     @Test
-    fun `RADA update existing RADA so that days are more than ADAs`() {
+    suspend fun `RADA update existing RADA so that days are more than ADAs`() {
       val result = validationService.validate(EXISTING_RADA.copy(days = 51))
       assertThat(result).isEqualTo(listOf(ValidationMessage(ValidationCode.MORE_RADAS_THAN_ADAS)))
     }
@@ -179,43 +179,43 @@ class ValidationServiceTest {
     )
 
     @Test
-    fun `UAL valid`() {
+    suspend fun `UAL valid`() {
       val result = validationService.validate(VALID_NEW_UAL)
       assertThat(result).isEmpty()
     }
 
     @Test
-    fun `UAL valid same from to date`() {
+    suspend fun `UAL valid same from to date`() {
       val result = validationService.validate(VALID_NEW_UAL.copy(toDate = VALID_NEW_UAL.fromDate))
       assertThat(result).isEmpty()
     }
 
     @Test
-    fun `UAL missing from date`() {
+    suspend fun `UAL missing from date`() {
       val result = validationService.validate(VALID_NEW_UAL.copy(fromDate = null))
       assertThat(result).isEqualTo(listOf(ValidationMessage(ValidationCode.UAL_FROM_DATE_NOT_NULL)))
     }
 
     @Test
-    fun `UAL missing to date`() {
+    suspend fun `UAL missing to date`() {
       val result = validationService.validate(VALID_NEW_UAL.copy(toDate = null))
       assertThat(result).isEqualTo(listOf(ValidationMessage(ValidationCode.UAL_TO_DATE_NOT_NULL)))
     }
 
     @Test
-    fun `UAL to date before from date`() {
+    suspend fun `UAL to date before from date`() {
       val result = validationService.validate(VALID_NEW_UAL.copy(toDate = VALID_NEW_UAL.fromDate!!.minusDays(1)))
       assertThat(result).isEqualTo(listOf(ValidationMessage(UAL_FROM_DATE_AFTER_TO_DATE)))
     }
 
     @Test
-    fun `UAL missing ual type`() {
+    suspend fun `UAL missing ual type`() {
       val result = validationService.validate(VALID_NEW_UAL.copy(unlawfullyAtLarge = null))
       assertThat(result).isEqualTo(listOf(ValidationMessage(ValidationCode.UAL_TYPE_NOT_NULL)))
     }
 
     @Test
-    fun `UAL before sentence envelope start`() {
+    suspend fun `UAL before sentence envelope start`() {
       val result = validationService.validate(
         VALID_NEW_UAL.copy(
           fromDate = START_OF_SENTENCE_ENVELOPE.minusDays(1),
@@ -232,7 +232,7 @@ class ValidationServiceTest {
     }
 
     @Test
-    fun `Future dated UAL start date`() {
+    suspend fun `Future dated UAL start date`() {
       val result = validationService.validate(
         VALID_NEW_UAL.copy(
           fromDate = LocalDate.now().plusDays(1),
@@ -247,7 +247,7 @@ class ValidationServiceTest {
     }
 
     @Test
-    fun `Future dated UAL end date`() {
+    suspend fun `Future dated UAL end date`() {
       val result = validationService.validate(
         VALID_NEW_UAL.copy(
           toDate = LocalDate.now().plusDays(1),

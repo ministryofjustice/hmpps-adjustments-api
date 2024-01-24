@@ -6,6 +6,7 @@ plugins {
 }
 
 configurations {
+  implementation { exclude(module = "spring-boot-starter-web") }
   testImplementation {
     exclude(group = "org.junit.vintage")
     exclude(group = "logback-classic")
@@ -31,6 +32,10 @@ dependencies {
   implementation("uk.gov.justice.service.hmpps:hmpps-sqs-spring-boot-starter:2.1.1")
 
   implementation("org.springframework:spring-jms:6.0.13")
+
+  implementation("org.jetbrains.kotlinx:kotlinx-coroutines-reactor")
+  implementation("org.jetbrains.kotlinx:kotlinx-coroutines-jdk8")
+  implementation("org.jetbrains.kotlinx:kotlinx-coroutines-jdk9")
 
   // Database dependencies
   runtimeOnly("org.flywaydb:flyway-core")

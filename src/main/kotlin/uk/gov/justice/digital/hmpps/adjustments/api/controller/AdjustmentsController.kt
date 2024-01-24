@@ -53,7 +53,7 @@ class AdjustmentsController(
       ApiResponse(responseCode = "401", description = "Unauthorised, requires a valid Oauth2 token"),
     ],
   )
-  fun create(@RequestBody adjustments: List<AdjustmentDto>): CreateResponseDto {
+  suspend fun create(@RequestBody adjustments: List<AdjustmentDto>): CreateResponseDto {
     return adjustmentsService.create(adjustments).also {
       eventService.create(it.adjustmentIds, adjustments[0].person, AdjustmentSource.DPS)
     }
@@ -72,7 +72,7 @@ class AdjustmentsController(
     ],
   )
   @PreAuthorize("(hasRole('ADJUSTMENTS_MAINTAINER') and hasRole('RELEASE_DATES_CALCULATOR')) or hasRole('VIEW_SENTENCE_ADJUSTMENTS')")
-  fun findByPerson(
+  suspend fun findByPerson(
     @Parameter(required = true, description = "The noms ID of the person")
     @RequestParam("person")
     person: String,
@@ -99,7 +99,7 @@ class AdjustmentsController(
     ],
   )
   @PreAuthorize("(hasRole('ADJUSTMENTS_MAINTAINER') and hasRole('RELEASE_DATES_CALCULATOR')) or hasRole('VIEW_SENTENCE_ADJUSTMENTS')")
-  fun get(
+  suspend fun get(
     @Parameter(required = true, description = "The adjustment UUID")
     @PathVariable("adjustmentId")
     adjustmentId: UUID,
@@ -120,7 +120,7 @@ class AdjustmentsController(
     ],
   )
   @PreAuthorize("hasRole('ADJUSTMENTS_MAINTAINER')")
-  fun update(
+  suspend fun update(
     @Parameter(required = true, description = "The adjustment UUID")
     @PathVariable("adjustmentId")
     adjustmentId: UUID,
@@ -144,7 +144,7 @@ class AdjustmentsController(
     ],
   )
   @PreAuthorize("hasRole('ADJUSTMENTS_MAINTAINER')")
-  fun restore(
+  suspend fun restore(
     @Parameter(required = true, description = "The adjustment UUID")
     @RequestBody
     adjustments: RestoreAdjustmentsDto,
@@ -167,7 +167,7 @@ class AdjustmentsController(
     ],
   )
   @PreAuthorize("hasRole('ADJUSTMENTS_MAINTAINER')")
-  fun updateEffectiveDays(
+  suspend fun updateEffectiveDays(
     @Parameter(required = true, description = "The adjustment UUID")
     @PathVariable("adjustmentId")
     adjustmentId: UUID,
@@ -191,7 +191,7 @@ class AdjustmentsController(
     ],
   )
   @PreAuthorize("hasRole('ADJUSTMENTS_MAINTAINER') and hasRole('RELEASE_DATES_CALCULATOR')")
-  fun delete(
+  suspend fun delete(
     @Parameter(required = true, description = "The adjustment UUID")
     @PathVariable("adjustmentId")
     adjustmentId: UUID,
@@ -214,7 +214,7 @@ class AdjustmentsController(
     ],
   )
   @PreAuthorize("hasRole('ADJUSTMENTS_MAINTAINER') and hasRole('RELEASE_DATES_CALCULATOR')")
-  fun validate(@RequestBody adjustment: AdjustmentDto): List<ValidationMessage> {
+  suspend fun validate(@RequestBody adjustment: AdjustmentDto): List<ValidationMessage> {
     return validationService.validate(adjustment)
   }
 }

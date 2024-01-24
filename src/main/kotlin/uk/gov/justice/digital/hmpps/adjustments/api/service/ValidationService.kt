@@ -15,7 +15,7 @@ class ValidationService(
   private val adjustmentService: AdjustmentsService,
 ) {
 
-  fun validate(adjustment: AdjustmentDto): List<ValidationMessage> {
+  suspend fun validate(adjustment: AdjustmentDto): List<ValidationMessage> {
     val startOfSentenceEnvelope = prisonService.getStartOfSentenceEnvelope(adjustment.bookingId)
     if (adjustment.adjustmentType == AdjustmentType.RESTORATION_OF_ADDITIONAL_DAYS_AWARDED) {
       return validateRada(adjustment, startOfSentenceEnvelope)
@@ -59,7 +59,7 @@ class ValidationService(
     return validationMessages
   }
 
-  private fun validateRada(adjustment: AdjustmentDto, startOfSentenceEnvelope: LocalDate): List<ValidationMessage> {
+  private suspend fun validateRada(adjustment: AdjustmentDto, startOfSentenceEnvelope: LocalDate): List<ValidationMessage> {
     val validationMessages = mutableListOf<ValidationMessage>()
 
     if (adjustment.days != null && adjustment.days > 0) {
