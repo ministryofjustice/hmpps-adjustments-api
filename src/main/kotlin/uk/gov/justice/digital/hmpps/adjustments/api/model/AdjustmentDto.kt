@@ -44,6 +44,8 @@ data class AdjustmentDto(
   val status: AdjustmentStatus? = null,
   @Schema(description = "The date and time this adjustment was last updated", readOnly = true)
   val lastUpdatedDate: LocalDateTime? = null,
+  @Schema(description = "The date and time this adjustment was last created", readOnly = true)
+  val createdDate: LocalDateTime? = null,
   @Schema(description = "The number of days effective in a calculation. (for example remand minus any unused deductions)", readOnly = true)
   val effectiveDays: Int? = null,
   @Schema(description = "The NOMIS sentence sequence of the adjustment")

@@ -293,6 +293,7 @@ class AdjustmentsService(
       taggedBail = taggedBailDto(adjustment, legacyData),
       lastUpdatedBy = adjustment.adjustmentHistory.last().changeByUsername,
       lastUpdatedDate = adjustment.adjustmentHistory.last().changeAt,
+      createdDate = adjustment.adjustmentHistory.first().changeAt,
       status = adjustment.status,
       prisonId = adjustment.prisonId,
       prisonName = prisonDescription,

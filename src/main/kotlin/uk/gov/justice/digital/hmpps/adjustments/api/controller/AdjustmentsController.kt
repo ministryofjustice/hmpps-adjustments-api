@@ -55,7 +55,7 @@ class AdjustmentsController(
   )
   fun create(@RequestBody adjustments: List<AdjustmentDto>): CreateResponseDto {
     return adjustmentsService.create(adjustments).also {
-      eventService.create(it.adjustmentIds, adjustments[0].person, AdjustmentSource.DPS)
+      eventService.create(it.adjustmentIds, adjustments[0].person, AdjustmentSource.DPS, adjustments[0].adjustmentType)
     }
   }
 
@@ -127,7 +127,7 @@ class AdjustmentsController(
     @RequestBody adjustment: AdjustmentDto,
   ) {
     adjustmentsService.update(adjustmentId, adjustment).also {
-      eventService.update(adjustmentId, adjustment.person, AdjustmentSource.DPS)
+      eventService.update(adjustmentId, adjustment.person, AdjustmentSource.DPS, adjustment.adjustmentType)
     }
   }
 
@@ -150,7 +150,7 @@ class AdjustmentsController(
     adjustments: RestoreAdjustmentsDto,
   ) {
     adjustmentsService.restore(adjustments).also {
-      eventService.create(adjustments.ids, it[0].person, AdjustmentSource.DPS)
+      eventService.create(adjustments.ids, it[0].person, AdjustmentSource.DPS, it[0].adjustmentType)
     }
   }
 
@@ -198,7 +198,7 @@ class AdjustmentsController(
   ) {
     adjustmentsService.get(adjustmentId).also {
       adjustmentsService.delete(adjustmentId)
-      eventService.delete(adjustmentId, it.person, AdjustmentSource.DPS)
+      eventService.delete(adjustmentId, it.person, AdjustmentSource.DPS, it.adjustmentType)
     }
   }
 
