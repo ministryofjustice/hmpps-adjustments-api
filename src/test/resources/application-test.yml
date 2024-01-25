@@ -52,6 +52,13 @@ hmpps.sqs:
   reactiveApi: true
   provider: localstack
   queues:
+    prisonerlistener:
+      queueName: "prisonerlistener-${random.uuid}"
+      dlqName: "prisonerlistener-dlq-${random.uuid}"
+      subscribeTopicId: domainevents
+      subscribeFilter: "{\"eventType\":[\"prisoner-offender-search.prisoner.released\", \"prisoner-offender-search.prisoner.received\"]}"
+      dlqMaxReceiveCount: 3
+      visibilityTimeout: 120
     adjustments:
       queueName: adjustments-test-event-queue
       dlqName: adjustments-test-event-dlq

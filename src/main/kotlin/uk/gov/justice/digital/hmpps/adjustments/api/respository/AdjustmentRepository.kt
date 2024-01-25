@@ -32,4 +32,6 @@ interface AdjustmentRepository : JpaRepository<Adjustment, UUID> {
     status: AdjustmentStatus,
     adjustmentTypes: List<AdjustmentType>? = listOf(REMAND, TAGGED_BAIL, UNUSED_DEDUCTIONS),
   ): List<Adjustment>
+
+  fun findByPerson(person: String): List<Adjustment>
 }
