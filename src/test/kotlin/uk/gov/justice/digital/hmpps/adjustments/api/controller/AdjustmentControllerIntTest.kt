@@ -142,7 +142,7 @@ class AdjustmentControllerIntTest : SqsIntegrationTestBase() {
 
       assertThat(result)
         .usingRecursiveComparison()
-        .ignoringFieldsMatchingRegexes("lastUpdatedDate")
+        .ignoringFieldsMatchingRegexes("lastUpdatedDate", "createdDate")
         .isEqualTo(
           CREATED_ADJUSTMENT.copy(
             id = id,
@@ -229,7 +229,7 @@ class AdjustmentControllerIntTest : SqsIntegrationTestBase() {
       assertThat(latestMessage).contains(adjustment.id.toString())
       assertThat(latestMessage).contains(EventType.ADJUSTMENT_UPDATED.value)
       assertThat(latestMessage).contains(AdjustmentSource.DPS.name)
-      assertThat(latestMessage).contains("\\\"effectiveDays\\\":true")
+      assertThat(latestMessage).contains("\\\"unusedDeductions\\\":true")
       assertThat(latestMessage).contains("\\\"lastEvent\\\":true")
     }
 
@@ -322,7 +322,7 @@ class AdjustmentControllerIntTest : SqsIntegrationTestBase() {
       assertThat(result.size).isEqualTo(1)
       assertThat(result[0])
         .usingRecursiveComparison()
-        .ignoringFieldsMatchingRegexes("lastUpdatedDate")
+        .ignoringFieldsMatchingRegexes("lastUpdatedDate", "createdDate")
         .isEqualTo(
           CREATED_ADJUSTMENT.copy(
             id = id,
@@ -464,7 +464,7 @@ class AdjustmentControllerIntTest : SqsIntegrationTestBase() {
 
       assertThat(createdAdjustment)
         .usingRecursiveComparison()
-        .ignoringFieldsMatchingRegexes("lastUpdatedDate")
+        .ignoringFieldsMatchingRegexes("lastUpdatedDate", "createdDate")
         .isEqualTo(
           CREATED_ADJUSTMENT.copy(
             id = adjustmentId,
@@ -518,7 +518,7 @@ class AdjustmentControllerIntTest : SqsIntegrationTestBase() {
 
       assertThat(createdAdjustment)
         .usingRecursiveComparison()
-        .ignoringFieldsMatchingRegexes("lastUpdatedDate")
+        .ignoringFieldsMatchingRegexes("lastUpdatedDate", "createdDate")
         .isEqualTo(
           CREATED_ADJUSTMENT.copy(
             id = adjustmentId,
