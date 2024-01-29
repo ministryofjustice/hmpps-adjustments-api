@@ -2,8 +2,6 @@ package uk.gov.justice.digital.hmpps.adjustments.api.legacy.controller
 
 import jakarta.transaction.Transactional
 import org.assertj.core.api.Assertions.assertThat
-import org.awaitility.kotlin.matches
-import org.awaitility.kotlin.untilCallTo
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.http.MediaType
@@ -208,16 +206,16 @@ class LegacyAndAdjustmentsControllerIntTest : SqsIntegrationTestBase() {
     val adjustment = ADJUSTMENT.copy()
     val id = postCreateAdjustments(listOf(adjustment))[0]
 
-    //Assert adjustment is active after creating.
+    // Assert adjustment is active after creating.
     var legacyAdjustment = getLegacyAdjustment(id)
     assertThat(legacyAdjustment.active).isEqualTo(true)
 
-    //Assert adjustment is inactive when effective days are zero
+    // Assert adjustment is inactive when effective days are zero
     postAdjustmentEffectiveDaysUpdate(id, AdjustmentEffectiveDaysDto(id, 0, adjustment.person))
     legacyAdjustment = getLegacyAdjustment(id)
     assertThat(legacyAdjustment.active).isEqualTo(false)
 
-    //Assert adjustment is active again when effective days are non-zero
+    // Assert adjustment is active again when effective days are non-zero
     postAdjustmentEffectiveDaysUpdate(id, AdjustmentEffectiveDaysDto(id, 1, adjustment.person))
     legacyAdjustment = getLegacyAdjustment(id)
     assertThat(legacyAdjustment.active).isEqualTo(true)
