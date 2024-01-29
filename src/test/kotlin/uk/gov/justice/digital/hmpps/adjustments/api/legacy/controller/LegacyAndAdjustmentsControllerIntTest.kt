@@ -2,6 +2,8 @@ package uk.gov.justice.digital.hmpps.adjustments.api.legacy.controller
 
 import jakarta.transaction.Transactional
 import org.assertj.core.api.Assertions.assertThat
+import org.awaitility.kotlin.matches
+import org.awaitility.kotlin.untilCallTo
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.http.MediaType
@@ -199,6 +201,26 @@ class LegacyAndAdjustmentsControllerIntTest : SqsIntegrationTestBase() {
     adjustment = getAdjustmentById(id)
     assertThat(adjustment.daysBetween).isEqualTo(totalDays)
     assertThat(adjustment.status).isEqualTo(AdjustmentStatus.INACTIVE)
+  }
+
+  @Test
+  fun `legacy get where the effective days are zero but there were days entered in DPS`() {
+    val adjustment = ADJUSTMENT.copy()
+    val id = postCreateAdjustments(listOf(adjustment))[0]
+
+    //Assert adjustment is active after creating.
+    var legacyAdjustment = getLegacyAdjustment(id)
+    assertThat(legacyAdjustment.active).isEqualTo(true)
+
+    //Assert adjustment is inactive when effective days are zero
+    postAdjustmentEffectiveDaysUpdate(id, AdjustmentEffectiveDaysDto(id, 0, adjustment.person))
+    legacyAdjustment = getLegacyAdjustment(id)
+    assertThat(legacyAdjustment.active).isEqualTo(false)
+
+    //Assert adjustment is active again when effective days are non-zero
+    postAdjustmentEffectiveDaysUpdate(id, AdjustmentEffectiveDaysDto(id, 1, adjustment.person))
+    legacyAdjustment = getLegacyAdjustment(id)
+    assertThat(legacyAdjustment.active).isEqualTo(true)
   }
   private fun getAdjustmentById(adjustmentId: UUID) = webTestClient
     .get()

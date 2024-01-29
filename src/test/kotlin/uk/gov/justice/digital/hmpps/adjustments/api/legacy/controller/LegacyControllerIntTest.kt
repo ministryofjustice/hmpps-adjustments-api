@@ -120,6 +120,7 @@ class LegacyControllerIntTest : SqsIntegrationTestBase() {
     awaitAtMost30Secs untilCallTo { getNumberOfMessagesCurrentlyOnQueue() } matches { it == 0 }
   }
 
+
   @Test
   fun update() {
     cleanQueue()
