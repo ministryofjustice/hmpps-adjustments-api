@@ -68,10 +68,21 @@ class LegacyService(
       adjustmentType = transform(adjustment.adjustmentType, legacyData),
       sentenceSequence = legacyData.sentenceSequence,
       bookingId = legacyData.bookingId,
-      active = legacyData.adjustmentActive,
+      active = legacyData.adjustmentActive && !shouldSetAdjustmentToInactiveBecauseOfUnusedDeductions(adjustment),
       bookingReleased = !legacyData.bookingActive,
       comment = legacyData.comment,
     )
+  }
+
+  /*
+   * If the unused deductions' calculation results in this adjustment being ENTIRELY unused. It will then have no bearing
+   * on a release date calculation. Usually the users would then not create this adjustment in NOMIS. However, we record
+   * all deductions, therefore make this adjustment inactive in NOMIS.
+   */
+  private fun shouldSetAdjustmentToInactiveBecauseOfUnusedDeductions(adjustment: Adjustment): Boolean {
+    val dpsDays = (adjustment.days ?: adjustment.daysCalculated)
+    val adjustmentHasDifferentEffectiveDays = dpsDays != null && dpsDays != adjustment.effectiveDays
+    return adjustmentHasDifferentEffectiveDays && adjustment.effectiveDays == 0
   }
 
   @Transactional
