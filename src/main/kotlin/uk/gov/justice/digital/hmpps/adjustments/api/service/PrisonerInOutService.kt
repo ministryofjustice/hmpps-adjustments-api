@@ -18,7 +18,7 @@ class PrisonerInOutService(
   }
 
   fun handleReceived(event: PrisonerEvent) {
-    if (event.additionalInformation.reason == ADMISSION_REASON) {
+    if (ADMISSION_REASONS.contains(event.additionalInformation.reason)) {
       val prisoner = systemPrisonApiClient.getPrisonerDetail(event.additionalInformation.nomsNumber)
       legacyService.setAdmission(prisoner)
     }
@@ -26,7 +26,7 @@ class PrisonerInOutService(
 }
 
 const val RELEASE_REASON = "RELEASED"
-const val ADMISSION_REASON = "NEW_ADMISSION"
+val ADMISSION_REASONS = listOf("NEW_ADMISSION", "READMISSION")
 
 data class PrisonerEvent(
   val additionalInformation: PrisonerAdditionalInformation,
