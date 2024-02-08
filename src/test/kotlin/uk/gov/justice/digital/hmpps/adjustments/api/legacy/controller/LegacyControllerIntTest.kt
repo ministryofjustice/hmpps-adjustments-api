@@ -29,7 +29,7 @@ class LegacyControllerIntTest : SqsIntegrationTestBase() {
   @Autowired
   private lateinit var adjustmentRepository: AdjustmentRepository
 
-  private lateinit var CREATED_ID: UUID
+  private lateinit var createdId: UUID
 
   @BeforeEach
   fun setup() {
@@ -45,13 +45,13 @@ class LegacyControllerIntTest : SqsIntegrationTestBase() {
       .expectStatus().isCreated
       .returnResult(LegacyAdjustmentCreatedResponse::class.java)
       .responseBody.blockFirst()!!
-    CREATED_ID = result.adjustmentId
+    createdId = result.adjustmentId
   }
 
   @Test
   fun create() {
     // Created in @BeforeEach.
-    val adjustment = adjustmentRepository.findById(CREATED_ID).get()
+    val adjustment = adjustmentRepository.findById(createdId).get()
 
     assertThat(adjustment.adjustmentType).isEqualTo(AdjustmentType.UNUSED_DEDUCTIONS)
     assertThat(adjustment.adjustmentHistory).singleElement()
@@ -106,7 +106,7 @@ class LegacyControllerIntTest : SqsIntegrationTestBase() {
     cleanQueue()
     val result = webTestClient
       .get()
-      .uri("/legacy/adjustments/$CREATED_ID")
+      .uri("/legacy/adjustments/$createdId")
       .headers(
         setViewAdjustmentsAuth(),
       )
@@ -125,7 +125,7 @@ class LegacyControllerIntTest : SqsIntegrationTestBase() {
     cleanQueue()
     webTestClient
       .put()
-      .uri("/legacy/adjustments/$CREATED_ID")
+      .uri("/legacy/adjustments/$createdId")
       .headers(
         setLegacySynchronisationAuth(),
       )
@@ -142,7 +142,7 @@ class LegacyControllerIntTest : SqsIntegrationTestBase() {
       .exchange()
       .expectStatus().isOk
 
-    val adjustment = adjustmentRepository.findById(CREATED_ID).get()
+    val adjustment = adjustmentRepository.findById(createdId).get()
 
     assertThat(adjustment.adjustmentType).isEqualTo(AdjustmentType.UNUSED_DEDUCTIONS)
     assertThat(adjustment.adjustmentHistory.size).isEqualTo(2)
@@ -173,7 +173,7 @@ class LegacyControllerIntTest : SqsIntegrationTestBase() {
     cleanQueue()
     webTestClient
       .delete()
-      .uri("/legacy/adjustments/$CREATED_ID")
+      .uri("/legacy/adjustments/$createdId")
       .headers(
         setLegacySynchronisationAuth(),
       )
@@ -181,7 +181,7 @@ class LegacyControllerIntTest : SqsIntegrationTestBase() {
       .exchange()
       .expectStatus().isOk
 
-    val adjustment = adjustmentRepository.findById(CREATED_ID).get()
+    val adjustment = adjustmentRepository.findById(createdId).get()
 
     assertThat(adjustment.status).isEqualTo(AdjustmentStatus.INACTIVE_WHEN_DELETED)
     assertThat(adjustment.adjustmentHistory.size).isEqualTo(2)
@@ -194,7 +194,7 @@ class LegacyControllerIntTest : SqsIntegrationTestBase() {
     assertThat(latestMessage).contains(AdjustmentSource.NOMIS.name)
     webTestClient
       .get()
-      .uri("/legacy/adjustments/$CREATED_ID")
+      .uri("/legacy/adjustments/$createdId")
       .headers(
         setLegacySynchronisationAuth(),
       )
@@ -217,9 +217,9 @@ class LegacyControllerIntTest : SqsIntegrationTestBase() {
       .expectStatus().isCreated
       .returnResult(LegacyAdjustmentCreatedResponse::class.java)
       .responseBody.blockFirst()!!
-    CREATED_ID = result.adjustmentId
+    createdId = result.adjustmentId
     // Created in @BeforeEach.
-    val adjustment = adjustmentRepository.findById(CREATED_ID).get()
+    val adjustment = adjustmentRepository.findById(createdId).get()
 
     assertThat(adjustment.status).isEqualTo(AdjustmentStatus.INACTIVE)
 

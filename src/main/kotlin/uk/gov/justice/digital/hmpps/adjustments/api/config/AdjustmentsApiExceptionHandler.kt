@@ -11,6 +11,8 @@ import org.springframework.web.bind.annotation.ExceptionHandler
 import org.springframework.web.bind.annotation.RestControllerAdvice
 import org.springframework.web.client.RestClientException
 import org.springframework.web.client.RestClientResponseException
+import org.springframework.web.servlet.resource.NoResourceFoundException
+import software.amazon.awssdk.http.HttpStatusCode
 import uk.gov.justice.digital.hmpps.adjustments.api.error.ApiValidationException
 import uk.gov.justice.digital.hmpps.adjustments.api.error.NoActiveSentencesException
 
@@ -49,10 +51,10 @@ class AdjustmentsApiExceptionHandler {
   fun handleRestClientException(e: RestClientResponseException): ResponseEntity<ErrorResponse> {
     log.error("RestClientResponseException: ${e.message}", e)
     return ResponseEntity
-      .status(e.rawStatusCode)
+      .status(e.statusCode)
       .body(
         ErrorResponse(
-          status = e.rawStatusCode,
+          status = e.statusCode.value(),
           userMessage = "Rest client exception ${e.message}",
           developerMessage = e.message,
         ),
@@ -73,19 +75,27 @@ class AdjustmentsApiExceptionHandler {
       )
   }
 
-  @ExceptionHandler(EntityNotFoundException::class)
-  fun handleEntityNotFoundException(e: EntityNotFoundException): ResponseEntity<ErrorResponse> {
-    log.info("Entity not found exception: ${e.message}", e)
-    return ResponseEntity
-      .status(HttpStatus.NOT_FOUND)
-      .body(
-        ErrorResponse(
-          status = HttpStatus.NOT_FOUND.value(),
-          userMessage = "Not found: ${e.message}",
-          developerMessage = e.message,
-        ),
-      )
-  }
+  @ExceptionHandler(NoResourceFoundException::class)
+  fun handleNoResourceFoundException(e: NoResourceFoundException): ResponseEntity<ErrorResponse> = ResponseEntity
+    .status(HttpStatusCode.NOT_FOUND)
+    .body(
+      ErrorResponse(
+        status = HttpStatus.NOT_FOUND,
+        userMessage = "No resource found failure: ${e.message}",
+        developerMessage = e.message,
+      ),
+    ).also { log.info("No resource found exception: {}", e.message) }
+
+  @ExceptionHandler(Exception::class)
+  fun handleException(e: Exception): ResponseEntity<ErrorResponse> = ResponseEntity
+    .status(HttpStatusCode.INTERNAL_SERVER_ERROR)
+    .body(
+      ErrorResponse(
+        status = HttpStatus.INTERNAL_SERVER_ERROR,
+        userMessage = "Unexpected error: ${e.message}",
+        developerMessage = e.message,
+      ),
+    ).also { log.error("Unexpected exception", e) }
 
   @ExceptionHandler(ValidationException::class)
   fun handleValidationException(e: ValidationException): ResponseEntity<ErrorResponse> {
@@ -129,15 +139,15 @@ class AdjustmentsApiExceptionHandler {
       )
   }
 
-  @ExceptionHandler(java.lang.Exception::class)
-  fun handleException(e: java.lang.Exception): ResponseEntity<ErrorResponse?>? {
-    log.error("Unexpected exception: ${e.message}", e)
+  @ExceptionHandler(EntityNotFoundException::class)
+  fun handleEntityNotFoundException(e: EntityNotFoundException): ResponseEntity<ErrorResponse> {
+    log.info("Entity not found exception: ${e.message}", e)
     return ResponseEntity
-      .status(HttpStatus.INTERNAL_SERVER_ERROR)
+      .status(HttpStatus.NOT_FOUND)
       .body(
         ErrorResponse(
-          status = HttpStatus.INTERNAL_SERVER_ERROR,
-          userMessage = "Unexpected error: ${e.message}",
+          status = HttpStatus.NOT_FOUND.value(),
+          userMessage = "Not found: ${e.message}",
           developerMessage = e.message,
         ),
       )
