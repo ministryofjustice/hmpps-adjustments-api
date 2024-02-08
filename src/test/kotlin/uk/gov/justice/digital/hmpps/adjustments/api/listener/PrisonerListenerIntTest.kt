@@ -26,7 +26,7 @@ class PrisonerListenerIntTest : SqsIntegrationTestBase() {
 
   @Test
   fun handleReleased() {
-    val id = createAnAdjustment(CREATED_ADJUSTMENT.copy())
+    val id = createAnAdjustment(createdAdjustment.copy())
     await untilAsserted {
       val adjustment = adjustmentRepository.findById(id).get()
       assertThat(adjustment.status).isEqualTo(AdjustmentStatus.ACTIVE)
@@ -64,7 +64,7 @@ class PrisonerListenerIntTest : SqsIntegrationTestBase() {
   @Test
   fun handleAdmission() {
     val id = createAnAdjustment(
-      CREATED_ADJUSTMENT.copy(
+      createdAdjustment.copy(
         bookingReleased = true,
       ),
     )
@@ -135,7 +135,7 @@ class PrisonerListenerIntTest : SqsIntegrationTestBase() {
     .returnResult(LegacyAdjustment::class.java)
     .responseBody.blockFirst()!!
 
-  private val CREATED_ADJUSTMENT = LegacyAdjustment(
+  private val createdAdjustment = LegacyAdjustment(
     bookingId = PrisonApiExtension.BOOKING_ID,
     sentenceSequence = 1,
     offenderNo = PrisonApiExtension.PRISONER_ID,
