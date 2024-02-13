@@ -83,7 +83,7 @@ class AdjustmentsController(
     @RequestParam("sentenceEnvelopeDate")
     sentenceEnvelopeDate: LocalDate?,
   ): List<AdjustmentDto> {
-    return adjustmentsService.findCurrentAdjustments(person, status ?: AdjustmentStatus.ACTIVE, sentenceEnvelopeDate)
+    return adjustmentsService.findCurrentAdjustments(person, status ?: AdjustmentStatus.ACTIVE, sentenceEnvelopeDate ?: LocalDate.MIN)
   }
 
   @GetMapping("/{adjustmentId}")

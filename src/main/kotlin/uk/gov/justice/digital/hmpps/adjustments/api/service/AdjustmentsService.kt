@@ -161,7 +161,7 @@ class AdjustmentsService(
   fun findCurrentAdjustments(
     person: String,
     status: AdjustmentStatus,
-    startOfSentenceEnvelope: LocalDate? = LocalDate.MIN,
+    startOfSentenceEnvelope: LocalDate,
   ): List<AdjustmentDto> {
     return adjustmentRepository.findCurrentAdjustmentsByPerson(person, startOfSentenceEnvelope, status).map { mapToDto(it) }
   }
