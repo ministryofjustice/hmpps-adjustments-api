@@ -9,7 +9,6 @@ import org.junit.jupiter.api.extension.BeforeAllCallback
 import org.junit.jupiter.api.extension.BeforeEachCallback
 import org.junit.jupiter.api.extension.ExtensionContext
 import uk.gov.justice.digital.hmpps.adjustments.api.wiremock.PrisonApiExtension.Companion.BOOKING_ID
-import uk.gov.justice.digital.hmpps.adjustments.api.wiremock.PrisonApiExtension.Companion.NO_ACTIVE_SENTENCE_PRISONER_ID
 import uk.gov.justice.digital.hmpps.adjustments.api.wiremock.PrisonApiExtension.Companion.PRISONER_ID
 import uk.gov.justice.digital.hmpps.adjustments.api.wiremock.PrisonApiExtension.Companion.RECALL_BOOKING_ID
 import uk.gov.justice.digital.hmpps.adjustments.api.wiremock.PrisonApiExtension.Companion.RECALL_PRISONER_ID
@@ -25,15 +24,11 @@ class PrisonApiExtension : BeforeAllCallback, AfterAllCallback, BeforeEachCallba
     const val PRISONER_ID = "BCDEFG"
     const val RECALL_BOOKING_ID = 321L
     const val RECALL_PRISONER_ID = "CDEFGH"
-    const val NO_ACTIVE_SENTENCE_PRISONER_ID = "NO_SENTENCES"
-    const val NO_ACTIVE_SENTENCE_BOOKING_ID = 2L
     const val EARLIEST_SENTENCE_DATE = "2015-03-17"
   }
 
   override fun beforeAll(context: ExtensionContext) {
     prisonApi.start()
-    prisonApi.stubNoActiveSentences()
-    prisonApi.stubGetNoActiveSentencePrisoner()
     prisonApi.stubSentencesAndOffences()
     prisonApi.stubGetPrisonerDetails()
     prisonApi.stubGetPrison("LDS", "Leeds")
@@ -96,45 +91,6 @@ class PrisonApiMockServer : WireMockServer(WIREMOCK_PORT) {
         ),
     )
   }
-  fun stubNoActiveSentences() {
-    stubFor(
-      get("/api/offender-sentences/booking/${PrisonApiExtension.NO_ACTIVE_SENTENCE_BOOKING_ID}/sentences-and-offences")
-        .willReturn(
-          aResponse()
-            .withHeader("Content-Type", "application/json")
-            .withBody(
-              """
-                [
-                  {
-                    "bookingId": 123,
-                    "sentenceSequence": 1,
-                    "sentenceStatus": "I",
-                    "sentenceCategory": "2003",
-                    "sentenceCalculationType": "ADIMP_ORA",
-                    "sentenceTypeDescription": "Standard Determinate",
-                    "sentenceDate": "2015-03-17",
-                    "terms": [{
-                      "years": 0,
-                      "months": 20,
-                      "weeks": 0,
-                      "days": 0
-                    }],
-                    "offences": [
-                      {
-                        "offenderChargeId": 9991,
-                        "offenceStartDate": "2015-03-17",
-                        "offenceCode": "GBH",
-                        "offenceDescription": "Grievous bodily harm"
-                      }
-                    ]
-                  }
-                ]
-              """.trimIndent(),
-            )
-            .withStatus(200),
-        ),
-    )
-  }
   fun stubGetPrisonerDetails(): StubMapping =
     stubFor(
       get("/api/offenders/$PRISONER_ID")
@@ -146,26 +102,6 @@ class PrisonApiMockServer : WireMockServer(WIREMOCK_PORT) {
               {
                  "offenderNo": "$PRISONER_ID",
                  "bookingId": $BOOKING_ID,
-                 "firstName": "Default",
-                 "lastName": "Prisoner",
-                 "dateOfBirth": "1995-03-08"
-              }
-              """.trimIndent(),
-            )
-            .withStatus(200),
-        ),
-    )
-  fun stubGetNoActiveSentencePrisoner(): StubMapping =
-    stubFor(
-      get("/api/offenders/$NO_ACTIVE_SENTENCE_PRISONER_ID")
-        .willReturn(
-          aResponse()
-            .withHeader("Content-Type", "application/json")
-            .withBody(
-              """
-              {
-                 "offenderNo": "default",
-                 "bookingId": 2,
                  "firstName": "Default",
                  "lastName": "Prisoner",
                  "dateOfBirth": "1995-03-08"
