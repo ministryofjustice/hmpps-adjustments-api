@@ -161,10 +161,9 @@ class AdjustmentsService(
   fun findCurrentAdjustments(
     person: String,
     status: AdjustmentStatus,
-    startOfSentenceEnvelope: LocalDate? = null,
+    startOfSentenceEnvelope: LocalDate,
   ): List<AdjustmentDto> {
-    val fromDate = startOfSentenceEnvelope ?: prisonService.getStartOfSentenceEnvelope(person)
-    return adjustmentRepository.findCurrentAdjustmentsByPerson(person, fromDate, status).map { mapToDto(it) }
+    return adjustmentRepository.findCurrentAdjustmentsByPerson(person, startOfSentenceEnvelope, status).map { mapToDto(it) }
   }
 
   @Transactional

@@ -336,18 +336,6 @@ class AdjustmentControllerIntTest : SqsIntegrationTestBase() {
 
       awaitAtMost30Secs untilCallTo { getNumberOfMessagesCurrentlyOnQueue() } matches { it == 0 }
     }
-
-    @Test
-    fun findByPerson_NoActiveSentences() {
-      webTestClient
-        .get()
-        .uri("/adjustments?person=${PrisonApiExtension.NO_ACTIVE_SENTENCE_PRISONER_ID}")
-        .headers(
-          setAdjustmentsMaintainerAuth(),
-        )
-        .exchange()
-        .expectStatus().isEqualTo(422)
-    }
   }
 
   @Nested
@@ -575,9 +563,8 @@ class AdjustmentControllerIntTest : SqsIntegrationTestBase() {
       "classpath:test_data/insert-adjustments-spanning-sentence-envelope.sql",
     )
     fun `Get adjustments by person where some have been deleted, and some fall outside of the sentence envelope`() {
-      // The sentence envelope start date is 2015-03-17 (set in prison-api mock call)
       val person = "BCDEFG"
-      val result = getAdjustmentsByPerson(person)
+      val result = getAdjustmentsByPerson(person, startOfSentenceEnvelope = LocalDate.of(2015, 3, 17))
 
       assertThat(result.map { it.lastUpdatedBy })
         .usingRecursiveComparison()
@@ -591,7 +578,6 @@ class AdjustmentControllerIntTest : SqsIntegrationTestBase() {
       "classpath:test_data/insert-adjustments-spanning-sentence-envelope.sql",
     )
     fun `Get adjustments by person filter for adjustments before sentence envelope`() {
-      // The sentence envelope start date is 2015-03-17 (set in prison-api mock call)
       val person = "BCDEFG"
       val result = getAdjustmentsByPerson(person, startOfSentenceEnvelope = LocalDate.of(2000, 1, 1))
 
@@ -616,9 +602,8 @@ class AdjustmentControllerIntTest : SqsIntegrationTestBase() {
       "classpath:test_data/insert-adjustments-spanning-sentence-envelope.sql",
     )
     fun `Get adjustments by person filter for deleted adjustments`() {
-      // The sentence envelope start date is 2015-03-17 (set in prison-api mock call)
       val person = "BCDEFG"
-      val result = getAdjustmentsByPerson(person, status = DELETED)
+      val result = getAdjustmentsByPerson(person, status = DELETED, startOfSentenceEnvelope = LocalDate.of(2015, 3, 17))
 
       assertThat(result.map { it.lastUpdatedBy })
         .usingRecursiveComparison()

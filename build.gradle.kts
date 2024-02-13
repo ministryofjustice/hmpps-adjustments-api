@@ -50,10 +50,6 @@ dependencies {
   testImplementation("org.testcontainers:localstack:1.19.4")
 }
 
-java {
-  toolchain.languageVersion.set(JavaLanguageVersion.of(21))
-}
-
 kotlin {
   jvmToolchain(21)
 }
