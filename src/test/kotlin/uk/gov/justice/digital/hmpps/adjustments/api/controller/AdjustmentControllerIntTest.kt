@@ -619,6 +619,7 @@ class AdjustmentControllerIntTest : SqsIntegrationTestBase() {
           ),
         )
     }
+
     @Test
     @Sql(
       "classpath:test_data/reset-data.sql",
