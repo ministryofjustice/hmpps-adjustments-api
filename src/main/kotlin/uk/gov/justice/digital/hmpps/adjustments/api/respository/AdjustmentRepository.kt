@@ -20,7 +20,8 @@ interface AdjustmentRepository : JpaRepository<Adjustment, UUID> {
       " WHERE a.person = :person" +
       " AND a.status = :status" +
       " AND (" +
-      " a.fromDate IS NULL" +
+      " :fromDate IS NULL " +
+      " OR a.fromDate IS NULL" +
       " OR a.fromDate >= :fromDate" +
       " OR a.adjustmentType IN (:adjustmentTypes)" +
       " OR ada.prospective" +
@@ -28,7 +29,7 @@ interface AdjustmentRepository : JpaRepository<Adjustment, UUID> {
   )
   fun findCurrentAdjustmentsByPerson(
     person: String,
-    fromDate: LocalDate,
+    fromDate: LocalDate?,
     status: AdjustmentStatus,
     adjustmentTypes: List<AdjustmentType>? = listOf(REMAND, TAGGED_BAIL, UNUSED_DEDUCTIONS),
   ): List<Adjustment>

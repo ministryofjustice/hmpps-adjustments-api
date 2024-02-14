@@ -343,8 +343,8 @@ class AdjustmentControllerIntTest : SqsIntegrationTestBase() {
     @Test
     @Transactional
     fun adaAdjustments() {
-      val beforeEarliestSentence =
-        LocalDate.parse(PrisonApiExtension.EARLIEST_SENTENCE_DATE, DateTimeFormatter.ISO_LOCAL_DATE).minusDays(1)
+      val earliestSentenceDate = LocalDate.parse(PrisonApiExtension.EARLIEST_SENTENCE_DATE, DateTimeFormatter.ISO_LOCAL_DATE)
+      val beforeEarliestSentence = earliestSentenceDate.minusDays(1)
       val createDto = CREATED_ADJUSTMENT.copy(
         fromDate = beforeEarliestSentence,
         person = PrisonApiExtension.PRISONER_ID,
@@ -395,7 +395,7 @@ class AdjustmentControllerIntTest : SqsIntegrationTestBase() {
       assertThat(adjustmentDto.additionalDaysAwarded).isEqualTo(AdditionalDaysAwardedDto(listOf(32415555), false))
 
       // Assert that non-prospective adas before the earliest sentence date are not included.
-      adjustments = getAdjustmentsByPerson(PrisonApiExtension.PRISONER_ID)
+      adjustments = getAdjustmentsByPerson(PrisonApiExtension.PRISONER_ID, startOfSentenceEnvelope = earliestSentenceDate)
       assertThat(adjustments.contains(adjustmentDto)).isFalse
 
       entityManager.refresh(adjustment)
@@ -580,6 +580,30 @@ class AdjustmentControllerIntTest : SqsIntegrationTestBase() {
     fun `Get adjustments by person filter for adjustments before sentence envelope`() {
       val person = "BCDEFG"
       val result = getAdjustmentsByPerson(person, startOfSentenceEnvelope = LocalDate.of(2000, 1, 1))
+
+      assertThat(result.map { it.lastUpdatedBy })
+        .usingRecursiveComparison()
+        .ignoringCollectionOrder()
+        .isEqualTo(
+          listOf(
+            "current-ual",
+            "current-rada",
+            "tagged-bail-no-dates",
+            "remand-before-sentence",
+            "expired-ual",
+            "expired-rada",
+          ),
+        )
+    }
+
+    @Test
+    @Sql(
+      "classpath:test_data/reset-data.sql",
+      "classpath:test_data/insert-adjustments-spanning-sentence-envelope.sql",
+    )
+    fun `Get adjustments by person filter for adjustments without envelope filter`() {
+      val person = "BCDEFG"
+      val result = getAdjustmentsByPerson(person)
 
       assertThat(result.map { it.lastUpdatedBy })
         .usingRecursiveComparison()
