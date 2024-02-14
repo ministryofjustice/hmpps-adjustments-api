@@ -601,6 +601,29 @@ class AdjustmentControllerIntTest : SqsIntegrationTestBase() {
       "classpath:test_data/reset-data.sql",
       "classpath:test_data/insert-adjustments-spanning-sentence-envelope.sql",
     )
+    fun `Get adjustments by person filter for adjustments without envelope filter`() {
+      val person = "BCDEFG"
+      val result = getAdjustmentsByPerson(person)
+
+      assertThat(result.map { it.lastUpdatedBy })
+        .usingRecursiveComparison()
+        .ignoringCollectionOrder()
+        .isEqualTo(
+          listOf(
+            "current-ual",
+            "current-rada",
+            "tagged-bail-no-dates",
+            "remand-before-sentence",
+            "expired-ual",
+            "expired-rada",
+          ),
+        )
+    }
+    @Test
+    @Sql(
+      "classpath:test_data/reset-data.sql",
+      "classpath:test_data/insert-adjustments-spanning-sentence-envelope.sql",
+    )
     fun `Get adjustments by person filter for deleted adjustments`() {
       val person = "BCDEFG"
       val result = getAdjustmentsByPerson(person, status = DELETED, startOfSentenceEnvelope = LocalDate.of(2015, 3, 17))
