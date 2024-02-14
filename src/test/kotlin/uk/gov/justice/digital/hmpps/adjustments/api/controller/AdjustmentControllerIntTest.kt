@@ -343,8 +343,8 @@ class AdjustmentControllerIntTest : SqsIntegrationTestBase() {
     @Test
     @Transactional
     fun adaAdjustments() {
-      val beforeEarliestSentence =
-        LocalDate.parse(PrisonApiExtension.EARLIEST_SENTENCE_DATE, DateTimeFormatter.ISO_LOCAL_DATE).minusDays(1)
+      val earliestSentenceDate = LocalDate.parse(PrisonApiExtension.EARLIEST_SENTENCE_DATE, DateTimeFormatter.ISO_LOCAL_DATE)
+      val beforeEarliestSentence = earliestSentenceDate.minusDays(1)
       val createDto = CREATED_ADJUSTMENT.copy(
         fromDate = beforeEarliestSentence,
         person = PrisonApiExtension.PRISONER_ID,
@@ -395,7 +395,7 @@ class AdjustmentControllerIntTest : SqsIntegrationTestBase() {
       assertThat(adjustmentDto.additionalDaysAwarded).isEqualTo(AdditionalDaysAwardedDto(listOf(32415555), false))
 
       // Assert that non-prospective adas before the earliest sentence date are not included.
-      adjustments = getAdjustmentsByPerson(PrisonApiExtension.PRISONER_ID)
+      adjustments = getAdjustmentsByPerson(PrisonApiExtension.PRISONER_ID, startOfSentenceEnvelope = earliestSentenceDate)
       assertThat(adjustments.contains(adjustmentDto)).isFalse
 
       entityManager.refresh(adjustment)
