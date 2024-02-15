@@ -18,7 +18,7 @@ data class AdjustmentDto(
   val person: String,
   @Schema(description = "The type of adjustment")
   val adjustmentType: AdjustmentType,
-  @Schema(description = "Humand readable text for type of adjustment")
+  @Schema(description = "Human readable text for type of adjustment")
   val adjustmentTypeText: String? = null,
   @Schema(description = "The end date of the adjustment")
   val toDate: LocalDate?,
