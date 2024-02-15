@@ -146,12 +146,12 @@ class AdjustmentControllerIntTest : SqsIntegrationTestBase() {
         .isEqualTo(
           editableAdjustmentDTOToAdjustmentDTO(CREATED_ADJUSTMENT).copy(
             id = id,
-            days = 4,
             effectiveDays = 4,
             lastUpdatedBy = "Test User",
             status = ACTIVE,
             sentenceSequence = 1,
             adjustmentTypeText = CREATED_ADJUSTMENT.adjustmentType.text,
+            daysTotal = 4,
           ),
         )
       awaitAtMost30Secs untilCallTo { getNumberOfMessagesCurrentlyOnQueue() } matches { it == 0 }
@@ -329,12 +329,12 @@ class AdjustmentControllerIntTest : SqsIntegrationTestBase() {
           editableAdjustmentDTOToAdjustmentDTO(CREATED_ADJUSTMENT).copy(
             id = id,
             person = PrisonApiExtension.PRISONER_ID,
-            days = 4,
             effectiveDays = 4,
             lastUpdatedBy = "Test User",
             status = ACTIVE,
             sentenceSequence = 1,
             adjustmentTypeText = CREATED_ADJUSTMENT.adjustmentType.text,
+            daysTotal = 4,
           ),
         )
 
@@ -472,6 +472,7 @@ class AdjustmentControllerIntTest : SqsIntegrationTestBase() {
             status = ACTIVE,
             sentenceSequence = 1,
             adjustmentTypeText = TAGGED_BAIL.text,
+            daysTotal = 987,
           ),
         )
 
@@ -481,7 +482,7 @@ class AdjustmentControllerIntTest : SqsIntegrationTestBase() {
       assertThat(updatedAdjustment)
         .usingRecursiveComparison()
         .ignoringFieldsMatchingRegexes("lastUpdatedDate")
-        .isEqualTo(createdAdjustment.copy(days = 986, effectiveDays = 986))
+        .isEqualTo(createdAdjustment.copy(days = 986, effectiveDays = 986, daysTotal = 986))
     }
   }
 
@@ -519,11 +520,11 @@ class AdjustmentControllerIntTest : SqsIntegrationTestBase() {
             adjustmentType = UNLAWFULLY_AT_LARGE,
             unlawfullyAtLarge = UnlawfullyAtLargeDto(type = RECALL),
             remand = null,
-            days = 4,
             effectiveDays = 4,
             lastUpdatedBy = "Test User",
             status = ACTIVE,
             adjustmentTypeText = UNLAWFULLY_AT_LARGE.text,
+            daysTotal = 4,
           ),
         )
 

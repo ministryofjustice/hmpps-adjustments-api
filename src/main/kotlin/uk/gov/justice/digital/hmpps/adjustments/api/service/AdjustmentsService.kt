@@ -285,7 +285,7 @@ class AdjustmentsService(
     return AdjustmentDto(
       id = adjustment.id,
       person = adjustment.person,
-      days = adjustment.days ?: daysBetween(adjustment.fromDate, adjustment.toDate) ?: adjustment.effectiveDays,
+      days = if (adjustment.toDate != null) null else adjustment.days,
       effectiveDays = adjustment.effectiveDays,
       fromDate = adjustment.fromDate,
       toDate = adjustment.toDate,
@@ -303,6 +303,7 @@ class AdjustmentsService(
       prisonId = adjustment.prisonId,
       prisonName = prisonDescription,
       adjustmentTypeText = adjustment.adjustmentType.text,
+      daysTotal = adjustment.days ?: daysBetween(adjustment.fromDate, adjustment.toDate) ?: adjustment.effectiveDays,
     )
   }
 
