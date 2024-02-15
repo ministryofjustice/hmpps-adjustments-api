@@ -163,7 +163,11 @@ class AdjustmentsService(
     status: AdjustmentStatus,
     startOfSentenceEnvelope: LocalDate?,
   ): List<AdjustmentDto> {
-    return adjustmentRepository.findCurrentAdjustmentsByPerson(person, startOfSentenceEnvelope, status).map { mapToDto(it) }
+    return if (startOfSentenceEnvelope != null) {
+      adjustmentRepository.findAdjustmentsByPersonWithinSentenceEnvelope(person, startOfSentenceEnvelope, status)
+    } else {
+      adjustmentRepository.findByPersonAndStatus(person, status)
+    }.map { mapToDto(it) }
   }
 
   @Transactional
