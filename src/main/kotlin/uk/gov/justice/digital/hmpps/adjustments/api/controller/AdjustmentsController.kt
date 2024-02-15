@@ -23,6 +23,7 @@ import uk.gov.justice.digital.hmpps.adjustments.api.entity.AdjustmentStatus
 import uk.gov.justice.digital.hmpps.adjustments.api.model.AdjustmentDto
 import uk.gov.justice.digital.hmpps.adjustments.api.model.AdjustmentEffectiveDaysDto
 import uk.gov.justice.digital.hmpps.adjustments.api.model.CreateResponseDto
+import uk.gov.justice.digital.hmpps.adjustments.api.model.EditableAdjustmentDto
 import uk.gov.justice.digital.hmpps.adjustments.api.model.RestoreAdjustmentsDto
 import uk.gov.justice.digital.hmpps.adjustments.api.model.ValidationMessage
 import uk.gov.justice.digital.hmpps.adjustments.api.service.AdjustmentsEventService
@@ -53,7 +54,7 @@ class AdjustmentsController(
       ApiResponse(responseCode = "401", description = "Unauthorised, requires a valid Oauth2 token"),
     ],
   )
-  fun create(@RequestBody adjustments: List<AdjustmentDto>): CreateResponseDto {
+  fun create(@RequestBody adjustments: List<EditableAdjustmentDto>): CreateResponseDto {
     return adjustmentsService.create(adjustments).also {
       eventService.create(it.adjustmentIds, adjustments[0].person, AdjustmentSource.DPS, adjustments[0].adjustmentType)
     }
@@ -124,7 +125,7 @@ class AdjustmentsController(
     @Parameter(required = true, description = "The adjustment UUID")
     @PathVariable("adjustmentId")
     adjustmentId: UUID,
-    @RequestBody adjustment: AdjustmentDto,
+    @RequestBody adjustment: EditableAdjustmentDto,
   ) {
     adjustmentsService.update(adjustmentId, adjustment).also {
       eventService.update(adjustmentId, adjustment.person, AdjustmentSource.DPS, adjustment.adjustmentType)
