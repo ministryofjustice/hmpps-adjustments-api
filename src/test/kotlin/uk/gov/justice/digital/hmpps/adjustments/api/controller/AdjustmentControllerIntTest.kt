@@ -30,6 +30,7 @@ import uk.gov.justice.digital.hmpps.adjustments.api.model.AdditionalDaysAwardedD
 import uk.gov.justice.digital.hmpps.adjustments.api.model.AdjustmentDto
 import uk.gov.justice.digital.hmpps.adjustments.api.model.AdjustmentEffectiveDaysDto
 import uk.gov.justice.digital.hmpps.adjustments.api.model.CreateResponseDto
+import uk.gov.justice.digital.hmpps.adjustments.api.model.EditableAdjustmentDto
 import uk.gov.justice.digital.hmpps.adjustments.api.model.RemandDto
 import uk.gov.justice.digital.hmpps.adjustments.api.model.TaggedBailDto
 import uk.gov.justice.digital.hmpps.adjustments.api.model.UnlawfullyAtLargeDto
@@ -39,7 +40,6 @@ import uk.gov.justice.digital.hmpps.adjustments.api.respository.AdjustmentReposi
 import uk.gov.justice.digital.hmpps.adjustments.api.service.EventType
 import uk.gov.justice.digital.hmpps.adjustments.api.wiremock.PrisonApiExtension
 import java.time.LocalDate
-import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
 import java.util.UUID
 
@@ -144,8 +144,9 @@ class AdjustmentControllerIntTest : SqsIntegrationTestBase() {
         .usingRecursiveComparison()
         .ignoringFieldsMatchingRegexes("lastUpdatedDate", "createdDate")
         .isEqualTo(
-          CREATED_ADJUSTMENT.copy(
+          editableAdjustmentDTOToAdjustmentDTO(CREATED_ADJUSTMENT).copy(
             id = id,
+            days = 4,
             effectiveDays = 4,
             lastUpdatedBy = "Test User",
             status = ACTIVE,
@@ -325,9 +326,10 @@ class AdjustmentControllerIntTest : SqsIntegrationTestBase() {
         .usingRecursiveComparison()
         .ignoringFieldsMatchingRegexes("lastUpdatedDate", "createdDate")
         .isEqualTo(
-          CREATED_ADJUSTMENT.copy(
+          editableAdjustmentDTOToAdjustmentDTO(CREATED_ADJUSTMENT).copy(
             id = id,
             person = PrisonApiExtension.PRISONER_ID,
+            days = 4,
             effectiveDays = 4,
             lastUpdatedBy = "Test User",
             status = ACTIVE,
@@ -456,7 +458,7 @@ class AdjustmentControllerIntTest : SqsIntegrationTestBase() {
         .usingRecursiveComparison()
         .ignoringFieldsMatchingRegexes("lastUpdatedDate", "createdDate")
         .isEqualTo(
-          CREATED_ADJUSTMENT.copy(
+          editableAdjustmentDTOToAdjustmentDTO(CREATED_ADJUSTMENT).copy(
             id = adjustmentId,
             person = "TB123",
             fromDate = null,
@@ -473,7 +475,7 @@ class AdjustmentControllerIntTest : SqsIntegrationTestBase() {
           ),
         )
 
-      val updateDto = createdAdjustment.copy(days = 986)
+      val updateDto = adjustmentDTOToEditableAdjustmentDTO(createdAdjustment).copy(days = 986)
       putAdjustmentUpdate(adjustmentId, updateDto)
       val updatedAdjustment = getAdjustmentById(adjustmentId)
       assertThat(updatedAdjustment)
@@ -511,12 +513,13 @@ class AdjustmentControllerIntTest : SqsIntegrationTestBase() {
         .usingRecursiveComparison()
         .ignoringFieldsMatchingRegexes("lastUpdatedDate", "createdDate")
         .isEqualTo(
-          CREATED_ADJUSTMENT.copy(
+          editableAdjustmentDTOToAdjustmentDTO(CREATED_ADJUSTMENT).copy(
             id = adjustmentId,
             person = "UAL123",
             adjustmentType = UNLAWFULLY_AT_LARGE,
             unlawfullyAtLarge = UnlawfullyAtLargeDto(type = RECALL),
             remand = null,
+            days = 4,
             effectiveDays = 4,
             lastUpdatedBy = "Test User",
             status = ACTIVE,
@@ -524,7 +527,7 @@ class AdjustmentControllerIntTest : SqsIntegrationTestBase() {
           ),
         )
 
-      val updateDto = createdAdjustment.copy(days = null, unlawfullyAtLarge = UnlawfullyAtLargeDto(type = ESCAPE))
+      val updateDto = adjustmentDTOToEditableAdjustmentDTO(createdAdjustment).copy(days = null, unlawfullyAtLarge = UnlawfullyAtLargeDto(type = ESCAPE))
       putAdjustmentUpdate(adjustmentId, updateDto)
       val updatedAdjustment = getAdjustmentById(adjustmentId)
       assertThat(updatedAdjustment)
@@ -544,7 +547,7 @@ class AdjustmentControllerIntTest : SqsIntegrationTestBase() {
 
       putAdjustmentUpdate(
         adjustment.id!!,
-        adjustment.copy(unlawfullyAtLarge = UnlawfullyAtLargeDto(type = RECALL), prisonId = "MRG"),
+        adjustmentDTOToEditableAdjustmentDTO(adjustment).copy(unlawfullyAtLarge = UnlawfullyAtLargeDto(type = RECALL), prisonId = "MRG", days = null),
       )
 
       val updatedAdjustment = getAdjustmentById(adjustmentId)
@@ -557,6 +560,7 @@ class AdjustmentControllerIntTest : SqsIntegrationTestBase() {
             unlawfullyAtLarge = UnlawfullyAtLargeDto(type = RECALL),
             prisonId = "MRG",
             prisonName = "Moorgate",
+            days = null,
           ),
         )
     }
@@ -650,7 +654,7 @@ class AdjustmentControllerIntTest : SqsIntegrationTestBase() {
 
       putAdjustmentUpdate(
         adjustment.id!!,
-        adjustment.copy(days = null, unlawfullyAtLarge = UnlawfullyAtLargeDto(type = RECALL)),
+        adjustmentDTOToEditableAdjustmentDTO(adjustment).copy(days = null, unlawfullyAtLarge = UnlawfullyAtLargeDto(type = RECALL)),
       )
 
       val updatedAdjustment = getAdjustmentById(adjustmentId)
@@ -683,7 +687,7 @@ class AdjustmentControllerIntTest : SqsIntegrationTestBase() {
       .returnResult()
       .responseBody
 
-  private fun postCreateAdjustments(adjustmentDtos: List<AdjustmentDto>) = webTestClient
+  private fun postCreateAdjustments(adjustmentDtos: List<EditableAdjustmentDto>) = webTestClient
     .post()
     .uri("/adjustments")
     .headers(setAdjustmentsMaintainerAuth())
@@ -748,7 +752,7 @@ class AdjustmentControllerIntTest : SqsIntegrationTestBase() {
 
   private fun putAdjustmentUpdate(
     adjustmentId: UUID,
-    updateDto: AdjustmentDto,
+    updateDto: EditableAdjustmentDto,
   ) {
     webTestClient
       .put()
@@ -780,8 +784,40 @@ class AdjustmentControllerIntTest : SqsIntegrationTestBase() {
       .expectStatus().isOk
   }
 
+  private fun editableAdjustmentDTOToAdjustmentDTO(editableAdjustmentDto: EditableAdjustmentDto): AdjustmentDto = AdjustmentDto(
+    id = editableAdjustmentDto.id,
+    bookingId = editableAdjustmentDto.bookingId,
+    person = editableAdjustmentDto.person,
+    adjustmentType = editableAdjustmentDto.adjustmentType,
+    toDate = editableAdjustmentDto.toDate,
+    fromDate = editableAdjustmentDto.fromDate,
+    days = editableAdjustmentDto.days,
+    additionalDaysAwarded = editableAdjustmentDto.additionalDaysAwarded,
+    unlawfullyAtLarge = editableAdjustmentDto.unlawfullyAtLarge,
+    remand = editableAdjustmentDto.remand,
+    taggedBail = editableAdjustmentDto.taggedBail,
+    prisonId = editableAdjustmentDto.prisonId,
+    sentenceSequence = editableAdjustmentDto.sentenceSequence,
+  )
+
+  private fun adjustmentDTOToEditableAdjustmentDTO(adjustmentDto: AdjustmentDto): EditableAdjustmentDto = EditableAdjustmentDto(
+    id = adjustmentDto.id,
+    bookingId = adjustmentDto.bookingId,
+    person = adjustmentDto.person,
+    adjustmentType = adjustmentDto.adjustmentType,
+    toDate = adjustmentDto.toDate,
+    fromDate = adjustmentDto.fromDate,
+    days = adjustmentDto.days,
+    additionalDaysAwarded = adjustmentDto.additionalDaysAwarded,
+    unlawfullyAtLarge = adjustmentDto.unlawfullyAtLarge,
+    remand = adjustmentDto.remand,
+    taggedBail = adjustmentDto.taggedBail,
+    prisonId = adjustmentDto.prisonId,
+    sentenceSequence = adjustmentDto.sentenceSequence,
+  )
+
   companion object {
-    private val CREATED_ADJUSTMENT = AdjustmentDto(
+    private val CREATED_ADJUSTMENT = EditableAdjustmentDto(
       id = null,
       bookingId = PrisonApiExtension.BOOKING_ID,
       person = PrisonApiExtension.PRISONER_ID,
@@ -793,7 +829,6 @@ class AdjustmentControllerIntTest : SqsIntegrationTestBase() {
       unlawfullyAtLarge = null,
       remand = RemandDto(chargeId = listOf(9991)),
       taggedBail = null,
-      lastUpdatedDate = LocalDateTime.now(),
     )
   }
 }

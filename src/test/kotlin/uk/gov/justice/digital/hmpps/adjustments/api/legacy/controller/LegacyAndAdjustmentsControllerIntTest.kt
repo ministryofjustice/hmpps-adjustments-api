@@ -25,6 +25,7 @@ import uk.gov.justice.digital.hmpps.adjustments.api.respository.AdjustmentReposi
 import uk.gov.justice.digital.hmpps.adjustments.api.wiremock.PrisonApiExtension
 import java.time.LocalDate
 import java.time.LocalDateTime
+import java.time.temporal.ChronoUnit
 import java.util.UUID
 
 /*
@@ -188,7 +189,7 @@ class LegacyAndAdjustmentsControllerIntTest : SqsIntegrationTestBase() {
     // Create an adjustment int DPS with different calculated + effective days.
     var adjustment = ADJUSTMENT.copy()
     val id = postCreateAdjustments(listOf(adjustment))[0]
-    val totalDays = adjustment.daysBetween
+    val totalDays = (ChronoUnit.DAYS.between(adjustment.fromDate, adjustment.toDate) + 1).toInt()
     postAdjustmentEffectiveDaysUpdate(id, AdjustmentEffectiveDaysDto(id, 1, adjustment.person))
 
     // Update the adjustment from NOMIS (set inactive)
@@ -197,7 +198,8 @@ class LegacyAndAdjustmentsControllerIntTest : SqsIntegrationTestBase() {
 
     // Adjustment should still have same total days
     adjustment = getAdjustmentById(id)
-    assertThat(adjustment.daysBetween).isEqualTo(totalDays)
+    val daysBetweenResult = (ChronoUnit.DAYS.between(adjustment.fromDate, adjustment.toDate) + 1).toInt()
+    assertThat(daysBetweenResult).isEqualTo(totalDays)
     assertThat(adjustment.status).isEqualTo(AdjustmentStatus.INACTIVE)
   }
 

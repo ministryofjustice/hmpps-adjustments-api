@@ -32,6 +32,7 @@ import uk.gov.justice.digital.hmpps.adjustments.api.model.AdditionalDaysAwardedD
 import uk.gov.justice.digital.hmpps.adjustments.api.model.AdjustmentDto
 import uk.gov.justice.digital.hmpps.adjustments.api.model.AdjustmentEffectiveDaysDto
 import uk.gov.justice.digital.hmpps.adjustments.api.model.CreateResponseDto
+import uk.gov.justice.digital.hmpps.adjustments.api.model.EditableAdjustmentDto
 import uk.gov.justice.digital.hmpps.adjustments.api.model.RemandDto
 import uk.gov.justice.digital.hmpps.adjustments.api.model.RestoreAdjustmentsDto
 import uk.gov.justice.digital.hmpps.adjustments.api.model.SentenceInfo
@@ -39,6 +40,7 @@ import uk.gov.justice.digital.hmpps.adjustments.api.model.TaggedBailDto
 import uk.gov.justice.digital.hmpps.adjustments.api.model.UnlawfullyAtLargeDto
 import uk.gov.justice.digital.hmpps.adjustments.api.respository.AdjustmentRepository
 import java.time.LocalDate
+import java.time.temporal.ChronoUnit
 import java.util.UUID
 
 @Service
@@ -55,20 +57,20 @@ class AdjustmentsService(
       ?: throw IllegalStateException("User is not authenticated")
 
   @Transactional
-  fun create(resource: List<AdjustmentDto>): CreateResponseDto {
+  fun create(resource: List<EditableAdjustmentDto>): CreateResponseDto {
     return CreateResponseDto(resource.map { create(it) })
   }
 
-  private fun create(resource: AdjustmentDto): UUID {
+  private fun create(resource: EditableAdjustmentDto): UUID {
     if ((resource.toDate == null && resource.days == null) || (resource.toDate != null && resource.days != null)) {
       throw ApiValidationException("resource must have either toDate or days, not both")
     }
     val sentenceInfo = sentenceInfo(resource)
     val adjustment = Adjustment(
       person = resource.person,
-      effectiveDays = resource.daysBetween ?: resource.days!!,
+      effectiveDays = daysBetween(resource.fromDate, resource.toDate) ?: resource.days!!,
       days = resource.days,
-      daysCalculated = resource.daysBetween,
+      daysCalculated = daysBetween(resource.fromDate, resource.toDate),
       fromDate = resource.fromDate,
       toDate = resource.toDate,
       source = AdjustmentSource.DPS,
@@ -111,7 +113,7 @@ class AdjustmentsService(
     }
   }
 
-  private fun unlawfullyAtLarge(adjustmentDto: AdjustmentDto, adjustment: Adjustment? = null): UnlawfullyAtLarge? =
+  private fun unlawfullyAtLarge(adjustmentDto: EditableAdjustmentDto, adjustment: Adjustment? = null): UnlawfullyAtLarge? =
     if (adjustmentDto.adjustmentType == UNLAWFULLY_AT_LARGE && adjustmentDto.unlawfullyAtLarge != null) {
       getUnlawfullyAtLarge(adjustment).apply {
         type = adjustmentDto.unlawfullyAtLarge.type
@@ -129,7 +131,7 @@ class AdjustmentsService(
       UnlawfullyAtLarge()
     }
 
-  private fun additionalDaysAwarded(resource: AdjustmentDto, adjustment: Adjustment? = null): AdditionalDaysAwarded? {
+  private fun additionalDaysAwarded(resource: EditableAdjustmentDto, adjustment: Adjustment? = null): AdditionalDaysAwarded? {
     if (resource.adjustmentType == AdjustmentType.ADDITIONAL_DAYS_AWARDED && resource.additionalDaysAwarded != null) {
       return getAdditionalDaysAwarded(adjustment).apply {
         adjudicationCharges =
@@ -171,7 +173,7 @@ class AdjustmentsService(
   }
 
   @Transactional
-  fun update(adjustmentId: UUID, resource: AdjustmentDto) {
+  fun update(adjustmentId: UUID, resource: EditableAdjustmentDto) {
     val adjustment = adjustmentRepository.findById(adjustmentId)
       .orElseThrow {
         EntityNotFoundException("No adjustment found with id $adjustmentId")
@@ -187,8 +189,8 @@ class AdjustmentsService(
     val sentenceInfo = sentenceInfo(resource)
     adjustment.apply {
       days = resource.days
-      effectiveDays = resource.daysBetween ?: resource.days!!
-      daysCalculated = resource.daysBetween
+      effectiveDays = daysBetween(resource.fromDate, resource.toDate) ?: resource.days!!
+      daysCalculated = daysBetween(resource.fromDate, resource.toDate)
       fromDate = resource.fromDate
       toDate = resource.toDate
       source = AdjustmentSource.DPS
@@ -229,7 +231,7 @@ class AdjustmentsService(
     return null
   }
 
-  private fun sentenceInfo(resource: AdjustmentDto): SentenceInfo? {
+  private fun sentenceInfo(resource: EditableAdjustmentDto): SentenceInfo? {
     if (resource.adjustmentType.isSentenceType()) {
       val sentences = prisonService.getSentencesAndOffences(resource.bookingId)
       return if (resource.remand != null && resource.adjustmentType == REMAND) {
@@ -283,7 +285,7 @@ class AdjustmentsService(
     return AdjustmentDto(
       id = adjustment.id,
       person = adjustment.person,
-      days = if (adjustment.toDate != null) null else adjustment.days,
+      days = adjustment.days ?: daysBetween(adjustment.fromDate, adjustment.toDate) ?: adjustment.effectiveDays,
       effectiveDays = adjustment.effectiveDays,
       fromDate = adjustment.fromDate,
       toDate = adjustment.toDate,
@@ -301,6 +303,25 @@ class AdjustmentsService(
       prisonId = adjustment.prisonId,
       prisonName = prisonDescription,
       adjustmentTypeText = adjustment.adjustmentType.text,
+    )
+  }
+
+  private fun mapToEditableDto(adjustment: Adjustment): EditableAdjustmentDto {
+    val legacyData = objectMapper.convertValue(adjustment.legacyData, LegacyData::class.java)
+    return EditableAdjustmentDto(
+      id = adjustment.id,
+      person = adjustment.person,
+      days = if (adjustment.toDate != null) null else adjustment.days,
+      fromDate = adjustment.fromDate,
+      toDate = adjustment.toDate,
+      adjustmentType = adjustment.adjustmentType,
+      sentenceSequence = legacyData.sentenceSequence,
+      bookingId = legacyData.bookingId,
+      additionalDaysAwarded = additionalDaysAwardedToDto(adjustment),
+      unlawfullyAtLarge = unlawfullyAtLargeDto(adjustment),
+      remand = remandDto(adjustment, legacyData),
+      taggedBail = taggedBailDto(adjustment, legacyData),
+      prisonId = adjustment.prisonId,
     )
   }
 
@@ -336,9 +357,11 @@ class AdjustmentsService(
   }
 
   @Transactional
-  fun restore(resource: RestoreAdjustmentsDto): List<AdjustmentDto> {
-    val adjustments = adjustmentRepository.findAllById(resource.ids).map { mapToDto(it) }
+  fun restore(resource: RestoreAdjustmentsDto): List<EditableAdjustmentDto> {
+    val adjustments = adjustmentRepository.findAllById(resource.ids).map { mapToEditableDto(it) }
     adjustments.forEach { update(it.id!!, it) }
     return adjustments
   }
+
+  fun daysBetween(from: LocalDate?, to: LocalDate?): Int? = from?.let { fromDate -> to?.let { toDate -> (ChronoUnit.DAYS.between(fromDate, toDate) + 1).toInt() } }
 }
