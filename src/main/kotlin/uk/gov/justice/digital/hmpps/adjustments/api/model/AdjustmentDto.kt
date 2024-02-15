@@ -24,7 +24,7 @@ data class AdjustmentDto(
   val toDate: LocalDate?,
   @Schema(description = "The start date of the adjustment")
   val fromDate: LocalDate?,
-  @Schema(description = "The number of adjustment days")
+  @Schema(description = "The number of adjustment days, Deprecated: Use daysTotal instead", deprecated = true)
   val days: Int?,
   @Schema(description = "The details of a remand adjustment")
   val remand: RemandDto?,
@@ -55,7 +55,7 @@ data class AdjustmentDto(
   @Schema(description = "The total number of adjustment days")
   val daysTotal: Int? = null,
 ) {
-  @get:Schema(description = "The days between the from and two date", readOnly = true)
+  @get:Schema(description = "The days between the from and two date, Deprecated: Use daysTotal instead", readOnly = true, deprecated = true)
   val daysBetween: Int?
     get() {
       return if (this.fromDate == null || this.toDate == null) {
