@@ -150,6 +150,7 @@ class AdjustmentControllerIntTest : SqsIntegrationTestBase() {
             lastUpdatedBy = "Test User",
             status = ACTIVE,
             sentenceSequence = 1,
+            adjustmentTypeText = CREATED_ADJUSTMENT.adjustmentType.text,
           ),
         )
       awaitAtMost30Secs untilCallTo { getNumberOfMessagesCurrentlyOnQueue() } matches { it == 0 }
@@ -331,6 +332,7 @@ class AdjustmentControllerIntTest : SqsIntegrationTestBase() {
             lastUpdatedBy = "Test User",
             status = ACTIVE,
             sentenceSequence = 1,
+            adjustmentTypeText = CREATED_ADJUSTMENT.adjustmentType.text,
           ),
         )
 
@@ -467,6 +469,7 @@ class AdjustmentControllerIntTest : SqsIntegrationTestBase() {
             lastUpdatedBy = "Test User",
             status = ACTIVE,
             sentenceSequence = 1,
+            adjustmentTypeText = TAGGED_BAIL.text,
           ),
         )
 
@@ -517,6 +520,7 @@ class AdjustmentControllerIntTest : SqsIntegrationTestBase() {
             effectiveDays = 4,
             lastUpdatedBy = "Test User",
             status = ACTIVE,
+            adjustmentTypeText = UNLAWFULLY_AT_LARGE.text,
           ),
         )
 

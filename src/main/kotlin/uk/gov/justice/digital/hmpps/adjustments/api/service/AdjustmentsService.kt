@@ -300,6 +300,7 @@ class AdjustmentsService(
       status = adjustment.status,
       prisonId = adjustment.prisonId,
       prisonName = prisonDescription,
+      adjustmentTypeText = adjustment.adjustmentType.text,
     )
   }
 
