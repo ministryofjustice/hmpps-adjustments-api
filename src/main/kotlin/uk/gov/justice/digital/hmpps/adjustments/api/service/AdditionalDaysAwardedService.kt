@@ -3,17 +3,21 @@ package uk.gov.justice.digital.hmpps.adjustments.api.service
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import uk.gov.justice.digital.hmpps.adjustments.api.client.PrisonApiClient
+import uk.gov.justice.digital.hmpps.adjustments.api.entity.Adjustment
 import uk.gov.justice.digital.hmpps.adjustments.api.entity.AdjustmentType.ADDITIONAL_DAYS_AWARDED
 import uk.gov.justice.digital.hmpps.adjustments.api.model.prisonapi.AdjudicationDetail
 import uk.gov.justice.digital.hmpps.adjustments.api.model.prisonapi.Hearing
 import uk.gov.justice.digital.hmpps.adjustments.api.model.prisonapi.Sanction
 import uk.gov.justice.digital.hmpps.adjustments.api.respository.AdjustmentRepository
+import uk.gov.justice.digital.hmpps.adjustments.api.service.AdaStatus.PENDING_APPROVAL
 import uk.gov.justice.digital.hmpps.adjustments.api.service.ChargeStatus.AWARDED_OR_PENDING
 import uk.gov.justice.digital.hmpps.adjustments.api.service.ChargeStatus.PROSPECTIVE
 import uk.gov.justice.digital.hmpps.adjustments.api.service.ChargeStatus.QUASHED
 import uk.gov.justice.digital.hmpps.adjustments.api.service.ChargeStatus.SUSPENDED
 import java.time.LocalDate
 import java.time.LocalDateTime
+import java.util.SortedMap
+import kotlin.collections.Map as Map1
 
 enum class ChargeStatus { AWARDED_OR_PENDING, SUSPENDED, QUASHED, PROSPECTIVE }
 
@@ -90,14 +94,25 @@ class AdditionalDaysAwardedService(
     if (anyUnlinkedAdas) return true
 
     val adas = lookupAdas(nomsId)
-    val awardedOrPending: List<AdasByDateCharged> = this.getAdasByDateCharged(adas, AWARDED_OR_PENDING)
-    val prospective: List<AdasByDateCharged> = this.getAdasByDateCharged(adas, PROSPECTIVE)
+    val awardedOrPending = this.getAdasByDateCharged(adas, AWARDED_OR_PENDING)
+    val prospective = this.getAdasByDateCharged(adas, PROSPECTIVE)
 
     return false
   }
 
+  private fun filterAdasByMatchingAdjustment(
+    adas: List <AdasByDateCharged>,
+    adjustments: List <Adjustment>,
+  ): Pair<List<AdasByDateCharged>, List<AdasByDateCharged>>? {
+    if (adjustments.any{ it.additionalDaysAwarded != null}) {
+      return emptyList<AdasByDateCharged>() to adas.map { it.copy(status =  PENDING_APPROVAL) }
+
+    }
+    return null
+  }
+
   private fun lookupAdas(nomsId: String): List<Ada> {
-    val startOfSentenceEnvelope = prisonService.getStartOfSentenceEnvelopeExcludingRecalls(nomsId) ?: return true
+    val startOfSentenceEnvelope = prisonService.getStartOfSentenceEnvelopeExcludingRecalls(nomsId) ?: return emptyList()
     val adaAdjustments = adjustmentRepository.findByPersonAndAdjustmentType(nomsId, ADDITIONAL_DAYS_AWARDED)
     val adjudications = prisonApiClient.getAdjudications(nomsId)
     val individualAdjudications =
@@ -105,10 +120,10 @@ class AdditionalDaysAwardedService(
     return getAdas(individualAdjudications, startOfSentenceEnvelope)
   }
 
-  private fun getAdasByDateCharged(adas: List<Ada>, filterStatus: ChargeStatus): List<AdasByDateCharged> {
+  private fun getAdasByDateCharged(adas: List<Ada>, filterStatus: ChargeStatus): SortedMap<LocalDate, List<Ada>> {
 
     // TODO check dates ordered correct;y tests
-    val adasByDateCharged = adas.filter { it.status == filterStatus }.groupBy { it.dateChargeProved }.toSortedMap()
+    return adas.filter { it.status == filterStatus }.groupBy { it.dateChargeProved }.toSortedMap()
   }
 
   private fun prospectiveOrSanctioned(hearing: Hearing, startOfSentenceEnvelope: LocalDate): Boolean {
