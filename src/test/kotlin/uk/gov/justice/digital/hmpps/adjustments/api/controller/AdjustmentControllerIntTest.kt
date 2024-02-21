@@ -37,9 +37,11 @@ import uk.gov.justice.digital.hmpps.adjustments.api.model.UnlawfullyAtLargeDto
 import uk.gov.justice.digital.hmpps.adjustments.api.model.ValidationCode
 import uk.gov.justice.digital.hmpps.adjustments.api.model.ValidationMessage
 import uk.gov.justice.digital.hmpps.adjustments.api.respository.AdjustmentRepository
+import uk.gov.justice.digital.hmpps.adjustments.api.service.AdjustmentsService
 import uk.gov.justice.digital.hmpps.adjustments.api.service.EventType
 import uk.gov.justice.digital.hmpps.adjustments.api.wiremock.PrisonApiExtension
 import java.time.LocalDate
+import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
 import java.util.UUID
 
@@ -465,7 +467,6 @@ class AdjustmentControllerIntTest : SqsIntegrationTestBase() {
             toDate = null,
             adjustmentType = TAGGED_BAIL,
             taggedBail = TaggedBailDto(caseSequence = 9191),
-            days = 987,
             effectiveDays = 987,
             remand = null,
             lastUpdatedBy = "Test User",
@@ -482,7 +483,7 @@ class AdjustmentControllerIntTest : SqsIntegrationTestBase() {
       assertThat(updatedAdjustment)
         .usingRecursiveComparison()
         .ignoringFieldsMatchingRegexes("lastUpdatedDate")
-        .isEqualTo(createdAdjustment.copy(days = 986, effectiveDays = 986, daysTotal = 986))
+        .isEqualTo(createdAdjustment.copy(effectiveDays = 986, daysTotal = 986))
     }
   }
 
@@ -552,7 +553,7 @@ class AdjustmentControllerIntTest : SqsIntegrationTestBase() {
       )
 
       val updatedAdjustment = getAdjustmentById(adjustmentId)
-      assertThat(updatedAdjustment.copy(days = null))
+      assertThat(updatedAdjustment)
         .usingRecursiveComparison()
         .ignoringFieldsMatchingRegexes("lastUpdatedDate")
         .isEqualTo(
@@ -561,7 +562,6 @@ class AdjustmentControllerIntTest : SqsIntegrationTestBase() {
             unlawfullyAtLarge = UnlawfullyAtLargeDto(type = RECALL),
             prisonId = "MRG",
             prisonName = "Moorgate",
-            days = null,
           ),
         )
     }
@@ -785,39 +785,44 @@ class AdjustmentControllerIntTest : SqsIntegrationTestBase() {
       .expectStatus().isOk
   }
 
-  private fun editableAdjustmentDTOToAdjustmentDTO(editableAdjustmentDto: EditableAdjustmentDto): AdjustmentDto = AdjustmentDto(
-    id = editableAdjustmentDto.id,
-    bookingId = editableAdjustmentDto.bookingId,
-    person = editableAdjustmentDto.person,
-    adjustmentType = editableAdjustmentDto.adjustmentType,
-    toDate = editableAdjustmentDto.toDate,
-    fromDate = editableAdjustmentDto.fromDate,
-    days = editableAdjustmentDto.days,
-    additionalDaysAwarded = editableAdjustmentDto.additionalDaysAwarded,
-    unlawfullyAtLarge = editableAdjustmentDto.unlawfullyAtLarge,
-    remand = editableAdjustmentDto.remand,
-    taggedBail = editableAdjustmentDto.taggedBail,
-    prisonId = editableAdjustmentDto.prisonId,
-    sentenceSequence = editableAdjustmentDto.sentenceSequence,
-  )
-
-  private fun adjustmentDTOToEditableAdjustmentDTO(adjustmentDto: AdjustmentDto): EditableAdjustmentDto = EditableAdjustmentDto(
-    id = adjustmentDto.id,
-    bookingId = adjustmentDto.bookingId,
-    person = adjustmentDto.person,
-    adjustmentType = adjustmentDto.adjustmentType,
-    toDate = adjustmentDto.toDate,
-    fromDate = adjustmentDto.fromDate,
-    days = adjustmentDto.days,
-    additionalDaysAwarded = adjustmentDto.additionalDaysAwarded,
-    unlawfullyAtLarge = adjustmentDto.unlawfullyAtLarge,
-    remand = adjustmentDto.remand,
-    taggedBail = adjustmentDto.taggedBail,
-    prisonId = adjustmentDto.prisonId,
-    sentenceSequence = adjustmentDto.sentenceSequence,
-  )
-
   companion object {
+    fun editableAdjustmentDTOToAdjustmentDTO(editableAdjustmentDto: EditableAdjustmentDto): AdjustmentDto = AdjustmentDto(
+      id = editableAdjustmentDto.id,
+      bookingId = editableAdjustmentDto.bookingId,
+      person = editableAdjustmentDto.person,
+      adjustmentType = editableAdjustmentDto.adjustmentType,
+      toDate = editableAdjustmentDto.toDate,
+      fromDate = editableAdjustmentDto.fromDate,
+      daysTotal = editableAdjustmentDto.days ?: AdjustmentsService.daysBetween(editableAdjustmentDto.fromDate, editableAdjustmentDto.toDate)!!,
+      additionalDaysAwarded = editableAdjustmentDto.additionalDaysAwarded,
+      unlawfullyAtLarge = editableAdjustmentDto.unlawfullyAtLarge,
+      remand = editableAdjustmentDto.remand,
+      taggedBail = editableAdjustmentDto.taggedBail,
+      prisonId = editableAdjustmentDto.prisonId,
+      sentenceSequence = editableAdjustmentDto.sentenceSequence,
+      createdDate = LocalDateTime.now(),
+      effectiveDays = editableAdjustmentDto.days ?: AdjustmentsService.daysBetween(editableAdjustmentDto.fromDate, editableAdjustmentDto.toDate)!!,
+      lastUpdatedBy = "",
+      status = ACTIVE,
+      lastUpdatedDate = LocalDateTime.now(),
+    )
+
+    fun adjustmentDTOToEditableAdjustmentDTO(adjustmentDto: AdjustmentDto): EditableAdjustmentDto = EditableAdjustmentDto(
+      id = adjustmentDto.id,
+      bookingId = adjustmentDto.bookingId,
+      person = adjustmentDto.person,
+      adjustmentType = adjustmentDto.adjustmentType,
+      toDate = adjustmentDto.toDate,
+      fromDate = adjustmentDto.fromDate,
+      days = adjustmentDto.daysTotal,
+      additionalDaysAwarded = adjustmentDto.additionalDaysAwarded,
+      unlawfullyAtLarge = adjustmentDto.unlawfullyAtLarge,
+      remand = adjustmentDto.remand,
+      taggedBail = adjustmentDto.taggedBail,
+      prisonId = adjustmentDto.prisonId,
+      sentenceSequence = adjustmentDto.sentenceSequence,
+    )
+
     private val CREATED_ADJUSTMENT = EditableAdjustmentDto(
       id = null,
       bookingId = PrisonApiExtension.BOOKING_ID,

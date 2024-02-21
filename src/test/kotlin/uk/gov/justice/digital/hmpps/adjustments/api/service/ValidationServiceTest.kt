@@ -6,6 +6,7 @@ import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.whenever
+import uk.gov.justice.digital.hmpps.adjustments.api.controller.AdjustmentControllerIntTest
 import uk.gov.justice.digital.hmpps.adjustments.api.entity.AdjustmentStatus
 import uk.gov.justice.digital.hmpps.adjustments.api.entity.AdjustmentType
 import uk.gov.justice.digital.hmpps.adjustments.api.enums.UnlawfullyAtLargeType
@@ -36,24 +37,27 @@ class ValidationServiceTest {
     adjustmentType = AdjustmentType.ADDITIONAL_DAYS_AWARDED,
     toDate = null,
     fromDate = LocalDate.now().minusDays(5),
-    days = 50,
-    effectiveDays = null,
+    daysTotal = 50,
+    effectiveDays = 50,
     additionalDaysAwarded = null,
     unlawfullyAtLarge = null,
     remand = null,
     taggedBail = null,
     lastUpdatedDate = LocalDateTime.now(),
+    createdDate = LocalDateTime.now(),
+    lastUpdatedBy = "Person",
+    status = AdjustmentStatus.ACTIVE,
   )
 
   private val existingRada = existingAda.copy(
     id = UUID.randomUUID(),
     adjustmentType = AdjustmentType.RESTORATION_OF_ADDITIONAL_DAYS_AWARDED,
-    days = 20,
+    daysTotal = 20,
   )
 
   private val existingNomisRada = existingRada.copy(
     id = UUID.randomUUID(),
-    days = null,
+    daysTotal = 20,
     effectiveDays = 20,
   )
 
@@ -66,7 +70,7 @@ class ValidationServiceTest {
   @Nested
   inner class RadaTests {
 
-    val validNewRada = existingRada.copy(id = null, days = 4)
+    val validNewRada = AdjustmentControllerIntTest.adjustmentDTOToEditableAdjustmentDTO(existingRada.copy(id = null, daysTotal = 4))
 
     @Test
     fun `RADA days valid`() {
@@ -149,19 +153,19 @@ class ValidationServiceTest {
 
     @Test
     fun `RADA update existing RADA so that days are less than 50 percent`() {
-      val result = validationService.validate(existingRada.copy(days = 24))
+      val result = validationService.validate(AdjustmentControllerIntTest.adjustmentDTOToEditableAdjustmentDTO(existingRada.copy(daysTotal = 24)))
       assertThat(result).isEmpty()
     }
 
     @Test
     fun `RADA update existing RADA so that days are more than 50 percent`() {
-      val result = validationService.validate(existingRada.copy(days = 26))
+      val result = validationService.validate(AdjustmentControllerIntTest.adjustmentDTOToEditableAdjustmentDTO(existingRada.copy(daysTotal = 26)))
       assertThat(result).isEqualTo(listOf(ValidationMessage(ValidationCode.RADA_REDUCES_BY_MORE_THAN_HALF)))
     }
 
     @Test
     fun `RADA update existing RADA so that days are more than ADAs`() {
-      val result = validationService.validate(existingRada.copy(days = 51))
+      val result = validationService.validate(AdjustmentControllerIntTest.adjustmentDTOToEditableAdjustmentDTO(existingRada.copy(daysTotal = 51)))
       assertThat(result).isEqualTo(listOf(ValidationMessage(ValidationCode.MORE_RADAS_THAN_ADAS)))
     }
   }
@@ -169,13 +173,15 @@ class ValidationServiceTest {
   @Nested
   inner class UalTests {
 
-    val validNewUal = existingRada.copy(
-      id = null,
-      days = null,
-      fromDate = LocalDate.now().minusDays(10),
-      toDate = LocalDate.now().minusDays(2),
-      adjustmentType = AdjustmentType.UNLAWFULLY_AT_LARGE,
-      unlawfullyAtLarge = UnlawfullyAtLargeDto(UnlawfullyAtLargeType.ESCAPE),
+    val validNewUal = AdjustmentControllerIntTest.adjustmentDTOToEditableAdjustmentDTO(
+      existingRada.copy(
+        id = null,
+        daysTotal = 9,
+        fromDate = LocalDate.now().minusDays(10),
+        toDate = LocalDate.now().minusDays(2),
+        adjustmentType = AdjustmentType.UNLAWFULLY_AT_LARGE,
+        unlawfullyAtLarge = UnlawfullyAtLargeDto(UnlawfullyAtLargeType.ESCAPE),
+      ),
     )
 
     @Test

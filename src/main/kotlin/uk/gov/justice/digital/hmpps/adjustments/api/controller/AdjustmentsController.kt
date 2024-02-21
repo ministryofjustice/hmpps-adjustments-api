@@ -215,7 +215,7 @@ class AdjustmentsController(
     ],
   )
   @PreAuthorize("hasRole('ADJUSTMENTS_MAINTAINER') and hasRole('RELEASE_DATES_CALCULATOR')")
-  fun validate(@RequestBody adjustment: AdjustmentDto): List<ValidationMessage> {
+  fun validate(@RequestBody adjustment: EditableAdjustmentDto): List<ValidationMessage> {
     return validationService.validate(adjustment)
   }
 }

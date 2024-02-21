@@ -29,8 +29,7 @@ data class EditableAdjustmentDto(
   val unlawfullyAtLarge: UnlawfullyAtLargeDto?,
   @Schema(description = "The details of a tagged-bail adjustment")
   val taggedBail: TaggedBailDto?,
-
-  @Schema(description = "The prison where the prisoner was located at the time the adjustment was created (a 3 character code identifying the prison)", example = "LDS")
+  @Schema(description = "The prison where the prisoner was located at the time the adjustment was created (a 3 character code identifying the prison)", example = "LDS", required = true)
   val prisonId: String? = null,
   @Schema(description = "The NOMIS sentence sequence of the adjustment")
   val sentenceSequence: Int? = null,

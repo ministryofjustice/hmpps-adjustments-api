@@ -333,12 +333,16 @@ class LegacyAndAdjustmentsControllerIntTest : SqsIntegrationTestBase() {
       adjustmentType = AdjustmentType.REMAND,
       fromDate = LocalDate.now().minusDays(5),
       toDate = LocalDate.now().plusDays(2),
-      days = null,
+      daysTotal = 4,
       additionalDaysAwarded = null,
       unlawfullyAtLarge = null,
       remand = RemandDto(chargeId = listOf(9991)),
       taggedBail = null,
       lastUpdatedDate = LocalDateTime.now(),
+      createdDate = LocalDateTime.now(),
+      effectiveDays = 4,
+      lastUpdatedBy = "Person",
+      status = AdjustmentStatus.ACTIVE,
     )
   }
 }
