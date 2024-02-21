@@ -5,7 +5,6 @@ import uk.gov.justice.digital.hmpps.adjustments.api.entity.AdjustmentStatus
 import uk.gov.justice.digital.hmpps.adjustments.api.entity.AdjustmentType
 import java.time.LocalDate
 import java.time.LocalDateTime
-import java.time.temporal.ChronoUnit
 import java.util.UUID
 
 @Schema(description = "The adjustment and its identifier")
@@ -24,8 +23,6 @@ data class AdjustmentDto(
   val toDate: LocalDate?,
   @Schema(description = "The start date of the adjustment")
   val fromDate: LocalDate?,
-  @Schema(description = "The number of adjustment days, Deprecated: Use daysTotal instead", deprecated = true)
-  val days: Int?,
   @Schema(description = "The details of a remand adjustment")
   val remand: RemandDto?,
   @Schema(description = "The details of an additional days awarded adjustments (ADA)")
@@ -34,34 +31,22 @@ data class AdjustmentDto(
   val unlawfullyAtLarge: UnlawfullyAtLargeDto?,
   @Schema(description = "The details of a tagged-bail adjustment")
   val taggedBail: TaggedBailDto?,
-
-  // View only fields
-  @Schema(description = "The prison where the prisoner was located at the time the adjustment was created (a 3 character code identifying the prison)", example = "LDS", readOnly = true)
+  @Schema(description = "The prison where the prisoner was located at the time the adjustment was created (a 3 character code identifying the prison)", example = "LDS")
   val prisonId: String? = null,
-  @Schema(description = "The name name of the prison where the prisoner was located at the time the adjustment was created ", example = "Leeds", readOnly = true)
+  @Schema(description = "The name name of the prison where the prisoner was located at the time the adjustment was created ", example = "Leeds")
   val prisonName: String? = null,
-  @Schema(description = "The person last updating this adjustment", readOnly = true)
-  val lastUpdatedBy: String? = null,
-  @Schema(description = "The status of this adjustment", readOnly = true)
-  val status: AdjustmentStatus? = null,
-  @Schema(description = "The date and time this adjustment was last updated", readOnly = true)
-  val lastUpdatedDate: LocalDateTime? = null,
-  @Schema(description = "The date and time this adjustment was last created", readOnly = true)
-  val createdDate: LocalDateTime? = null,
-  @Schema(description = "The number of days effective in a calculation. (for example remand minus any unused deductions)", readOnly = true)
-  val effectiveDays: Int? = null,
+  @Schema(description = "The person last updating this adjustment")
+  val lastUpdatedBy: String,
+  @Schema(description = "The status of this adjustment")
+  val status: AdjustmentStatus,
+  @Schema(description = "The date and time this adjustment was last updated")
+  val lastUpdatedDate: LocalDateTime,
+  @Schema(description = "The date and time this adjustment was last created")
+  val createdDate: LocalDateTime,
+  @Schema(description = "The number of days effective in a calculation. (for example remand minus any unused deductions)")
+  val effectiveDays: Int,
   @Schema(description = "The NOMIS sentence sequence of the adjustment")
   val sentenceSequence: Int? = null,
   @Schema(description = "The total number of adjustment days")
-  val daysTotal: Int? = null,
-) {
-  @get:Schema(description = "The days between the from and two date, Deprecated: Use daysTotal instead", readOnly = true, deprecated = true)
-  val daysBetween: Int?
-    get() {
-      return if (this.fromDate == null || this.toDate == null) {
-        null
-      } else {
-        (ChronoUnit.DAYS.between(this.fromDate, this.toDate) + 1).toInt()
-      }
-    }
-}
+  val daysTotal: Int,
+)
