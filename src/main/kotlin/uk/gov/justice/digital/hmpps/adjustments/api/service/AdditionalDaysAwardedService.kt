@@ -100,15 +100,32 @@ class AdditionalDaysAwardedService(
     return false
   }
 
-  private fun filterAdasByMatchingAdjustment(
-    adas: List <AdasByDateCharged>,
-    adjustments: List <Adjustment>,
-  ): Pair<List<AdasByDateCharged>, List<AdasByDateCharged>>? {
-    if (adjustments.any{ it.additionalDaysAwarded != null}) {
-      return emptyList<AdasByDateCharged>() to adas.map { it.copy(status =  PENDING_APPROVAL) }
+  data class AwardedAndPending(
+    val awarded: List<AdasByDateCharged>? = null,
+    val pendingApproval: List<AdasByDateCharged>? = null,
+  )
 
+  private fun filterAdasByMatchingAdjustment(
+    adas: List<AdasByDateCharged>,
+    adjustments: List<Adjustment>,
+  ): AwardedAndPending {
+    if (adjustments.any { it.additionalDaysAwarded != null }) {
+      return AwardedAndPending(pendingApproval = adas.map { it.copy(status = PENDING_APPROVAL) })
     }
-    return null
+
+    adas.fold(AwardedAndPending()) {
+      adjustments.any { it. }
+    }
+
+  }
+
+  private fun adjustmentMatchesAdjudication(adjudication: AdasByDateCharged, adjustment: Adjustment): Boolean {
+    return (
+      adjudication.total == (adjustment.days || adjustment.effectiveDays || adjustment.effectiveDays) &&
+        adjudication.dateChargeProved.toISOString().substring(0, 10) === adjustment.fromDate &&
+        JSON.stringify(adjudication.charges.map(charge => charge.chargeNumber).sort()) ===
+      JSON.stringify(adjustment.additionalDaysAwarded.adjudicationId.sort())
+    )
   }
 
   private fun lookupAdas(nomsId: String): List<Ada> {
@@ -160,15 +177,19 @@ class AdditionalDaysAwardedService(
           }
         }
         result.sanctions!!.filter { s -> isProspectiveOrSanctioned(s, h.hearingTime, startOfSentenceEnvelope) }
-          .forEach { sanction ->  acc.add(Ada(
-            dateChargeProved = h.hearingTime.toLocalDate(),
-            days = sanction.sanctionDays,
-            chargeNumber = cur.adjudicationNumber,
-            consecutiveToSequence = sanction.consecutiveSanctionSeq,
-            heardAt = h.establishment,
-            sequence = sanction.sanctionSeq,
-            status = deriveChargeStatus(sanction),
-          ))}
+          .forEach { sanction ->
+            acc.add(
+              Ada(
+                dateChargeProved = h.hearingTime.toLocalDate(),
+                days = sanction.sanctionDays,
+                chargeNumber = cur.adjudicationNumber,
+                consecutiveToSequence = sanction.consecutiveSanctionSeq,
+                heardAt = h.establishment,
+                sequence = sanction.sanctionSeq,
+                status = deriveChargeStatus(sanction),
+              ),
+            )
+          }
 
       }
       acc
