@@ -285,7 +285,6 @@ class AdjustmentsService(
     return AdjustmentDto(
       id = adjustment.id,
       person = adjustment.person,
-      days = if (adjustment.toDate != null) null else adjustment.days,
       effectiveDays = adjustment.effectiveDays,
       fromDate = adjustment.fromDate,
       toDate = adjustment.toDate,
@@ -364,5 +363,8 @@ class AdjustmentsService(
     return adjustments
   }
 
-  fun daysBetween(from: LocalDate?, to: LocalDate?): Int? = from?.let { fromDate -> to?.let { toDate -> (ChronoUnit.DAYS.between(fromDate, toDate) + 1).toInt() } }
+  companion object {
+    fun daysBetween(from: LocalDate?, to: LocalDate?): Int? =
+      from?.let { fromDate -> to?.let { toDate -> (ChronoUnit.DAYS.between(fromDate, toDate) + 1).toInt() } }
+  }
 }
