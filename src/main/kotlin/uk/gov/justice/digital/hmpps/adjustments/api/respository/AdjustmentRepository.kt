@@ -39,4 +39,6 @@ interface AdjustmentRepository : JpaRepository<Adjustment, UUID> {
     person: String,
     status: AdjustmentStatus,
   ): List<Adjustment>
+
+  fun findByPersonAndAdjustmentType(person: String, adjustmentType: AdjustmentType): List<Adjustment>
 }
