@@ -190,7 +190,7 @@ class AdjustmentsService(
 
     if (isPeriodAdjustment && resource.days != null) {
       if (daysBetween != resource.days) {
-        throw ApiValidationException("resource must have either toDate or days, not both")
+        throw ApiValidationException("The number of days provide does not match the period between the from and to dates of the adjustment")
       }
     }
     val persistedLegacyData = objectMapper.convertValue(adjustment.legacyData, LegacyData::class.java)
