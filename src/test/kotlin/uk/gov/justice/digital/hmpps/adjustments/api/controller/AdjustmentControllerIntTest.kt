@@ -333,7 +333,7 @@ class AdjustmentControllerIntTest : SqsIntegrationTestBase() {
             status = ACTIVE,
             sentenceSequence = 1,
             adjustmentTypeText = CREATED_ADJUSTMENT.adjustmentType.text,
-            days = 4
+            days = 4,
           ),
         )
 
@@ -470,7 +470,7 @@ class AdjustmentControllerIntTest : SqsIntegrationTestBase() {
             status = ACTIVE,
             sentenceSequence = 1,
             adjustmentTypeText = TAGGED_BAIL.text,
-            days = 987
+            days = 987,
           ),
         )
 
@@ -522,7 +522,7 @@ class AdjustmentControllerIntTest : SqsIntegrationTestBase() {
             lastUpdatedBy = "Test User",
             status = ACTIVE,
             adjustmentTypeText = UNLAWFULLY_AT_LARGE.text,
-            days = 4
+            days = 4,
           ),
         )
 
