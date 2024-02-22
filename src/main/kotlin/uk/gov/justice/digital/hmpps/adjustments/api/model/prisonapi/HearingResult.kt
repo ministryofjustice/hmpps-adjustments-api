@@ -1,6 +1,6 @@
 package uk.gov.justice.digital.hmpps.adjustments.api.model.prisonapi
 
-data class HearingResult (
+data class HearingResult(
   val offenceType: String? = null,
   val offenceDescription: String? = null,
   val plea: String? = null,

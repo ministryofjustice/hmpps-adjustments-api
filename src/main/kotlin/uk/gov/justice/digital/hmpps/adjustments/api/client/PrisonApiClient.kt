@@ -46,7 +46,7 @@ class PrisonApiClient(@Qualifier("prisonApiWebClient") private val webClient: We
   fun getAdjudications(nomsId: String): AdjudicationSearchResponse {
     log.info("Requesting details for nomsId $nomsId")
     return webClient.get()
-      .uri("/api/offenders/${nomsId}/adjudications")
+      .uri("/api/offenders/$nomsId/adjudications")
       .header("Page-Limit", "10000")
       .retrieve()
       .bodyToMono(typeReference<AdjudicationSearchResponse>())
@@ -56,7 +56,7 @@ class PrisonApiClient(@Qualifier("prisonApiWebClient") private val webClient: We
   fun getAdjudication(nomsId: String, adjudicationNumber: Long): AdjudicationDetail {
     log.info("Requesting adjudication for nomsId $nomsId and adjudicationNumber $adjudicationNumber")
     return webClient.get()
-      .uri("/api/offenders/${nomsId}/adjudications/${adjudicationNumber}")
+      .uri("/api/offenders/$nomsId/adjudications/$adjudicationNumber")
       .retrieve()
       .bodyToMono(typeReference<AdjudicationDetail>())
       .block()!!
