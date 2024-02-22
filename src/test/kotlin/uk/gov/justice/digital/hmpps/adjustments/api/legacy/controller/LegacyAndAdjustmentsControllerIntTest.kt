@@ -334,7 +334,6 @@ class LegacyAndAdjustmentsControllerIntTest : SqsIntegrationTestBase() {
       fromDate = LocalDate.now().minusDays(5),
       toDate = LocalDate.now().plusDays(2),
       days = 8,
-      daysTotal = 8,
       additionalDaysAwarded = null,
       unlawfullyAtLarge = null,
       remand = RemandDto(chargeId = listOf(9991)),

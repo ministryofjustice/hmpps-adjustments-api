@@ -151,7 +151,6 @@ class AdjustmentControllerIntTest : SqsIntegrationTestBase() {
             sentenceSequence = 1,
             adjustmentTypeText = CREATED_ADJUSTMENT.adjustmentType.text,
             days = 4,
-            daysTotal = 4,
           ),
         )
       awaitAtMost30Secs untilCallTo { getNumberOfMessagesCurrentlyOnQueue() } matches { it == 0 }
@@ -335,7 +334,6 @@ class AdjustmentControllerIntTest : SqsIntegrationTestBase() {
             sentenceSequence = 1,
             adjustmentTypeText = CREATED_ADJUSTMENT.adjustmentType.text,
             days = 4,
-            daysTotal = 4,
           ),
         )
 
@@ -473,7 +471,6 @@ class AdjustmentControllerIntTest : SqsIntegrationTestBase() {
             sentenceSequence = 1,
             adjustmentTypeText = TAGGED_BAIL.text,
             days = 987,
-            daysTotal = 987,
           ),
         )
 
@@ -483,7 +480,7 @@ class AdjustmentControllerIntTest : SqsIntegrationTestBase() {
       assertThat(updatedAdjustment)
         .usingRecursiveComparison()
         .ignoringFieldsMatchingRegexes("lastUpdatedDate")
-        .isEqualTo(createdAdjustment.copy(effectiveDays = 986, days = 986, daysTotal = 986))
+        .isEqualTo(createdAdjustment.copy(effectiveDays = 986, days = 986))
     }
   }
 
@@ -526,7 +523,6 @@ class AdjustmentControllerIntTest : SqsIntegrationTestBase() {
             status = ACTIVE,
             adjustmentTypeText = UNLAWFULLY_AT_LARGE.text,
             days = 4,
-            daysTotal = 4,
           ),
         )
 
