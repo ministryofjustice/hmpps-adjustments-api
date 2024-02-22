@@ -3,7 +3,7 @@ package uk.gov.justice.digital.hmpps.adjustments.api.service
 import org.springframework.stereotype.Service
 import uk.gov.justice.digital.hmpps.adjustments.api.entity.AdjustmentStatus
 import uk.gov.justice.digital.hmpps.adjustments.api.entity.AdjustmentType
-import uk.gov.justice.digital.hmpps.adjustments.api.model.EditableAdjustmentDto
+import uk.gov.justice.digital.hmpps.adjustments.api.model.AdjustmentDto
 import uk.gov.justice.digital.hmpps.adjustments.api.model.ValidationCode
 import uk.gov.justice.digital.hmpps.adjustments.api.model.ValidationMessage
 import java.time.LocalDate
@@ -15,7 +15,7 @@ class ValidationService(
   private val adjustmentService: AdjustmentsService,
 ) {
 
-  fun validate(adjustment: EditableAdjustmentDto): List<ValidationMessage> {
+  fun validate(adjustment: AdjustmentDto): List<ValidationMessage> {
     val startOfSentenceEnvelope = prisonService.getStartOfSentenceEnvelope(adjustment.bookingId)
     if (adjustment.adjustmentType == AdjustmentType.RESTORATION_OF_ADDITIONAL_DAYS_AWARDED) {
       return validateRada(adjustment, startOfSentenceEnvelope)
@@ -26,7 +26,7 @@ class ValidationService(
     return emptyList()
   }
 
-  private fun validateUal(adjustment: EditableAdjustmentDto, startOfSentenceEnvelope: LocalDate): List<ValidationMessage> {
+  private fun validateUal(adjustment: AdjustmentDto, startOfSentenceEnvelope: LocalDate): List<ValidationMessage> {
     val validationMessages = mutableListOf<ValidationMessage>()
 
     if (adjustment.fromDate == null) {
@@ -59,19 +59,19 @@ class ValidationService(
     return validationMessages
   }
 
-  private fun validateRada(adjustment: EditableAdjustmentDto, startOfSentenceEnvelope: LocalDate): List<ValidationMessage> {
+  private fun validateRada(adjustment: AdjustmentDto, startOfSentenceEnvelope: LocalDate): List<ValidationMessage> {
     val validationMessages = mutableListOf<ValidationMessage>()
 
     if (adjustment.days != null && adjustment.days > 0) {
       val adjustments = adjustmentService.findCurrentAdjustments(adjustment.person, AdjustmentStatus.ACTIVE, startOfSentenceEnvelope)
       val adaDays = adjustments.filter { it.adjustmentType === AdjustmentType.ADDITIONAL_DAYS_AWARDED }
-        .map { it.daysTotal }
+        .map { it.days!! }
         .reduceOrNull { acc, it -> acc + it } ?: 0
       val radaDays =
         (
           adjustments.filter { it.adjustmentType === AdjustmentType.RESTORATION_OF_ADDITIONAL_DAYS_AWARDED }
             .filter { adjustment.id == null || adjustment.id != it.id }
-            .map { it.daysTotal }
+            .map { it.days!! }
             .reduceOrNull { acc, it -> acc + it } ?: 0
           ) + adjustment.days
 
