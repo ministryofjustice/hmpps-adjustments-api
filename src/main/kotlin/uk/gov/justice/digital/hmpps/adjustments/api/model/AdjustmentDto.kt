@@ -50,7 +50,5 @@ data class AdjustmentDto(
   @Schema(description = "The date and time this adjustment was last created", readOnly = true)
   val createdDate: LocalDateTime? = null,
   @Schema(description = "The number of days effective in a calculation. (for example remand minus any unused deductions)", readOnly = true)
-  val effectiveDays: Int? = null,
-  @Schema(description = "The total number of adjustment days", readOnly = true, deprecated = true)
-  val daysTotal: Int? = null,
+  val effectiveDays: Int? = null
 )
