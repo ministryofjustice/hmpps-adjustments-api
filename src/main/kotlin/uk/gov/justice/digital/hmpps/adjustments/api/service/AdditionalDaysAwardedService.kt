@@ -9,6 +9,7 @@ import uk.gov.justice.digital.hmpps.adjustments.api.model.prisonapi.Adjudication
 import uk.gov.justice.digital.hmpps.adjustments.api.model.prisonapi.Hearing
 import uk.gov.justice.digital.hmpps.adjustments.api.model.prisonapi.Sanction
 import uk.gov.justice.digital.hmpps.adjustments.api.respository.AdjustmentRepository
+import uk.gov.justice.digital.hmpps.adjustments.api.service.AdaStatus.AWARDED
 import uk.gov.justice.digital.hmpps.adjustments.api.service.AdaStatus.PENDING_APPROVAL
 import uk.gov.justice.digital.hmpps.adjustments.api.service.ChargeStatus.AWARDED_OR_PENDING
 import uk.gov.justice.digital.hmpps.adjustments.api.service.ChargeStatus.PROSPECTIVE
@@ -16,8 +17,7 @@ import uk.gov.justice.digital.hmpps.adjustments.api.service.ChargeStatus.QUASHED
 import uk.gov.justice.digital.hmpps.adjustments.api.service.ChargeStatus.SUSPENDED
 import java.time.LocalDate
 import java.time.LocalDateTime
-import java.util.SortedMap
-import kotlin.collections.Map as Map1
+import java.util.UUID
 
 enum class ChargeStatus { AWARDED_OR_PENDING, SUSPENDED, QUASHED, PROSPECTIVE }
 
@@ -36,9 +36,9 @@ enum class AdaStatus(alternativeName: String? = null) { AWARDED, PENDING_APPROVA
 data class AdasByDateCharged(
   val dateChargeProved: LocalDate,
   val charges: MutableList<Ada>,
-  val total: Long? = null,
+  val total: Int? = null,
   val status: AdaStatus? = null,
-  val adjustmentId: String? = null,
+  val adjustmentId: UUID? = null,
 )
 
 data class Ada(
@@ -47,7 +47,7 @@ data class Ada(
   val toBeServed: String? = null,
   val heardAt: String? = null,
   val status: ChargeStatus,
-  val days: Long,
+  val days: Int,
   val sequence: Long? = null,
   val consecutiveToSequence: Long? = null,
 )
@@ -74,7 +74,7 @@ fun isSanctionedAda(sanction: Sanction, hearingDate: LocalDate, startOfSentenceE
 
 fun isProspectiveAda(s: Sanction) = sanctionIsAda(s) && sanctionIsProspective(s)
 
-fun adaHasSequence(sequence: Long, ada: Ada) = sequence == ada.sequence
+fun adaHasSequence(sequence: Long?, ada: Ada) = sequence != null && sequence == ada.sequence
 
 fun isSuspended(sanction: Sanction): Boolean = sanction.status == "Suspended" ||
   sanction.status == "Suspended and Prospective" ||
@@ -90,12 +90,13 @@ class AdditionalDaysAwardedService(
 ) {
   fun shouldIntercept(nomsId: String): Boolean {
     val adaAdjustments = adjustmentRepository.findByPersonAndAdjustmentType(nomsId, ADDITIONAL_DAYS_AWARDED)
-    val anyUnlinkedAdas = adaAdjustments.any { it.additionalDaysAwarded?.adjudicationCharges?.isNotEmpty() ?: false }
+    val anyUnlinkedAdas = adaAdjustments.any { it.additionalDaysAwarded?.adjudicationCharges?.isEmpty() ?: false && it.effectiveDays > 0}
     if (anyUnlinkedAdas) return true
 
     val adas = lookupAdas(nomsId)
     val awardedOrPending = this.getAdasByDateCharged(adas, AWARDED_OR_PENDING)
     val prospective = this.getAdasByDateCharged(adas, PROSPECTIVE)
+    val x = filterAdasByMatchingAdjustment(awardedOrPending, adaAdjustments)
 
     return false
   }
@@ -106,6 +107,29 @@ class AdditionalDaysAwardedService(
   )
 
   private fun filterAdasByMatchingAdjustment(
+    adas: Map<LocalDate, List<Ada>>,
+    adjustments: List<Adjustment>,
+  ): AwardedAndPending {
+    if (adjustments.any { it.additionalDaysAwarded != null }) {
+      return AwardedAndPending(pendingApproval = adas.map { it.copy(status = PENDING_APPROVAL) })
+    }
+
+    val awardedAndPendingAdas = adas.fold(mutableListOf<AdasByDateCharged>()) { acc, cur ->
+      if (adjustments.any { adjustmentMatchesAdjudication(cur, it) }) {
+        val adjustment = adjustments.first { adjustmentMatchesAdjudication(cur, it) }
+        acc.add(cur.copy(status = AWARDED, adjustmentId = adjustment.id))
+      } else {
+        acc.add(cur.copy(status = PENDING_APPROVAL))
+      }
+      acc
+    }
+
+    return AwardedAndPending(
+      awarded = awardedAndPendingAdas.filter { it.status == AWARDED },
+      pendingApproval = awardedAndPendingAdas.filter { it.status == PENDING_APPROVAL },
+    )
+  }
+  private fun filterAdasByMatchingAdjustmentX(
     adas: List<AdasByDateCharged>,
     adjustments: List<Adjustment>,
   ): AwardedAndPending {
@@ -113,19 +137,30 @@ class AdditionalDaysAwardedService(
       return AwardedAndPending(pendingApproval = adas.map { it.copy(status = PENDING_APPROVAL) })
     }
 
-    adas.fold(AwardedAndPending()) {
-      adjustments.any { it. }
+    val awardedAndPendingAdas = adas.fold(mutableListOf<AdasByDateCharged>()) { acc, cur ->
+      if (adjustments.any { adjustmentMatchesAdjudication(cur, it) }) {
+        val adjustment = adjustments.first { adjustmentMatchesAdjudication(cur, it) }
+        acc.add(cur.copy(status = AWARDED, adjustmentId = adjustment.id))
+      } else {
+        acc.add(cur.copy(status = PENDING_APPROVAL))
+      }
+      acc
     }
 
+    return AwardedAndPending(
+      awarded = awardedAndPendingAdas.filter { it.status == AWARDED },
+      pendingApproval = awardedAndPendingAdas.filter { it.status == PENDING_APPROVAL },
+    )
   }
 
   private fun adjustmentMatchesAdjudication(adjudication: AdasByDateCharged, adjustment: Adjustment): Boolean {
     return (
-      adjudication.total == (adjustment.days || adjustment.effectiveDays || adjustment.effectiveDays) &&
-        adjudication.dateChargeProved.toISOString().substring(0, 10) === adjustment.fromDate &&
-        JSON.stringify(adjudication.charges.map(charge => charge.chargeNumber).sort()) ===
-      JSON.stringify(adjustment.additionalDaysAwarded.adjudicationId.sort())
-    )
+      adjudication.total == adjustment.days &&
+        adjudication.dateChargeProved == adjustment.fromDate &&
+        adjustment.additionalDaysAwarded != null &&
+        adjudication.charges.map { it.chargeNumber }
+          .toSet() == adjustment.additionalDaysAwarded!!.adjudicationCharges.map { it.adjudicationId }.toSet()
+      )
   }
 
   private fun lookupAdas(nomsId: String): List<Ada> {
@@ -137,11 +172,89 @@ class AdditionalDaysAwardedService(
     return getAdas(individualAdjudications, startOfSentenceEnvelope)
   }
 
-  private fun getAdasByDateCharged(adas: List<Ada>, filterStatus: ChargeStatus): SortedMap<LocalDate, List<Ada>> {
+  private fun getAdasByDateCharged(adas: List<Ada>, filterStatus: ChargeStatus): Map<LocalDate, List<Ada>> {
 
-    // TODO check dates ordered correct;y tests
-    return adas.filter { it.status == filterStatus }.groupBy { it.dateChargeProved }.toSortedMap()
+    val z = adas.filter { it.status == filterStatus }.groupBy { it.dateChargeProved }
+    // TODO did not sort - think unnecessary
+    // return  adas.filter { it.status == filterStatus }.groupBy { it.dateChargeProved }.toSortedMap()
+    // TODO did not return associateConsecutiveAdas - think unnecessary
+    associateConsecutiveAdas(z, adas).map { it.copy(total = calculateTotal(it), status = if (filterStatus != AWARDED_OR_PENDING) filterStatus else null ) }
   }
+
+  private fun calculateTotal(adaByDateCharge: AdasByDateCharged): Int {
+    if (adaByDateCharge.charges.size == 1) {
+      return adaByDateCharge.charges[0].days
+    }
+    val baseCharges = adaByDateCharge.charges.filter { it.consecutiveToSequence == null }
+    val consecCharges = adaByDateCharge.charges.filter { it.consecutiveToSequence != null }
+
+    val chains: MutableList<MutableList<Ada>> = mutableListOf()
+
+    baseCharges.forEach { it ->
+      val chain = mutableListOf(it)
+      chains.add(chain)
+      createChain(it, chain, consecCharges)
+    }
+
+    val calculatedDays = chains
+      .filter { it.isNotEmpty() }
+      .map { chain -> chain.sumOf { it.days } }
+    if (calculatedDays.isEmpty()) {
+      return 0
+    }
+    return calculatedDays.maxOrNull() ?: 0
+  }
+
+  private fun createChain(ada: Ada, chain: MutableList<Ada>, consecCharges: List<Ada>) {
+    val consecFrom = consecCharges.find { it.consecutiveToSequence == ada.sequence }
+    consecFrom?.let {
+      chain.add(it)
+      createChain(it, chain, consecCharges)
+    }
+  }
+
+  /*
+   * Sets the toBeServed of the groupedAdas for the review screen, can be either Consecutive, Concurrent or Forthwith
+   */
+  private fun associateConsecutiveAdas(adasByDateCharged: Map<LocalDate, List<Ada>>, adas: List<Ada>): List<AdasByDateCharged> {
+    val consecutiveSourceAdas = getSourceAdaForConsecutive(adas)
+    return adasByDateCharged.map {
+      val charges = it.value
+      if (charges.size == 1) {
+        AdasByDateCharged(dateChargeProved = it.key, charges = mutableListOf(charges[0].copy(toBeServed = "Forthwith")))
+      } else {
+        // Label consecutive or concurrent adas
+        val consecutiveAndConcurrentCharges = charges.map { charge ->
+          if (validConsecutiveSequence(charge, consecutiveSourceAdas)) {
+            val consecutiveAda = consecutiveSourceAdas.first { c -> adaHasSequence(charge.consecutiveToSequence!!, c) }
+            charge.copy(toBeServed = "Consecutive to ${consecutiveAda.chargeNumber}")
+          } else if (
+            !validConsecutiveSequence(charge, consecutiveSourceAdas) &&
+            !isSourceForConsecutiveChain(consecutiveSourceAdas, charge)
+          ) {
+            charge.copy(toBeServed = "Concurrent")
+          } else {
+            charge.copy(toBeServed = "Forthwith")
+          }
+        }
+        // TODO In the UI this is sorted - but not necessary for intercept logic
+        AdasByDateCharged(dateChargeProved = it.key, charges = consecutiveAndConcurrentCharges.toMutableList())
+
+      }
+    }
+  }
+
+  private fun isSourceForConsecutiveChain(consecutiveSourceAdas: List<Ada>, charge: Ada)
+    = consecutiveSourceAdas.any { consecutiveAda -> adaHasSequence(charge.sequence, consecutiveAda) }
+
+  private fun validConsecutiveSequence(charge: Ada, consecutiveSourceAdas: List<Ada>): Boolean =
+    charge.consecutiveToSequence != null  &&
+      consecutiveSourceAdas.any { consecutiveAda -> adaHasSequence(charge.consecutiveToSequence, consecutiveAda) }
+
+  private fun getSourceAdaForConsecutive(allAdas: List<Ada>): List<Ada> =
+    allAdas.filter { ada -> ada.consecutiveToSequence != null && allAdas.any { it.sequence == ada.consecutiveToSequence } }
+      .map { consecutiveAda -> allAdas.first { sourceAda -> sourceAda.sequence == consecutiveAda.sequence } }
+
 
   private fun prospectiveOrSanctioned(hearing: Hearing, startOfSentenceEnvelope: LocalDate): Boolean {
     return hearing.results != null && hearing.results.any { r ->
