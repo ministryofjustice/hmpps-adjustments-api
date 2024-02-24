@@ -89,7 +89,10 @@ class AdditionalDaysAwardedService(
       numPendingApproval > 0 -> AdaIntercept(UPDATE, numPendingApproval, anyProspective, getMessageParams(nomsId))
       numQuashed > 0 -> AdaIntercept(UPDATE, numQuashed, anyProspective, getMessageParams(nomsId))
       totalAdjustments != totalAdjudications -> AdaIntercept(
-        UPDATE, allAwarded.size, anyProspective, getMessageParams(nomsId),
+        UPDATE,
+        allAwarded.size,
+        anyProspective,
+        getMessageParams(nomsId),
       )
 
       numProspective > 0 -> AdaIntercept(PADA, numProspective, true, getMessageParams(nomsId))

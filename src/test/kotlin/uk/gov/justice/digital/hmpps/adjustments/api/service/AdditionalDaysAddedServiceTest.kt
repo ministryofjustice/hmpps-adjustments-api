@@ -100,7 +100,6 @@ class AdditionalDaysAddedServiceTest {
 
     @Test
     fun `Should intercept mix of concurrent consec`() {
-
       whenever(
         adjustmentRepository.findByPersonAndAdjustmentType(
           NOMS_ID,
@@ -120,7 +119,6 @@ class AdditionalDaysAddedServiceTest {
 
     @Test
     fun `Shouldnt intercept when already persisted in adjustment api`() {
-
       whenever(
         adjustmentRepository.findByPersonAndAdjustmentType(
           NOMS_ID,
@@ -142,7 +140,6 @@ class AdditionalDaysAddedServiceTest {
 
     @Test
     fun `Should intercept when already persisted adjustment has different days`() {
-
       whenever(
         adjustmentRepository.findByPersonAndAdjustmentType(
           NOMS_ID,
@@ -164,7 +161,6 @@ class AdditionalDaysAddedServiceTest {
 
     @Test
     fun `Should intercept if all adas quashed`() {
-
       whenever(
         adjustmentRepository.findByPersonAndAdjustmentType(
           NOMS_ID,
@@ -237,7 +233,9 @@ class AdditionalDaysAddedServiceTest {
       fromDate = LocalDate.of(2023, 8, 3),
       additionalDaysAwarded = AdditionalDaysAwarded(
         adjudicationCharges = mutableListOf(
-          AdjudicationCharges(1525916), AdjudicationCharges(1525917), AdjudicationCharges(1525918),
+          AdjudicationCharges(1525916),
+          AdjudicationCharges(1525917),
+          AdjudicationCharges(1525918),
         ),
       ),
     )
