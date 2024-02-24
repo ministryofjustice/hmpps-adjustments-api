@@ -50,10 +50,27 @@ class AdditionalDaysAwardedService(
     )
     val allAwarded = awarded + prospectiveAwarded
     val quashed = filterQuashedAdasByMatchingChargeIds(getAdasByDateCharged(adas, QUASHED), adaAdjustments)
-    return deriveAdaIntercept(anyUnlinkedAdas, prospective, pendingApproval, quashed, adaAdjustments, allAwarded)
+    return deriveAdaIntercept(
+      nomsId,
+      anyUnlinkedAdas,
+      prospective,
+      pendingApproval,
+      quashed,
+      adaAdjustments,
+      allAwarded,
+    )
   }
 
+  private fun getMessageParams(nomsId: String): List<String> {
+    val prisonerDetail = prisonApiClient.getPrisonerDetail(nomsId)
+    return listOf("${prisonerDetail.lastName}, ${prisonerDetail.firstName}".toTitleCase())
+  }
+
+  private fun String.toTitleCase(): String =
+    split(" ").joinToString(" ") { it.replaceFirstChar { if (it.isLowerCase()) it.titlecase() else it.toString() } }
+
   private fun deriveAdaIntercept(
+    nomsId: String,
     anyUnlinkedAdas: Boolean,
     prospective: List<AdasByDateCharged>,
     pendingApproval: List<AdasByDateCharged>,
@@ -69,10 +86,13 @@ class AdditionalDaysAwardedService(
     val anyProspective = numProspective > 0
     return when {
       anyUnlinkedAdas -> AdaIntercept(FIRST_TIME, numProspective + numPendingApproval, anyProspective)
-      numPendingApproval > 0 -> AdaIntercept(UPDATE, numPendingApproval, anyProspective)
-      numQuashed > 0 -> AdaIntercept(UPDATE, numQuashed, anyProspective)
-      totalAdjustments != totalAdjudications -> AdaIntercept(UPDATE, allAwarded.size, anyProspective)
-      numProspective > 0 -> AdaIntercept(PADA, numProspective, true)
+      numPendingApproval > 0 -> AdaIntercept(UPDATE, numPendingApproval, anyProspective, getMessageParams(nomsId))
+      numQuashed > 0 -> AdaIntercept(UPDATE, numQuashed, anyProspective, getMessageParams(nomsId))
+      totalAdjustments != totalAdjudications -> AdaIntercept(
+        UPDATE, allAwarded.size, anyProspective, getMessageParams(nomsId),
+      )
+
+      numProspective > 0 -> AdaIntercept(PADA, numProspective, true, getMessageParams(nomsId))
       else -> AdaIntercept(NONE, 0, false)
     }
   }
@@ -91,7 +111,8 @@ class AdditionalDaysAwardedService(
     adas: List<AdasByDateCharged>,
     adjustments: List<Adjustment>,
   ): Pair<List<AdasByDateCharged>, List<AdasByDateCharged>> {
-    return if (adjustments.any { it.additionalDaysAwarded != null }) {
+    return if (adjustments.any { it.additionalDaysAwarded == null }) {
+      // An ADA has been created in NOMIS, Revert everything to pending approval
       Pair(
         adas.map { it.copy(status = PENDING_APPROVAL) },
         emptyList(),
@@ -147,7 +168,7 @@ class AdditionalDaysAwardedService(
         chains.add(chain)
         createChain(ada, chain, consecCharges)
       }
-      chains.filter { it.isNotEmpty() }.map { chain -> chain.sumOf { it.days } }.maxOrNull() ?: 0
+      chains.filter { it.isNotEmpty() }.maxOfOrNull { chain -> chain.sumOf { it.days } } ?: 0
     }
   }
 
