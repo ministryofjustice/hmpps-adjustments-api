@@ -6,4 +6,8 @@ data class AdaIntercept(
   val type: InterceptType,
   val number: Int,
   val anyProspective: Boolean,
-)
+  val messageArguments: List<String> = listOf(),
+) {
+  val message: String?
+    get() = type.message?.format(*messageArguments.toTypedArray())
+}
