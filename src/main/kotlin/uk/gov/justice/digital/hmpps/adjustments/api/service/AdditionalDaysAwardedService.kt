@@ -69,8 +69,10 @@ class AdditionalDaysAwardedService(
     return listOf("${prisonerDetail.lastName}, ${prisonerDetail.firstName}".toTitleCase())
   }
 
-  private fun String.toTitleCase(): String =
-    split(" ").joinToString(" ") { it.replaceFirstChar { if (it.isLowerCase()) it.titlecase() else it.toString() } }
+  fun String.toTitleCase(): String =
+    split(" ").joinToString(" ") { it ->
+      it.lowercase().replaceFirstChar { if (it.isLowerCase()) it.titlecase() else it.toString() }
+    }
 
   private fun deriveAdaIntercept(
     nomsId: String,

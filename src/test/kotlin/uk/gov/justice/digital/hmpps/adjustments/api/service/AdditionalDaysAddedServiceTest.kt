@@ -43,8 +43,8 @@ class AdditionalDaysAddedServiceTest {
         PrisonerDetails(
           bookingId = 123,
           offenderNo = NOMS_ID,
-          firstName = "default",
-          lastName = "prisoner",
+          firstName = "DEFAULT",
+          lastName = "PRISONER",
           dateOfBirth = LocalDate.parse("1995-03-08"),
         ),
       )
