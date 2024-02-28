@@ -314,7 +314,7 @@ class AdditionalDaysAwardedService(
    */
   private fun sanctionIsProspective(s: Sanction) = s.status == "Prospective" || s.status == "Suspended and Prospective"
 
-  private fun sanctionIsAda(s: Sanction) = s.sanctionType === "Additional Days Added"
+  private fun sanctionIsAda(s: Sanction) = s.sanctionType == "Additional Days Added"
   private fun isSanctionedAda(sanction: Sanction, hearingDate: LocalDate, startOfSentenceEnvelope: LocalDate) =
     sanctionIsAda(sanction) &&
       !sanctionIsProspective(sanction) &&
