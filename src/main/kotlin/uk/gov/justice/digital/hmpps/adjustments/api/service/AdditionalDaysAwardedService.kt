@@ -36,10 +36,16 @@ class AdditionalDaysAwardedService(
 
   // This intercept logic has been copied from the UI - going forward the api will be used to determine this logic
   fun determineAdaIntercept(nomsId: String): AdaIntercept {
-    val adaAdjustments = adjustmentRepository.findByPersonAndAdjustmentType(nomsId, ADDITIONAL_DAYS_AWARDED)
+    val startOfSentenceEnvelope = prisonService.getStartOfSentenceEnvelopeExcludingRecalls(nomsId)
+      ?: return AdaIntercept(NONE, 0, false)
+    val adaAdjustments = adjustmentRepository.findByPersonAndAdjustmentTypeAndStatus(nomsId, ADDITIONAL_DAYS_AWARDED)
     val anyUnlinkedAdas =
-      adaAdjustments.any { it.additionalDaysAwarded?.adjudicationCharges?.isEmpty() ?: false && it.effectiveDays > 0 }
-    val adas = lookupAdas(nomsId)
+      adaAdjustments.any { it.additionalDaysAwarded?.adjudicationCharges?.isEmpty() ?: true && it.effectiveDays > 0 }
+
+
+    val adas = lookupAdas(nomsId, startOfSentenceEnvelope)
+
+    println("adas:" + adas.size)
     val (awarded, pendingApproval) = filterAdasByMatchingAdjustment(
       getAdasByDateCharged(adas, AWARDED_OR_PENDING),
       adaAdjustments,
@@ -141,8 +147,7 @@ class AdditionalDaysAwardedService(
       .toSet() == adjustment.additionalDaysAwarded!!.adjudicationCharges.map { it.adjudicationId }.toSet()
   }
 
-  private fun lookupAdas(nomsId: String): List<Ada> {
-    val startOfSentenceEnvelope = prisonService.getStartOfSentenceEnvelopeExcludingRecalls(nomsId) ?: return emptyList()
+  private fun lookupAdas(nomsId: String, startOfSentenceEnvelope: LocalDate): List<Ada> {
     val adjudications = prisonApiClient.getAdjudications(nomsId)
     val individualAdjudications =
       adjudications.results.map { prisonApiClient.getAdjudication(nomsId, it.adjudicationNumber) }
@@ -303,7 +308,7 @@ class AdditionalDaysAwardedService(
    */
   private fun sanctionIsProspective(s: Sanction) = s.status == "Prospective" || s.status == "Suspended and Prospective"
 
-  private fun sanctionIsAda(s: Sanction) = s.sanctionType === "Additional Days Added"
+  private fun sanctionIsAda(s: Sanction) = s.sanctionType == "Additional Days Added"
   private fun isSanctionedAda(sanction: Sanction, hearingDate: LocalDate, startOfSentenceEnvelope: LocalDate) =
     sanctionIsAda(sanction) &&
       !sanctionIsProspective(sanction) &&
