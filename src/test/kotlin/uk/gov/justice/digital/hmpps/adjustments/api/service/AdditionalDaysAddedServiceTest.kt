@@ -53,7 +53,7 @@ class AdditionalDaysAddedServiceTest {
     @Test
     fun `Should intercept if any unlinked ADAs`() {
       whenever(
-        adjustmentRepository.findByPersonAndAdjustmentType(
+        adjustmentRepository.findByPersonAndAdjustmentTypeAndStatus(
           NOMS_ID,
           ADDITIONAL_DAYS_AWARDED,
         ),
@@ -80,7 +80,7 @@ class AdditionalDaysAddedServiceTest {
     @Test
     fun `Should intercept if there is a difference between the totalDays in adjustments and adjudications`() {
       whenever(
-        adjustmentRepository.findByPersonAndAdjustmentType(
+        adjustmentRepository.findByPersonAndAdjustmentTypeAndStatus(
           NOMS_ID,
           ADDITIONAL_DAYS_AWARDED,
         ),
@@ -101,7 +101,7 @@ class AdditionalDaysAddedServiceTest {
     @Test
     fun `Should intercept mix of concurrent consec`() {
       whenever(
-        adjustmentRepository.findByPersonAndAdjustmentType(
+        adjustmentRepository.findByPersonAndAdjustmentTypeAndStatus(
           NOMS_ID,
           ADDITIONAL_DAYS_AWARDED,
         ),
@@ -120,7 +120,7 @@ class AdditionalDaysAddedServiceTest {
     @Test
     fun `Shouldnt intercept when already persisted in adjustment api`() {
       whenever(
-        adjustmentRepository.findByPersonAndAdjustmentType(
+        adjustmentRepository.findByPersonAndAdjustmentTypeAndStatus(
           NOMS_ID,
           ADDITIONAL_DAYS_AWARDED,
         ),
@@ -141,7 +141,7 @@ class AdditionalDaysAddedServiceTest {
     @Test
     fun `Should intercept when already persisted adjustment has different days`() {
       whenever(
-        adjustmentRepository.findByPersonAndAdjustmentType(
+        adjustmentRepository.findByPersonAndAdjustmentTypeAndStatus(
           NOMS_ID,
           ADDITIONAL_DAYS_AWARDED,
         ),
@@ -162,7 +162,7 @@ class AdditionalDaysAddedServiceTest {
     @Test
     fun `Should intercept if all adas quashed`() {
       whenever(
-        adjustmentRepository.findByPersonAndAdjustmentType(
+        adjustmentRepository.findByPersonAndAdjustmentTypeAndStatus(
           NOMS_ID,
           ADDITIONAL_DAYS_AWARDED,
         ),
@@ -183,7 +183,7 @@ class AdditionalDaysAddedServiceTest {
     @Test
     fun `Should intercept if any prospective`() {
       whenever(
-        adjustmentRepository.findByPersonAndAdjustmentType(
+        adjustmentRepository.findByPersonAndAdjustmentTypeAndStatus(
           NOMS_ID,
           ADDITIONAL_DAYS_AWARDED,
         ),
