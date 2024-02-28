@@ -41,11 +41,8 @@ class AdditionalDaysAwardedService(
     val adaAdjustments = adjustmentRepository.findByPersonAndAdjustmentTypeAndStatus(nomsId, ADDITIONAL_DAYS_AWARDED)
     val anyUnlinkedAdas =
       adaAdjustments.any { it.additionalDaysAwarded?.adjudicationCharges?.isEmpty() ?: true && it.effectiveDays > 0 }
-
-
     val adas = lookupAdas(nomsId, startOfSentenceEnvelope)
 
-    println("adas:" + adas.size)
     val (awarded, pendingApproval) = filterAdasByMatchingAdjustment(
       getAdasByDateCharged(adas, AWARDED_OR_PENDING),
       adaAdjustments,

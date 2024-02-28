@@ -51,6 +51,15 @@ class AdditionalDaysAddedServiceTest {
     }
 
     @Test
+    fun `Should not intercept if no sentence date`() {
+      whenever(prisonService.getStartOfSentenceEnvelopeExcludingRecalls(NOMS_ID)).thenReturn(null)
+
+      val intercept = additionalDaysAwardedService.determineAdaIntercept(NOMS_ID)
+
+      assertThat(intercept).isEqualTo(AdaIntercept(NONE, 0, false, emptyList()))
+    }
+
+    @Test
     fun `Should intercept if any unlinked ADAs`() {
       whenever(
         adjustmentRepository.findByPersonAndAdjustmentTypeAndStatus(
