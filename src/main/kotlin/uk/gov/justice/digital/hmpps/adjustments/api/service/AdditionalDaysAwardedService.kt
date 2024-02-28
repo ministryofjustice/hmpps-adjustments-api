@@ -41,7 +41,6 @@ class AdditionalDaysAwardedService(
     val adaAdjustments = adjustmentRepository.findByPersonAndAdjustmentTypeAndStatus(nomsId, ADDITIONAL_DAYS_AWARDED)
     val anyUnlinkedAdas =
       adaAdjustments.any { it.additionalDaysAwarded?.adjudicationCharges?.isEmpty() ?: true && it.effectiveDays > 0 }
-    println("Checking start of sentence env" + nomsId)
 
 
     val adas = lookupAdas(nomsId, startOfSentenceEnvelope)
@@ -246,14 +245,9 @@ class AdditionalDaysAwardedService(
     individualAdjudications: List<AdjudicationDetail>,
     startOfSentenceEnvelope: LocalDate,
   ): List<Ada> {
-    println("individualAdjudications.size")
-    println("individualAdjudications.size")
-    println("individualAdjudications.size")
-    println(individualAdjudications)
     val adasToTransform = individualAdjudications.filter { ad ->
       ad.hearings != null && ad.hearings.any { h -> prospectiveOrSanctioned(h, startOfSentenceEnvelope) }
     }
-    println(adasToTransform)
 
     return adasToTransform.fold(mutableListOf()) { acc, cur ->
       cur.hearings!!.filter { h ->
