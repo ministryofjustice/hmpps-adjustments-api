@@ -71,7 +71,6 @@ data class Adjustment(
   @PrimaryKeyJoinColumn
   var unlawfullyAtLarge: UnlawfullyAtLarge? = null,
 
-  var prisonId: String? = null,
 ) {
   init {
     adjustmentHistory.forEach { it.adjustment = this }

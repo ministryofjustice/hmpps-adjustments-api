@@ -46,4 +46,6 @@ class AdjustmentHistory(
   @NotNull
   @Enumerated(EnumType.STRING)
   val changeSource: AdjustmentSource = AdjustmentSource.DPS,
+
+  val prisonId: String? = null,
 )
