@@ -316,7 +316,7 @@ class LegacyAndAdjustmentsControllerIntTest : SqsIntegrationTestBase() {
     private val LEGACY_ADJUSTMENT = LegacyAdjustment(
       bookingId = 1,
       sentenceSequence = 1,
-      offenderNo = "ABC123",
+      offenderNo = PrisonApiExtension.PRISONER_ID,
       adjustmentType = LegacyAdjustmentType.RSR,
       adjustmentDate = LocalDate.now(),
       adjustmentFromDate = LocalDate.now().minusDays(5),

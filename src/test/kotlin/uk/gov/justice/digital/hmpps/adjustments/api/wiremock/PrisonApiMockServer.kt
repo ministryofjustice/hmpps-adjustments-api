@@ -104,7 +104,8 @@ class PrisonApiMockServer : WireMockServer(WIREMOCK_PORT) {
                  "bookingId": $BOOKING_ID,
                  "firstName": "Default",
                  "lastName": "Prisoner",
-                 "dateOfBirth": "1995-03-08"
+                 "dateOfBirth": "1995-03-08",
+                 "agencyId": "LDS"
               }
               """.trimIndent(),
             )
@@ -142,7 +143,8 @@ class PrisonApiMockServer : WireMockServer(WIREMOCK_PORT) {
                  "bookingId": $RECALL_BOOKING_ID,
                  "firstName": "Default",
                  "lastName": "Prisoner",
-                 "dateOfBirth": "1995-03-08"
+                 "dateOfBirth": "1995-03-08",
+                 "agencyId": "LDS"
               }
               """.trimIndent(),
             )

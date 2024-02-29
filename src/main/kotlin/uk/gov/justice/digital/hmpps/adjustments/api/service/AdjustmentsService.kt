@@ -70,7 +70,7 @@ class AdjustmentsService(
       }
     }
     val sentenceInfo = sentenceInfo(resource)
-
+    val prisoner = prisonApiClient.getPrisonerDetail(resource.person)
     val adjustment = Adjustment(
       person = resource.person,
       effectiveDays = daysBetween ?: resource.days!!,
@@ -101,7 +101,7 @@ class AdjustmentsService(
         changeType = ChangeType.CREATE,
         changeSource = AdjustmentSource.DPS,
         adjustment = adjustment,
-        prisonId = resource.prisonId,
+        prisonId = prisoner.agencyId,
       ),
     )
     return adjustmentRepository.save(adjustment).id
@@ -194,6 +194,7 @@ class AdjustmentsService(
         throw ApiValidationException("The number of days provide does not match the period between the from and to dates of the adjustment")
       }
     }
+    val prisoner = prisonApiClient.getPrisonerDetail(adjustment.person)
     val persistedLegacyData = objectMapper.convertValue(adjustment.legacyData, LegacyData::class.java)
     val change = objectToJson(adjustment)
     val sentenceInfo = sentenceInfo(resource)
@@ -224,7 +225,7 @@ class AdjustmentsService(
         change = change,
         changeSource = AdjustmentSource.DPS,
         adjustment = adjustment,
-        prisonId = resource.prisonId,
+        prisonId = prisoner.agencyId,
       )
     }
   }
@@ -319,25 +320,6 @@ class AdjustmentsService(
     )
   }
 
-  private fun mapToEditableDto(adjustment: Adjustment): AdjustmentDto {
-    val legacyData = objectMapper.convertValue(adjustment.legacyData, LegacyData::class.java)
-    return AdjustmentDto(
-      id = adjustment.id,
-      person = adjustment.person,
-      days = if (adjustment.toDate != null) null else adjustment.days,
-      fromDate = adjustment.fromDate,
-      toDate = adjustment.toDate,
-      adjustmentType = adjustment.adjustmentType,
-      sentenceSequence = legacyData.sentenceSequence,
-      bookingId = legacyData.bookingId,
-      additionalDaysAwarded = additionalDaysAwardedToDto(adjustment),
-      unlawfullyAtLarge = unlawfullyAtLargeDto(adjustment),
-      remand = remandDto(adjustment, legacyData),
-      taggedBail = taggedBailDto(adjustment, legacyData),
-      prisonId = adjustment.prisonId,
-    )
-  }
-
   private fun remandDto(adjustment: Adjustment, legacyData: LegacyData): RemandDto? {
     if (adjustment.adjustmentType === REMAND && legacyData.chargeIds.isNotEmpty()) {
       return RemandDto(legacyData.chargeIds)
@@ -371,7 +353,7 @@ class AdjustmentsService(
 
   @Transactional
   fun restore(resource: RestoreAdjustmentsDto): List<AdjustmentDto> {
-    val adjustments = adjustmentRepository.findAllById(resource.ids).map { mapToEditableDto(it) }
+    val adjustments = adjustmentRepository.findAllById(resource.ids).map { mapToDto(it) }
     adjustments.forEach { update(it.id!!, it) }
     return adjustments
   }
