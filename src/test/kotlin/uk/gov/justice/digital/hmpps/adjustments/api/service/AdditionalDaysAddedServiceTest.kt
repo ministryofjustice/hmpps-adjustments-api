@@ -43,17 +43,26 @@ class AdditionalDaysAddedServiceTest {
         PrisonerDetails(
           bookingId = 123,
           offenderNo = NOMS_ID,
-          firstName = "default",
-          lastName = "prisoner",
+          firstName = "DEFAULT",
+          lastName = "PRISONER",
           dateOfBirth = LocalDate.parse("1995-03-08"),
         ),
       )
     }
 
     @Test
+    fun `Should not intercept if no sentence date`() {
+      whenever(prisonService.getStartOfSentenceEnvelopeExcludingRecalls(NOMS_ID)).thenReturn(null)
+
+      val intercept = additionalDaysAwardedService.determineAdaIntercept(NOMS_ID)
+
+      assertThat(intercept).isEqualTo(AdaIntercept(NONE, 0, false, emptyList()))
+    }
+
+    @Test
     fun `Should intercept if any unlinked ADAs`() {
       whenever(
-        adjustmentRepository.findByPersonAndAdjustmentType(
+        adjustmentRepository.findByPersonAndAdjustmentTypeAndStatus(
           NOMS_ID,
           ADDITIONAL_DAYS_AWARDED,
         ),
@@ -78,9 +87,36 @@ class AdditionalDaysAddedServiceTest {
     }
 
     @Test
+    fun `Should return First Time intercept if any unlinked ADAs because there is no additionalDaysAwarded object associated to the ADA`() {
+      whenever(
+        adjustmentRepository.findByPersonAndAdjustmentTypeAndStatus(
+          NOMS_ID,
+          ADDITIONAL_DAYS_AWARDED,
+        ),
+      ).thenReturn(
+        listOf(
+          BASE_10_DAY_ADJUSTMENT.copy(
+            additionalDaysAwarded = null,
+            effectiveDays = 9,
+          ),
+        ),
+      )
+      whenever(prisonApiClient.getAdjudications(NOMS_ID)).thenReturn(threeAdjudicationsSearchResponse)
+      whenever(prisonApiClient.getAdjudication(NOMS_ID, 1525916)).thenReturn(adjudicationOne)
+      whenever(prisonApiClient.getAdjudication(NOMS_ID, 1525917)).thenReturn(adjudicationTwoConsecutiveToOne)
+      whenever(prisonApiClient.getAdjudication(NOMS_ID, 1525918)).thenReturn(adjudicationThreeConcurrentToOne)
+      whenever(prisonService.getStartOfSentenceEnvelopeExcludingRecalls(NOMS_ID)).thenReturn(LocalDate.of(2023, 1, 1))
+
+      val intercept = additionalDaysAwardedService.determineAdaIntercept(NOMS_ID)
+
+      assertThat(intercept).isEqualTo(AdaIntercept(FIRST_TIME, 0, false, emptyList()))
+      assertThat(intercept.message).isEqualTo("The first time you use the adjustments service, you need to check if the existing adjustment information from NOMIS is correct.")
+    }
+
+    @Test
     fun `Should intercept if there is a difference between the totalDays in adjustments and adjudications`() {
       whenever(
-        adjustmentRepository.findByPersonAndAdjustmentType(
+        adjustmentRepository.findByPersonAndAdjustmentTypeAndStatus(
           NOMS_ID,
           ADDITIONAL_DAYS_AWARDED,
         ),
@@ -101,7 +137,7 @@ class AdditionalDaysAddedServiceTest {
     @Test
     fun `Should intercept mix of concurrent consec`() {
       whenever(
-        adjustmentRepository.findByPersonAndAdjustmentType(
+        adjustmentRepository.findByPersonAndAdjustmentTypeAndStatus(
           NOMS_ID,
           ADDITIONAL_DAYS_AWARDED,
         ),
@@ -120,7 +156,7 @@ class AdditionalDaysAddedServiceTest {
     @Test
     fun `Shouldnt intercept when already persisted in adjustment api`() {
       whenever(
-        adjustmentRepository.findByPersonAndAdjustmentType(
+        adjustmentRepository.findByPersonAndAdjustmentTypeAndStatus(
           NOMS_ID,
           ADDITIONAL_DAYS_AWARDED,
         ),
@@ -141,7 +177,7 @@ class AdditionalDaysAddedServiceTest {
     @Test
     fun `Should intercept when already persisted adjustment has different days`() {
       whenever(
-        adjustmentRepository.findByPersonAndAdjustmentType(
+        adjustmentRepository.findByPersonAndAdjustmentTypeAndStatus(
           NOMS_ID,
           ADDITIONAL_DAYS_AWARDED,
         ),
@@ -162,7 +198,7 @@ class AdditionalDaysAddedServiceTest {
     @Test
     fun `Should intercept if all adas quashed`() {
       whenever(
-        adjustmentRepository.findByPersonAndAdjustmentType(
+        adjustmentRepository.findByPersonAndAdjustmentTypeAndStatus(
           NOMS_ID,
           ADDITIONAL_DAYS_AWARDED,
         ),
@@ -183,7 +219,7 @@ class AdditionalDaysAddedServiceTest {
     @Test
     fun `Should intercept if any prospective`() {
       whenever(
-        adjustmentRepository.findByPersonAndAdjustmentType(
+        adjustmentRepository.findByPersonAndAdjustmentTypeAndStatus(
           NOMS_ID,
           ADDITIONAL_DAYS_AWARDED,
         ),

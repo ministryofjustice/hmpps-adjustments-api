@@ -5,6 +5,7 @@ import org.springframework.data.jpa.repository.Query
 import org.springframework.stereotype.Repository
 import uk.gov.justice.digital.hmpps.adjustments.api.entity.Adjustment
 import uk.gov.justice.digital.hmpps.adjustments.api.entity.AdjustmentStatus
+import uk.gov.justice.digital.hmpps.adjustments.api.entity.AdjustmentStatus.ACTIVE
 import uk.gov.justice.digital.hmpps.adjustments.api.entity.AdjustmentType
 import uk.gov.justice.digital.hmpps.adjustments.api.entity.AdjustmentType.REMAND
 import uk.gov.justice.digital.hmpps.adjustments.api.entity.AdjustmentType.TAGGED_BAIL
@@ -40,5 +41,5 @@ interface AdjustmentRepository : JpaRepository<Adjustment, UUID> {
     status: AdjustmentStatus,
   ): List<Adjustment>
 
-  fun findByPersonAndAdjustmentType(person: String, adjustmentType: AdjustmentType): List<Adjustment>
+  fun findByPersonAndAdjustmentTypeAndStatus(person: String, adjustmentType: AdjustmentType, status: AdjustmentStatus = ACTIVE): List<Adjustment>
 }
