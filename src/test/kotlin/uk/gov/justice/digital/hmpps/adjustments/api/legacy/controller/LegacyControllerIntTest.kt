@@ -124,6 +124,7 @@ class LegacyControllerIntTest : SqsIntegrationTestBase() {
   @Test
   fun update() {
     cleanQueue()
+    val newFromDate = CREATED_ADJUSTMENT.adjustmentFromDate!!.minusYears(1)
     webTestClient
       .put()
       .uri("/legacy/adjustments/$createdId")
@@ -133,7 +134,7 @@ class LegacyControllerIntTest : SqsIntegrationTestBase() {
       .header("Content-Type", LegacyController.LEGACY_CONTENT_TYPE)
       .bodyValue(
         CREATED_ADJUSTMENT.copy(
-          adjustmentFromDate = CREATED_ADJUSTMENT.adjustmentFromDate!!.minusYears(1),
+          adjustmentFromDate = newFromDate,
           adjustmentDays = 5,
           adjustmentType = LegacyAdjustmentType.RX,
           active = true,
@@ -154,8 +155,8 @@ class LegacyControllerIntTest : SqsIntegrationTestBase() {
     assertThat(adjustment.status).isEqualTo(AdjustmentStatus.ACTIVE)
     assertThat(adjustment.source).isEqualTo(AdjustmentSource.NOMIS)
 
-    assertThat(adjustment.fromDate).isEqualTo(LocalDate.now().minusDays(5).minusYears(1))
-    assertThat(adjustment.toDate).isEqualTo(LocalDate.now().minusDays(1).minusYears(1))
+    assertThat(adjustment.fromDate).isEqualTo(newFromDate)
+    assertThat(adjustment.toDate).isEqualTo(newFromDate.plusDays(4))
     assertThat(adjustment.effectiveDays).isEqualTo(5)
     assertThat(adjustment.days).isEqualTo(null)
 
