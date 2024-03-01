@@ -19,6 +19,7 @@ import uk.gov.justice.digital.hmpps.adjustments.api.legacy.model.LegacyAdjustmen
 import uk.gov.justice.digital.hmpps.adjustments.api.legacy.model.LegacyData
 import uk.gov.justice.digital.hmpps.adjustments.api.respository.AdjustmentRepository
 import uk.gov.justice.digital.hmpps.adjustments.api.service.EventType
+import uk.gov.justice.digital.hmpps.adjustments.api.wiremock.PrisonApiExtension
 import java.time.LocalDate
 import java.util.UUID
 
@@ -231,7 +232,7 @@ class LegacyControllerIntTest : SqsIntegrationTestBase() {
     private val CREATED_ADJUSTMENT = LegacyAdjustment(
       bookingId = 1,
       sentenceSequence = 1,
-      offenderNo = "ABC123",
+      offenderNo = PrisonApiExtension.PRISONER_ID,
       adjustmentType = LegacyAdjustmentType.UR,
       adjustmentDate = LocalDate.now(),
       adjustmentFromDate = LocalDate.now().minusDays(5),

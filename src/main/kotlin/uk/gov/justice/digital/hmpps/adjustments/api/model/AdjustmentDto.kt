@@ -31,8 +31,6 @@ data class AdjustmentDto(
   val unlawfullyAtLarge: UnlawfullyAtLargeDto?,
   @Schema(description = "The details of a tagged-bail adjustment")
   val taggedBail: TaggedBailDto?,
-  @Schema(description = "The prison where the prisoner was located at the time the adjustment was created (a 3 character code identifying the prison)", example = "LDS")
-  val prisonId: String? = null,
   @Schema(description = "The NOMIS sentence sequence of the adjustment")
   val sentenceSequence: Int? = null,
 
@@ -41,6 +39,8 @@ data class AdjustmentDto(
   val adjustmentTypeText: String? = null,
   @Schema(description = "The name name of the prison where the prisoner was located at the time the adjustment was created ", example = "Leeds", readOnly = true)
   val prisonName: String? = null,
+  @Schema(description = "The prison where the prisoner was located at the time the adjustment was created (a 3 character code identifying the prison)", example = "LDS", readOnly = true)
+  val prisonId: String? = null,
   @Schema(description = "The person last updating this adjustment", readOnly = true)
   val lastUpdatedBy: String? = null,
   @Schema(description = "The status of this adjustment", readOnly = true)

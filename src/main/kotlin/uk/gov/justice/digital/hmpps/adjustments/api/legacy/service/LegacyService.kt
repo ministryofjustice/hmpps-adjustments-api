@@ -6,6 +6,7 @@ import io.hypersistence.utils.hibernate.type.json.internal.JacksonUtil
 import jakarta.persistence.EntityNotFoundException
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
+import uk.gov.justice.digital.hmpps.adjustments.api.client.SystemPrisonApiClient
 import uk.gov.justice.digital.hmpps.adjustments.api.entity.Adjustment
 import uk.gov.justice.digital.hmpps.adjustments.api.entity.AdjustmentHistory
 import uk.gov.justice.digital.hmpps.adjustments.api.entity.AdjustmentSource
@@ -26,12 +27,14 @@ import java.util.UUID
 @Service
 @Transactional(readOnly = true)
 class LegacyService(
-  val adjustmentRepository: AdjustmentRepository,
-  val objectMapper: ObjectMapper,
+  private val adjustmentRepository: AdjustmentRepository,
+  private val objectMapper: ObjectMapper,
+  private val systemPrisonApiClient: SystemPrisonApiClient,
 ) {
 
   @Transactional
   fun create(resource: LegacyAdjustment, migration: Boolean): LegacyAdjustmentCreatedResponse {
+    val prisonId = if (migration) null else systemPrisonApiClient.getPrisonerDetail(resource.offenderNo).agencyId
     val adjustment = Adjustment(
       person = resource.offenderNo,
       effectiveDays = resource.adjustmentDays,
@@ -46,6 +49,7 @@ class LegacyService(
           changeByUsername = "NOMIS",
           changeType = ChangeType.CREATE,
           changeSource = AdjustmentSource.NOMIS,
+          prisonId = prisonId,
         ),
       ),
     )
@@ -91,6 +95,7 @@ class LegacyService(
       .orElseThrow {
         EntityNotFoundException("No adjustment found with id $adjustmentId")
       }
+    val prisonId = systemPrisonApiClient.getPrisonerDetail(resource.offenderNo).agencyId
     val change = objectToJson(adjustment)
     adjustment.apply {
       effectiveDays = resource.adjustmentDays
@@ -105,6 +110,7 @@ class LegacyService(
         change = change,
         changeSource = AdjustmentSource.NOMIS,
         adjustment = adjustment,
+        prisonId = prisonId,
       )
     }
   }
@@ -120,6 +126,7 @@ class LegacyService(
       .orElseThrow {
         EntityNotFoundException("No adjustment found with id $adjustmentId")
       }
+    val prisonId = systemPrisonApiClient.getPrisonerDetail(adjustment.person).agencyId
     val change = objectToJson(adjustment)
     adjustment.apply {
       status = if (this.status == INACTIVE) INACTIVE_WHEN_DELETED else DELETED
@@ -129,6 +136,7 @@ class LegacyService(
         changeSource = AdjustmentSource.NOMIS,
         change = change,
         adjustment = adjustment,
+        prisonId = prisonId,
       )
     }
   }

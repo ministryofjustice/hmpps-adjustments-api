@@ -151,6 +151,8 @@ class AdjustmentControllerIntTest : SqsIntegrationTestBase() {
             sentenceSequence = 1,
             adjustmentTypeText = CREATED_ADJUSTMENT.adjustmentType.text,
             days = 4,
+            prisonId = "LDS",
+            prisonName = "Leeds",
           ),
         )
       awaitAtMost30Secs untilCallTo { getNumberOfMessagesCurrentlyOnQueue() } matches { it == 0 }
@@ -334,6 +336,8 @@ class AdjustmentControllerIntTest : SqsIntegrationTestBase() {
             sentenceSequence = 1,
             adjustmentTypeText = CREATED_ADJUSTMENT.adjustmentType.text,
             days = 4,
+            prisonId = "LDS",
+            prisonName = "Leeds",
           ),
         )
 
@@ -420,7 +424,6 @@ class AdjustmentControllerIntTest : SqsIntegrationTestBase() {
         .bodyValue(
           listOf(
             CREATED_ADJUSTMENT.copy(
-              person = "TB123",
               toDate = null,
               fromDate = null,
               days = 987,
@@ -439,7 +442,6 @@ class AdjustmentControllerIntTest : SqsIntegrationTestBase() {
       val adjustmentId = postCreateAdjustments(
         listOf(
           CREATED_ADJUSTMENT.copy(
-            person = "TB123",
             fromDate = null,
             toDate = null,
             days = 987,
@@ -459,7 +461,6 @@ class AdjustmentControllerIntTest : SqsIntegrationTestBase() {
         .isEqualTo(
           CREATED_ADJUSTMENT.copy(
             id = adjustmentId,
-            person = "TB123",
             fromDate = null,
             toDate = null,
             adjustmentType = TAGGED_BAIL,
@@ -471,6 +472,8 @@ class AdjustmentControllerIntTest : SqsIntegrationTestBase() {
             sentenceSequence = 1,
             adjustmentTypeText = TAGGED_BAIL.text,
             days = 987,
+            prisonId = "LDS",
+            prisonName = "Leeds",
           ),
         )
 
@@ -492,7 +495,6 @@ class AdjustmentControllerIntTest : SqsIntegrationTestBase() {
       val adjustmentId = postCreateAdjustments(
         listOf(
           CREATED_ADJUSTMENT.copy(
-            person = "UAL123",
             adjustmentType = UNLAWFULLY_AT_LARGE,
             unlawfullyAtLarge = UnlawfullyAtLargeDto(type = RECALL),
             remand = null,
@@ -514,7 +516,6 @@ class AdjustmentControllerIntTest : SqsIntegrationTestBase() {
         .isEqualTo(
           CREATED_ADJUSTMENT.copy(
             id = adjustmentId,
-            person = "UAL123",
             adjustmentType = UNLAWFULLY_AT_LARGE,
             unlawfullyAtLarge = UnlawfullyAtLargeDto(type = RECALL),
             remand = null,
@@ -523,6 +524,8 @@ class AdjustmentControllerIntTest : SqsIntegrationTestBase() {
             status = ACTIVE,
             adjustmentTypeText = UNLAWFULLY_AT_LARGE.text,
             days = 4,
+            prisonId = "LDS",
+            prisonName = "Leeds",
           ),
         )
 
@@ -540,13 +543,13 @@ class AdjustmentControllerIntTest : SqsIntegrationTestBase() {
       "classpath:test_data/reset-data.sql",
       "classpath:test_data/insert-nomis-ual.sql",
     )
-    fun `Update a UAL Adjustment that has no UAL type (eg migrated from NOMIS) - update the type and prison`() {
+    fun `Update a UAL Adjustment that has no UAL type (eg migrated from NOMIS) - update the type`() {
       val adjustmentId = UUID.fromString("dfba24ef-a2d4-4b26-af63-4d9494dd5252")
       val adjustment = getAdjustmentById(adjustmentId)
 
       putAdjustmentUpdate(
         adjustment.id!!,
-        adjustment.copy(unlawfullyAtLarge = UnlawfullyAtLargeDto(type = RECALL), prisonId = "MRG", days = null),
+        adjustment.copy(unlawfullyAtLarge = UnlawfullyAtLargeDto(type = RECALL), days = null),
       )
 
       val updatedAdjustment = getAdjustmentById(adjustmentId)
@@ -557,8 +560,6 @@ class AdjustmentControllerIntTest : SqsIntegrationTestBase() {
           adjustment.copy(
             lastUpdatedBy = "Test User",
             unlawfullyAtLarge = UnlawfullyAtLargeDto(type = RECALL),
-            prisonId = "MRG",
-            prisonName = "Moorgate",
           ),
         )
     }
