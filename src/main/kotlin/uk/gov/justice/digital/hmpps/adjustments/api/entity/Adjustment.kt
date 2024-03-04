@@ -45,7 +45,7 @@ data class Adjustment(
 
   @NotNull
   @Enumerated(EnumType.STRING)
-  val adjustmentType: AdjustmentType = AdjustmentType.REMAND,
+  var adjustmentType: AdjustmentType = AdjustmentType.REMAND,
 
   @Type(value = JsonType::class)
   @Column(columnDefinition = "jsonb")

@@ -104,6 +104,7 @@ class LegacyService(
       source = AdjustmentSource.NOMIS
       status = if (resource.active && !resource.bookingReleased) ACTIVE else INACTIVE
       legacyData = objectToJson(LegacyData(resource.bookingId, resource.sentenceSequence, resource.adjustmentDate, resource.comment, resource.adjustmentType, false, adjustmentActive = resource.active, bookingActive = !resource.bookingReleased))
+      adjustmentType = transform(resource.adjustmentType)
       adjustmentHistory += AdjustmentHistory(
         changeByUsername = "NOMIS",
         changeType = ChangeType.UPDATE,

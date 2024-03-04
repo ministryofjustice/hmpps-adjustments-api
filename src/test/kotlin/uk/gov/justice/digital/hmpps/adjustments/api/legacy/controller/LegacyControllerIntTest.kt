@@ -146,7 +146,7 @@ class LegacyControllerIntTest : SqsIntegrationTestBase() {
 
     val adjustment = adjustmentRepository.findById(createdId).get()
 
-    assertThat(adjustment.adjustmentType).isEqualTo(AdjustmentType.UNUSED_DEDUCTIONS)
+    assertThat(adjustment.adjustmentType).isEqualTo(AdjustmentType.REMAND)
     assertThat(adjustment.adjustmentHistory.size).isEqualTo(2)
     assertThat(adjustment.adjustmentHistory[1].changeType).isEqualTo(ChangeType.UPDATE)
     assertThat(adjustment.adjustmentHistory[1].changeByUsername).isEqualTo("NOMIS")
