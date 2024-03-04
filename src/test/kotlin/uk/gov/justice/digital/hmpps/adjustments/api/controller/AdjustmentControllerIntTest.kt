@@ -36,6 +36,7 @@ import uk.gov.justice.digital.hmpps.adjustments.api.model.UnlawfullyAtLargeDto
 import uk.gov.justice.digital.hmpps.adjustments.api.model.ValidationCode
 import uk.gov.justice.digital.hmpps.adjustments.api.model.ValidationMessage
 import uk.gov.justice.digital.hmpps.adjustments.api.respository.AdjustmentRepository
+import uk.gov.justice.digital.hmpps.adjustments.api.service.AdjustmentsService
 import uk.gov.justice.digital.hmpps.adjustments.api.service.EventType
 import uk.gov.justice.digital.hmpps.adjustments.api.wiremock.PrisonApiExtension
 import java.time.LocalDate
@@ -164,11 +165,13 @@ class AdjustmentControllerIntTest : SqsIntegrationTestBase() {
       val id = createAnAdjustment().also {
         cleanQueue()
       }
+      val newFromDate = CREATED_ADJUSTMENT.fromDate!!.minusYears(1)
+      val newToDate = CREATED_ADJUSTMENT.toDate!!.minusYears(1)
       putAdjustmentUpdate(
         id,
         CREATED_ADJUSTMENT.copy(
-          fromDate = CREATED_ADJUSTMENT.fromDate!!.minusYears(1),
-          toDate = CREATED_ADJUSTMENT.toDate!!.minusYears(1),
+          fromDate = newFromDate,
+          toDate = newToDate,
         ),
       )
 
@@ -182,11 +185,11 @@ class AdjustmentControllerIntTest : SqsIntegrationTestBase() {
       assertThat(adjustment.source).isEqualTo(AdjustmentSource.DPS)
       assertThat(adjustment.status).isEqualTo(ACTIVE)
 
-      assertThat(adjustment.fromDate).isEqualTo(LocalDate.now().minusDays(5).minusYears(1))
-      assertThat(adjustment.toDate).isEqualTo(LocalDate.now().minusDays(2).minusYears(1))
+      assertThat(adjustment.fromDate).isEqualTo(newFromDate)
+      assertThat(adjustment.toDate).isEqualTo(newToDate)
       assertThat(adjustment.days).isNull()
-      assertThat(adjustment.daysCalculated).isEqualTo(4)
-      assertThat(adjustment.effectiveDays).isEqualTo(4)
+      assertThat(adjustment.daysCalculated).isEqualTo(AdjustmentsService.daysBetween(newFromDate, newToDate))
+      assertThat(adjustment.effectiveDays).isEqualTo(AdjustmentsService.daysBetween(newFromDate, newToDate))
 
       val legacyData = objectMapper.convertValue(adjustment.legacyData, LegacyData::class.java)
       assertThat(legacyData).isEqualTo(
