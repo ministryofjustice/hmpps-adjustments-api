@@ -110,7 +110,7 @@ class LegacyController(
     @RequestBody adjustment: LegacyAdjustment,
   ) {
     legacyService.update(adjustmentId, adjustment).also {
-      eventService.update(adjustmentId, adjustment.offenderNo, AdjustmentSource.NOMIS)
+      eventService.update(adjustmentId, adjustment.offenderNo, AdjustmentSource.NOMIS, legacyService.transform(adjustment.adjustmentType))
     }
   }
 
