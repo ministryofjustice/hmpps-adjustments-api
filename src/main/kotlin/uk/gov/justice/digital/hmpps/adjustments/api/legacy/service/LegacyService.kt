@@ -207,4 +207,13 @@ class LegacyService(
       }
     }
   }
+
+  @Transactional
+  fun prisonerMerged(nomsNumber: String, removedNomsNumber: String) {
+    val adjustments = adjustmentRepository.findByPerson(removedNomsNumber)
+
+    adjustments.forEach {
+      it.person = nomsNumber
+    }
+  }
 }

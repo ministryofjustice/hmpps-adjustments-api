@@ -102,11 +102,47 @@ class PrisonerListenerIntTest : SqsIntegrationTestBase() {
     assertThat(legacyAdjustment.active).isEqualTo(true)
   }
 
+  @Test
+  fun handlePrisonerMerged() {
+    val id = createAnAdjustment(
+      createdAdjustment.copy(),
+    )
+    val eventType = "prison-offender-events.prisoner.merged"
+    val newPersonId = "NEWPERSON"
+    domainEventsTopicSnsClient.publish(
+      PublishRequest.builder().topicArn(domainEventsTopicArn)
+        .message(prisonerMergedPayload(newPersonId, PrisonApiExtension.PRISONER_ID))
+        .messageAttributes(
+          mapOf(
+            "eventType" to MessageAttributeValue.builder().dataType("String")
+              .stringValue(eventType).build(),
+          ),
+        ).build(),
+    ).get()
+
+    await untilAsserted {
+      assertThat(prisonerListenerQueue.sqsClient.countAllMessagesOnQueue(prisonerListenerQueueUrl).get()).isEqualTo(1)
+    }
+    await untilAsserted {
+      assertThat(prisonerListenerQueue.sqsClient.countAllMessagesOnQueue(prisonerListenerQueueUrl).get()).isEqualTo(0)
+    }
+
+    await untilAsserted {
+      val adjustment = adjustmentRepository.findById(id).get()
+      assertThat(adjustment.person).isEqualTo(newPersonId)
+      assertThat(adjustmentRepository.findByPerson(PrisonApiExtension.PRISONER_ID)).isEmpty()
+      assertThat(adjustmentRepository.findByPerson(newPersonId).find { it.id == id }).isNotNull
+    }
+  }
+
   private fun prisonerAdmissionPayload(nomsNumber: String, eventType: String) =
     """{"eventType":"$eventType", "additionalInformation": {"nomsNumber":"$nomsNumber", "reason": "NEW_ADMISSION"}}"""
 
   private fun prisonerReleasedPayload(nomsNumber: String, eventType: String) =
     """{"eventType":"$eventType", "additionalInformation": {"nomsNumber":"$nomsNumber", "reason": "RELEASED"}}"""
+
+  private fun prisonerMergedPayload(nomsNumber: String, removedNomsNumber: String) =
+    """{"eventType":"prison-offender-events.prisoner.merged","description":"A prisoner has been merged from $removedNomsNumber to $nomsNumber","additionalInformation":{"nomsNumber":"$nomsNumber","removedNomsNumber":"$removedNomsNumber","reason":"MERGE"}}"""
 
   private fun createAnAdjustment(adjustment: LegacyAdjustment): UUID {
     return webTestClient

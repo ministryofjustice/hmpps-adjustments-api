@@ -6,12 +6,12 @@ import io.awspring.cloud.sqs.annotation.SqsListener
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Service
-import uk.gov.justice.digital.hmpps.adjustments.api.service.PrisonerInOutService
+import uk.gov.justice.digital.hmpps.adjustments.api.service.PrisonerEventService
 
 @Service
 class PrisonerEventListener(
   private val objectMapper: ObjectMapper,
-  private val prisonerInOutService: PrisonerInOutService,
+  private val prisonerEventService: PrisonerEventService,
 ) {
 
   private companion object {
@@ -36,10 +36,12 @@ class PrisonerEventListener(
     when (eventType) {
       "prisoner-offender-search.prisoner.released",
       ->
-        prisonerInOutService.handleRelease(objectMapper.readValue(message))
+        prisonerEventService.handleRelease(objectMapper.readValue(message))
       "prisoner-offender-search.prisoner.received",
       ->
-        prisonerInOutService.handleReceived(objectMapper.readValue(message))
+        prisonerEventService.handleReceived(objectMapper.readValue(message))
+      "prison-offender-events.prisoner.merged",
+      -> prisonerEventService.handlePrisonerMerged(objectMapper.readValue(message))
 
       else -> log.info("Received a message I wasn't expecting: {}", eventType)
     }
