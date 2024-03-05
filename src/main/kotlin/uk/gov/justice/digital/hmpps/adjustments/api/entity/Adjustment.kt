@@ -27,7 +27,7 @@ data class Adjustment(
   val id: UUID = UUID.randomUUID(),
 
   @NotNull
-  val person: String = "",
+  var person: String = "",
 
   var fromDate: LocalDate? = null,
 
