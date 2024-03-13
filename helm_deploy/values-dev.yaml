@@ -23,4 +23,6 @@ generic-prometheus-alerts:
   sqsAlertsQueueNames:
     - "farsight-devs-dev-hmpps_adjustments_prisoner_queue"
     - "farsight-devs-dev-hmpps_adjustments_prisoner_dlq"
+  sqsAlertsOldestThreshold: 2
+  sqsAlertsTotalMessagesThreshold: 1
   alertSeverity: legacy-replacement-alerts-non-prod
