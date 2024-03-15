@@ -11,7 +11,6 @@ generic-service:
     PRISON_API_URL: https://api.prison.service.justice.gov.uk
     CALCULATERELEASEDATES_API_URL: https://calculate-release-dates-api.hmpps.service.justice.gov.uk
 
-
   postgresDatabaseRestore:
     enabled: true
     namespace_secrets:
