@@ -158,7 +158,7 @@ class AdjustmentsService(
 
   fun get(adjustmentId: UUID): AdjustmentDto {
     val adjustment = adjustmentRepository.findById(adjustmentId)
-      .map { if (it.status == DELETED || it.status == INACTIVE_WHEN_DELETED) null else it }
+      .map { if (it.status.isDeleted()) null else it }
       .orElseThrow {
         EntityNotFoundException("No adjustment found with id $adjustmentId")
       }!!

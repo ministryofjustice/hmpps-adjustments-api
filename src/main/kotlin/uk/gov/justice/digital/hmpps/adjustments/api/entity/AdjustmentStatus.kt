@@ -5,4 +5,9 @@ enum class AdjustmentStatus {
   INACTIVE,
   DELETED,
   INACTIVE_WHEN_DELETED,
+  ;
+
+  fun isDeleted(): Boolean {
+    return listOf(DELETED, INACTIVE_WHEN_DELETED).contains(this)
+  }
 }
