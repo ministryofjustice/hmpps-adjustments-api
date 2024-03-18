@@ -317,6 +317,7 @@ class AdjustmentsService(
       prisonName = prisonDescription,
       adjustmentTypeText = adjustment.adjustmentType.text,
       days = adjustment.days ?: daysBetween(adjustment.fromDate, adjustment.toDate) ?: adjustment.effectiveDays,
+      adjustmentArithmeticType = adjustment.adjustmentType.arithmeticType,
     )
   }
 
