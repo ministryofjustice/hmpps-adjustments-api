@@ -59,7 +59,7 @@ class LegacyService(
 
   fun get(adjustmentId: UUID): LegacyAdjustment {
     val adjustment = adjustmentRepository.findById(adjustmentId)
-      .map { if (it.status == DELETED || it.status == INACTIVE_WHEN_DELETED) null else it }
+      .map { if (it.status.isDeleted()) null else it }
       .orElseThrow {
         EntityNotFoundException("No adjustment found with id $adjustmentId")
       }!!
@@ -201,7 +201,7 @@ class LegacyService(
       )
       if (persistedLegacyData.bookingId == prisoner.bookingId) {
         it.apply {
-          status = if (persistedLegacyData.adjustmentActive) ACTIVE else INACTIVE
+          status = if (it.status.isDeleted()) it.status else if (persistedLegacyData.adjustmentActive) ACTIVE else INACTIVE
           legacyData = objectToJson(persistedLegacyData)
         }
       }
