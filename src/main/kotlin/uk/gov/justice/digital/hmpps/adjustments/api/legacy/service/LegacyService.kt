@@ -184,7 +184,7 @@ class LegacyService(
       )
       if (persistedLegacyData.bookingId == prisoner.bookingId) {
         it.apply {
-          status = INACTIVE
+          status = if (it.status.isDeleted()) it.status else INACTIVE
           legacyData = objectToJson(persistedLegacyData)
         }
       }

@@ -62,6 +62,39 @@ class PrisonerListenerIntTest : SqsIntegrationTestBase() {
   }
 
   @Test
+  fun `handleReleased for deleted adjustment`() {
+    val id = createAnAdjustment(createdAdjustment.copy())
+    deleteAdjustment(id)
+    await untilAsserted {
+      val adjustment = adjustmentRepository.findById(id).get()
+      assertThat(adjustment.status).isEqualTo(AdjustmentStatus.DELETED)
+    }
+    val eventType = "prisoner-offender-search.prisoner.released"
+    domainEventsTopicSnsClient.publish(
+      PublishRequest.builder().topicArn(domainEventsTopicArn)
+        .message(prisonerReleasedPayload(PrisonApiExtension.PRISONER_ID, eventType))
+        .messageAttributes(
+          mapOf(
+            "eventType" to MessageAttributeValue.builder().dataType("String")
+              .stringValue(eventType).build(),
+          ),
+        ).build(),
+    ).get()
+
+    await untilAsserted {
+      assertThat(prisonerListenerQueue.sqsClient.countAllMessagesOnQueue(prisonerListenerQueueUrl).get()).isEqualTo(1)
+    }
+    await untilAsserted {
+      assertThat(prisonerListenerQueue.sqsClient.countAllMessagesOnQueue(prisonerListenerQueueUrl).get()).isEqualTo(0)
+    }
+
+    await untilAsserted {
+      val adjustment = adjustmentRepository.findById(id).get()
+      assertThat(adjustment.status).isEqualTo(AdjustmentStatus.DELETED)
+    }
+  }
+
+  @Test
   fun handleAdmission() {
     val id = createAnAdjustment(
       createdAdjustment.copy(
