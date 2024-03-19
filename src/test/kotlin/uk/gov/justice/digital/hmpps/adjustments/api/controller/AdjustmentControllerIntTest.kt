@@ -154,6 +154,7 @@ class AdjustmentControllerIntTest : SqsIntegrationTestBase() {
             days = 4,
             prisonId = "LDS",
             prisonName = "Leeds",
+            adjustmentArithmeticType = CREATED_ADJUSTMENT.adjustmentType.arithmeticType,
           ),
         )
       awaitAtMost30Secs untilCallTo { getNumberOfMessagesCurrentlyOnQueue() } matches { it == 0 }
@@ -341,6 +342,7 @@ class AdjustmentControllerIntTest : SqsIntegrationTestBase() {
             days = 4,
             prisonId = "LDS",
             prisonName = "Leeds",
+            adjustmentArithmeticType = CREATED_ADJUSTMENT.adjustmentType.arithmeticType,
           ),
         )
 
@@ -477,6 +479,7 @@ class AdjustmentControllerIntTest : SqsIntegrationTestBase() {
             days = 987,
             prisonId = "LDS",
             prisonName = "Leeds",
+            adjustmentArithmeticType = TAGGED_BAIL.arithmeticType,
           ),
         )
 
@@ -529,6 +532,7 @@ class AdjustmentControllerIntTest : SqsIntegrationTestBase() {
             days = 4,
             prisonId = "LDS",
             prisonName = "Leeds",
+            adjustmentArithmeticType = UNLAWFULLY_AT_LARGE.arithmeticType,
           ),
         )
 

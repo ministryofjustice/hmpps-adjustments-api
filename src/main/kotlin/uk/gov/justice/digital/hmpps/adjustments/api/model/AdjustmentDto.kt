@@ -3,6 +3,7 @@ package uk.gov.justice.digital.hmpps.adjustments.api.model
 import io.swagger.v3.oas.annotations.media.Schema
 import uk.gov.justice.digital.hmpps.adjustments.api.entity.AdjustmentStatus
 import uk.gov.justice.digital.hmpps.adjustments.api.entity.AdjustmentType
+import uk.gov.justice.digital.hmpps.adjustments.api.enums.ArithmeticType
 import java.time.LocalDate
 import java.time.LocalDateTime
 import java.util.UUID
@@ -37,6 +38,8 @@ data class AdjustmentDto(
   // View only fields
   @Schema(description = "Human readable text for type of adjustment", readOnly = true)
   val adjustmentTypeText: String? = null,
+  @Schema(description = "Indicates whether the adjustment was an addition or deduction", readOnly = true)
+  val adjustmentArithmeticType: ArithmeticType? = null,
   @Schema(description = "The name name of the prison where the prisoner was located at the time the adjustment was created ", example = "Leeds", readOnly = true)
   val prisonName: String? = null,
   @Schema(description = "The prison where the prisoner was located at the time the adjustment was created (a 3 character code identifying the prison)", example = "LDS", readOnly = true)
