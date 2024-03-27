@@ -188,6 +188,14 @@ class LegacyService(
           legacyData = objectToJson(persistedLegacyData)
         }
       }
+
+      it.adjustmentHistory += AdjustmentHistory(
+        changeByUsername = "NOMIS",
+        changeType = ChangeType.RELEASE,
+        changeSource = AdjustmentSource.NOMIS,
+        adjustment = it,
+        prisonId = prisoner.agencyId,
+      )
     }
   }
 
@@ -205,6 +213,14 @@ class LegacyService(
           legacyData = objectToJson(persistedLegacyData)
         }
       }
+
+      it.adjustmentHistory += AdjustmentHistory(
+        changeByUsername = "NOMIS",
+        changeType = ChangeType.ADMISSION,
+        changeSource = AdjustmentSource.NOMIS,
+        adjustment = it,
+        prisonId = prisoner.agencyId,
+      )
     }
   }
 
@@ -214,6 +230,12 @@ class LegacyService(
 
     adjustments.forEach {
       it.person = nomsNumber
+      it.adjustmentHistory += AdjustmentHistory(
+        changeByUsername = "NOMIS",
+        changeType = ChangeType.MERGE,
+        changeSource = AdjustmentSource.NOMIS,
+        adjustment = it,
+      )
     }
   }
 }
