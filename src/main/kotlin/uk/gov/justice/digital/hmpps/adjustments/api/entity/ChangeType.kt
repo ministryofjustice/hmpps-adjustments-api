@@ -6,5 +6,5 @@ enum class ChangeType {
   DELETE,
   RELEASE,
   ADMISSION,
-  MERGE
+  MERGE,
 }
