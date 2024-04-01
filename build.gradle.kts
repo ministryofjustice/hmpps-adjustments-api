@@ -34,7 +34,7 @@ dependencies {
   runtimeOnly("org.postgresql:postgresql:42.7.3")
 
   // OpenAPI
-  implementation("org.springdoc:springdoc-openapi-starter-webmvc-ui:2.4.0")
+  implementation("org.springdoc:springdoc-openapi-starter-webmvc-ui:2.5.0")
 
   // Test dependencies
   testImplementation("org.awaitility:awaitility-kotlin")
