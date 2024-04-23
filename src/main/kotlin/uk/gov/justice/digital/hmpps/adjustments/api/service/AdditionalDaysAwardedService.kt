@@ -17,8 +17,10 @@ import uk.gov.justice.digital.hmpps.adjustments.api.enums.InterceptType.FIRST_TI
 import uk.gov.justice.digital.hmpps.adjustments.api.enums.InterceptType.NONE
 import uk.gov.justice.digital.hmpps.adjustments.api.enums.InterceptType.PADA
 import uk.gov.justice.digital.hmpps.adjustments.api.enums.InterceptType.UPDATE
-import uk.gov.justice.digital.hmpps.adjustments.api.model.AdaIntercept
-import uk.gov.justice.digital.hmpps.adjustments.api.model.AdasByDateCharged
+import uk.gov.justice.digital.hmpps.adjustments.api.model.additionaldays.Ada
+import uk.gov.justice.digital.hmpps.adjustments.api.model.additionaldays.AdaAdjudicationDetails
+import uk.gov.justice.digital.hmpps.adjustments.api.model.additionaldays.AdaIntercept
+import uk.gov.justice.digital.hmpps.adjustments.api.model.additionaldays.AdasByDateCharged
 import uk.gov.justice.digital.hmpps.adjustments.api.model.prisonapi.AdjudicationDetail
 import uk.gov.justice.digital.hmpps.adjustments.api.model.prisonapi.Hearing
 import uk.gov.justice.digital.hmpps.adjustments.api.model.prisonapi.Sanction
@@ -34,34 +36,66 @@ class AdditionalDaysAwardedService(
   private val prisonApiClient: PrisonApiClient,
 ) {
 
-  // This intercept logic has been copied from the UI - going forward the api will be used to determine this logic
-  fun determineAdaIntercept(nomsId: String): AdaIntercept {
+  fun getAdaAdjudicationDetails(nomsId: String, selectedProspectiveAdaDates: List<String> = listOf()): AdaAdjudicationDetails {
     val startOfSentenceEnvelope = prisonService.getStartOfSentenceEnvelopeExcludingRecalls(nomsId)
-      ?: return AdaIntercept(NONE, 0, false)
+      ?: return AdaAdjudicationDetails()
     val adaAdjustments = adjustmentRepository.findByPersonAndAdjustmentTypeAndStatus(nomsId, ADDITIONAL_DAYS_AWARDED)
-    val anyUnlinkedAdas =
-      adaAdjustments.any { it.additionalDaysAwarded?.adjudicationCharges?.isEmpty() ?: true && it.effectiveDays > 0 }
     val adas = lookupAdas(nomsId, startOfSentenceEnvelope)
 
     val (awarded, pendingApproval) = filterAdasByMatchingAdjustment(
       getAdasByDateCharged(adas, AWARDED_OR_PENDING),
       adaAdjustments,
     )
+
+    val suspended = getAdasByDateCharged(adas, SUSPENDED)
+    val totalSuspended = getTotalDays(suspended)
+
     val (prospectiveAwarded, prospective) = filterAdasByMatchingAdjustment(
       getAdasByDateCharged(adas, PROSPECTIVE),
       adaAdjustments,
     )
     val allAwarded = awarded + prospectiveAwarded
+    val totalAwarded = getTotalDays(awarded)
+
+    val totalProspective = getTotalDays(prospective)
+
+    val selectedProspectiveAdas = prospective.filter {
+      selectedProspectiveAdaDates.contains(it.dateChargeProved.toString())
+    }
+    val allAwaitingApproval = pendingApproval + selectedProspectiveAdas
+    val totalAwaitingApproval = getTotalDays(allAwaitingApproval)
+
     val quashed = filterQuashedAdasByMatchingChargeIds(getAdasByDateCharged(adas, QUASHED), adaAdjustments)
-    return deriveAdaIntercept(
-      nomsId,
-      anyUnlinkedAdas,
-      prospective,
-      pendingApproval,
+    val totalQuashed = getTotalDays(quashed)
+
+    val totalExistingAdas = adaAdjustments.map { it.days!! }.reduceOrNull { acc, it -> acc + it } ?: 0
+
+    return AdaAdjudicationDetails(
+      awarded,
+      totalAwarded,
+      suspended,
+      totalSuspended,
       quashed,
-      adaAdjustments,
-      allAwarded,
+      totalQuashed,
+      allAwaitingApproval,
+      totalAwaitingApproval,
+      prospective,
+      totalProspective,
+      intercept = deriveAdaIntercept(
+        nomsId,
+        prospective,
+        pendingApproval,
+        quashed,
+        adaAdjustments,
+        allAwarded,
+      ),
+      totalExistingAdas,
+      allAwaitingApproval.isEmpty() && quashed.isEmpty() && awarded.isEmpty(),
     )
+  }
+
+  private fun getTotalDays(adas: List<AdasByDateCharged>): Int {
+    return adas.map { it.total!! }.reduceOrNull { acc, it -> acc + it } ?: 0
   }
 
   private fun getMessageParams(nomsId: String): List<String> {
@@ -76,13 +110,14 @@ class AdditionalDaysAwardedService(
 
   private fun deriveAdaIntercept(
     nomsId: String,
-    anyUnlinkedAdas: Boolean,
     prospective: List<AdasByDateCharged>,
     pendingApproval: List<AdasByDateCharged>,
     quashed: List<AdasByDateCharged>,
     adaAdjustments: List<Adjustment>,
     allAwarded: List<AdasByDateCharged>,
   ): AdaIntercept {
+    val anyUnlinkedAdas =
+      adaAdjustments.any { it.additionalDaysAwarded?.adjudicationCharges?.isEmpty() ?: true && it.effectiveDays > 0 }
     val totalAdjustments = adaAdjustments.sumOf { it.days ?: 0 }
     val totalAdjudications = allAwarded.sumOf { it.total ?: 0 }
     val numPendingApproval = pendingApproval.size
@@ -230,7 +265,7 @@ class AdditionalDaysAwardedService(
 
   private fun getSourceAdaForConsecutive(allAdas: List<Ada>): List<Ada> =
     allAdas.filter { ada -> ada.consecutiveToSequence != null && allAdas.any { it.sequence == ada.consecutiveToSequence } }
-      .map { consecutiveAda -> allAdas.first { it.sequence == consecutiveAda.sequence } }
+      .map { consecutiveAda -> allAdas.first { it.sequence == consecutiveAda.consecutiveToSequence } }
 
   private fun prospectiveOrSanctioned(hearing: Hearing, startOfSentenceEnvelope: LocalDate): Boolean {
     return hearing.results != null && hearing.results.any { r ->
