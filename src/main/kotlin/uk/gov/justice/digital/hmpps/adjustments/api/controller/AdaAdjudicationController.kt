@@ -17,7 +17,7 @@ import uk.gov.justice.digital.hmpps.adjustments.api.service.AdditionalDaysAwarde
 
 @RestController
 @RequestMapping("/adjustments/additional-days", produces = [MediaType.APPLICATION_JSON_VALUE])
-@Tag(name = "adjustment-controller", description = "CRUD operations for adjustments.")
+@Tag(name = "ada-adjudication-controller", description = "Read operations for additional days logic")
 class AdaAdjudicationController(
   val additionalDaysAwardedService: AdditionalDaysAwardedService,
 ) {
