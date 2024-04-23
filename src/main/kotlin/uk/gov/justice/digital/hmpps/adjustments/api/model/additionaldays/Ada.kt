@@ -1,4 +1,4 @@
-package uk.gov.justice.digital.hmpps.adjustments.api.service
+package uk.gov.justice.digital.hmpps.adjustments.api.model.additionaldays
 
 import uk.gov.justice.digital.hmpps.adjustments.api.enums.ChargeStatus
 import java.time.LocalDate

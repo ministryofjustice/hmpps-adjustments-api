@@ -20,12 +20,12 @@ import org.springframework.web.bind.annotation.ResponseStatus
 import org.springframework.web.bind.annotation.RestController
 import uk.gov.justice.digital.hmpps.adjustments.api.entity.AdjustmentSource
 import uk.gov.justice.digital.hmpps.adjustments.api.entity.AdjustmentStatus
-import uk.gov.justice.digital.hmpps.adjustments.api.model.AdaIntercept
 import uk.gov.justice.digital.hmpps.adjustments.api.model.AdjustmentDto
 import uk.gov.justice.digital.hmpps.adjustments.api.model.AdjustmentEffectiveDaysDto
 import uk.gov.justice.digital.hmpps.adjustments.api.model.CreateResponseDto
 import uk.gov.justice.digital.hmpps.adjustments.api.model.RestoreAdjustmentsDto
 import uk.gov.justice.digital.hmpps.adjustments.api.model.ValidationMessage
+import uk.gov.justice.digital.hmpps.adjustments.api.model.additionaldays.AdaIntercept
 import uk.gov.justice.digital.hmpps.adjustments.api.service.AdditionalDaysAwardedService
 import uk.gov.justice.digital.hmpps.adjustments.api.service.AdjustmentsEventService
 import uk.gov.justice.digital.hmpps.adjustments.api.service.AdjustmentsService
@@ -241,6 +241,6 @@ class AdjustmentsController(
     @PathVariable("person")
     person: String,
   ): AdaIntercept {
-    return additionalDaysAwardedService.determineAdaIntercept(person)
+    return additionalDaysAwardedService.getAdaAdjudicationDetails(person).intercept
   }
 }

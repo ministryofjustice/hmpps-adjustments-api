@@ -1,7 +1,6 @@
-package uk.gov.justice.digital.hmpps.adjustments.api.model
+package uk.gov.justice.digital.hmpps.adjustments.api.model.additionaldays
 
 import uk.gov.justice.digital.hmpps.adjustments.api.enums.AdaStatus
-import uk.gov.justice.digital.hmpps.adjustments.api.service.Ada
 import java.time.LocalDate
 import java.util.UUID
 
