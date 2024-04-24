@@ -10,6 +10,7 @@ import org.springframework.security.access.prepost.PreAuthorize
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.PathVariable
 import org.springframework.web.bind.annotation.RequestMapping
+import org.springframework.web.bind.annotation.RequestParam
 import org.springframework.web.bind.annotation.RestController
 import uk.gov.justice.digital.hmpps.adjustments.api.model.additionaldays.AdaAdjudicationDetails
 import uk.gov.justice.digital.hmpps.adjustments.api.model.additionaldays.AdaIntercept
@@ -58,10 +59,10 @@ class AdaAdjudicationController(
     @Parameter(required = true, example = "AA1256A", description = "The noms ID of the person")
     @PathVariable("person")
     person: String,
-    @Parameter(required = true, example = "2022-01-10,2022-02-11", description = "The dates of selected prospective adas")
-    @PathVariable("selectedProspectiveAdaDates")
-    selectedProspectiveAdaDates: List<String>,
+    @Parameter(required = false, example = "2022-01-10,2022-02-11", description = "The dates of selected prospective adas")
+    @RequestParam("selectedProspectiveAdaDates")
+    selectedProspectiveAdaDates: List<String>?,
   ): AdaAdjudicationDetails {
-    return additionalDaysAwardedService.getAdaAdjudicationDetails(person, selectedProspectiveAdaDates)
+    return additionalDaysAwardedService.getAdaAdjudicationDetails(person, selectedProspectiveAdaDates ?: listOf())
   }
 }
