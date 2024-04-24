@@ -252,7 +252,62 @@ class AdditionalDaysAddedServiceTest {
             ),
           ),
           totalAwaitingApproval = 10,
-          intercept = AdaIntercept(type = PADA, number = 1, anyProspective = true, messageArguments = listOf("Prisoner, Default")),
+          intercept = AdaIntercept(type = UPDATE, number = 1, anyProspective = true, messageArguments = listOf("Prisoner, Default")),
+        ),
+      )
+    }
+
+    @Test
+    fun `Ada adjudication details prospective and awarded`() {
+      whenever(
+        adjustmentRepository.findByPersonAndAdjustmentTypeAndStatus(
+          NOMS_ID,
+          ADDITIONAL_DAYS_AWARDED,
+        ),
+      ).thenReturn(
+        listOf(
+          BASE_10_DAY_ADJUSTMENT.copy(
+            additionalDaysAwarded = AdditionalDaysAwarded(
+              adjudicationCharges = mutableListOf(
+                AdjudicationCharges(1525916),
+              ),
+            ),
+          ),
+        ),
+      )
+      whenever(prisonApiClient.getAdjudications(NOMS_ID)).thenReturn(oneAdjudicationSearchResponse)
+      whenever(prisonApiClient.getAdjudication(NOMS_ID, 1525916)).thenReturn(adjudicationOneProspective)
+      whenever(prisonService.getStartOfSentenceEnvelopeExcludingRecalls(NOMS_ID)).thenReturn(LocalDate.of(2023, 1, 1))
+
+      val adaAdjudicationDetails = additionalDaysAwardedService.getAdaAdjudicationDetails(NOMS_ID, selectedProspectiveAdaDates = listOf("2023-08-03"))
+
+      assertThat(
+        adaAdjudicationDetails,
+      ).isEqualTo(
+        AdaAdjudicationDetails(
+          awarded = listOf(
+            AdasByDateCharged(
+              dateChargeProved = LocalDate.of(2023, 8, 3),
+              charges = mutableListOf(
+                Ada(
+                  dateChargeProved = LocalDate.of(2023, 8, 3),
+                  chargeNumber = 1525916,
+                  toBeServed = "Forthwith",
+                  heardAt = "Moorland (HMP & YOI)",
+                  status = ChargeStatus.PROSPECTIVE,
+                  days = 10,
+                  sequence = 15,
+                  consecutiveToSequence = null,
+                ),
+              ),
+              total = 10,
+              status = AdaStatus.AWARDED,
+              adjustmentId = BASE_10_DAY_ADJUSTMENT.id,
+            ),
+          ),
+          totalAwarded = 10,
+          totalExistingAdas = 10,
+          intercept = AdaIntercept(type = NONE, number = 0, anyProspective = false, messageArguments = listOf()),
         ),
       )
     }
