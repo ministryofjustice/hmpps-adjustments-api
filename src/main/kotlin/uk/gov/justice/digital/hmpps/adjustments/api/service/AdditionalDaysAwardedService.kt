@@ -42,7 +42,7 @@ class AdditionalDaysAwardedService(
     val adaAdjustments = adjustmentRepository.findByPersonAndAdjustmentTypeAndStatus(nomsId, ADDITIONAL_DAYS_AWARDED)
     val adas = lookupAdas(nomsId, startOfSentenceEnvelope)
 
-    val (awarded, pendingApproval) = filterAdasByMatchingAdjustment(
+    var (awarded, pendingApproval) = filterAdasByMatchingAdjustment(
       getAdasByDateCharged(adas, AWARDED_OR_PENDING),
       adaAdjustments,
     )
@@ -54,7 +54,7 @@ class AdditionalDaysAwardedService(
       getAdasByDateCharged(adas, PROSPECTIVE),
       adaAdjustments,
     )
-    val allAwarded = awarded + prospectiveAwarded
+    awarded = awarded + prospectiveAwarded
     val totalAwarded = getTotalDays(awarded)
 
     val totalProspective = getTotalDays(prospective)
@@ -62,8 +62,8 @@ class AdditionalDaysAwardedService(
     val selectedProspectiveAdas = prospective.filter {
       selectedProspectiveAdaDates.contains(it.dateChargeProved.toString())
     }
-    val allAwaitingApproval = pendingApproval + selectedProspectiveAdas
-    val totalAwaitingApproval = getTotalDays(allAwaitingApproval)
+    pendingApproval = pendingApproval + selectedProspectiveAdas
+    val totalAwaitingApproval = getTotalDays(pendingApproval)
 
     val quashed = filterQuashedAdasByMatchingChargeIds(getAdasByDateCharged(adas, QUASHED), adaAdjustments)
     val totalQuashed = getTotalDays(quashed)
@@ -77,7 +77,7 @@ class AdditionalDaysAwardedService(
       totalSuspended,
       quashed,
       totalQuashed,
-      allAwaitingApproval,
+      pendingApproval,
       totalAwaitingApproval,
       prospective,
       totalProspective,
@@ -87,10 +87,10 @@ class AdditionalDaysAwardedService(
         pendingApproval,
         quashed,
         adaAdjustments,
-        allAwarded,
+        awarded,
       ),
       totalExistingAdas,
-      allAwaitingApproval.isEmpty() && quashed.isEmpty() && awarded.isEmpty(),
+      pendingApproval.isEmpty() && quashed.isEmpty() && awarded.isEmpty(),
     )
   }
 
