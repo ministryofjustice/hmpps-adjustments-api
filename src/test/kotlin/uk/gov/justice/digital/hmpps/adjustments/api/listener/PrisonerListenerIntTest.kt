@@ -5,9 +5,11 @@ import org.awaitility.kotlin.await
 import org.awaitility.kotlin.untilAsserted
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
+import org.springframework.transaction.annotation.Transactional
 import software.amazon.awssdk.services.sns.model.MessageAttributeValue
 import software.amazon.awssdk.services.sns.model.PublishRequest
 import uk.gov.justice.digital.hmpps.adjustments.api.entity.AdjustmentStatus
+import uk.gov.justice.digital.hmpps.adjustments.api.entity.ChangeType
 import uk.gov.justice.digital.hmpps.adjustments.api.integration.SqsIntegrationTestBase
 import uk.gov.justice.digital.hmpps.adjustments.api.legacy.controller.LegacyController
 import uk.gov.justice.digital.hmpps.adjustments.api.legacy.model.LegacyAdjustment
@@ -25,6 +27,7 @@ class PrisonerListenerIntTest : SqsIntegrationTestBase() {
   lateinit var adjustmentRepository: AdjustmentRepository
 
   @Test
+  @Transactional
   fun handleReleased() {
     val id = createAnAdjustment(createdAdjustment.copy())
     await untilAsserted {
@@ -56,6 +59,9 @@ class PrisonerListenerIntTest : SqsIntegrationTestBase() {
     }
 
     val legacyAdjustment = getLegacyAdjustment(id)
+
+    val adjustment = adjustmentRepository.findById(id).get()
+    assertThat(adjustment.adjustmentHistory.last().changeType == ChangeType.RELEASE)
 
     assertThat(legacyAdjustment.bookingReleased).isEqualTo(true)
     assertThat(legacyAdjustment.active).isEqualTo(true)
@@ -95,6 +101,7 @@ class PrisonerListenerIntTest : SqsIntegrationTestBase() {
   }
 
   @Test
+  @Transactional
   fun handleAdmission() {
     val id = createAnAdjustment(
       createdAdjustment.copy(
@@ -132,6 +139,10 @@ class PrisonerListenerIntTest : SqsIntegrationTestBase() {
     val legacyAdjustment = getLegacyAdjustment(id)
 
     assertThat(legacyAdjustment.bookingReleased).isEqualTo(false)
+
+    val adjustment = adjustmentRepository.findById(id).get()
+    assertThat(adjustment.adjustmentHistory.last().changeType == ChangeType.ADMISSION)
+
     assertThat(legacyAdjustment.active).isEqualTo(true)
   }
 
@@ -171,6 +182,7 @@ class PrisonerListenerIntTest : SqsIntegrationTestBase() {
   }
 
   @Test
+  @Transactional
   fun handlePrisonerMerged() {
     val id = createAnAdjustment(
       createdAdjustment.copy(),
@@ -201,6 +213,9 @@ class PrisonerListenerIntTest : SqsIntegrationTestBase() {
       assertThat(adjustmentRepository.findByPerson(PrisonApiExtension.PRISONER_ID)).isEmpty()
       assertThat(adjustmentRepository.findByPerson(newPersonId).find { it.id == id }).isNotNull
     }
+
+    val adjustment = adjustmentRepository.findById(id).get()
+    assertThat(adjustment.adjustmentHistory.last().changeType == ChangeType.MERGE)
   }
 
   private fun prisonerAdmissionPayload(nomsNumber: String, eventType: String) =
