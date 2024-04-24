@@ -1,4 +1,4 @@
-package uk.gov.justice.digital.hmpps.adjustments.api.model
+package uk.gov.justice.digital.hmpps.adjustments.api.model.additionaldays
 
 import uk.gov.justice.digital.hmpps.adjustments.api.enums.InterceptType
 

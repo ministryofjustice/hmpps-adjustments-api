@@ -35,6 +35,7 @@ data class SentenceInfo(
       "FTRSCH18",
       "FTRSCH18_ORA",
       "14FTRHDC_ORA",
+      "FTR_HDC_ORA",
     )
   }
 }
