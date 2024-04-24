@@ -329,7 +329,7 @@ class AdditionalDaysAddedServiceTest {
         adaAdjudicationDetails,
       ).isEqualTo(
         AdaAdjudicationDetails(
-          intercept = AdaIntercept(type = UPDATE, number = 0, anyProspective = false, messageArguments = listOf("Prisoner, Default")),
+          intercept = AdaIntercept(type = FIRST_TIME, number = 0, anyProspective = false, messageArguments = listOf()),
           totalExistingAdas = 10,
           showExistingAdaMessage = true,
         ),
@@ -411,7 +411,7 @@ class AdditionalDaysAddedServiceTest {
           ADDITIONAL_DAYS_AWARDED,
         ),
       ).thenReturn(
-        listOf(BASE_10_DAY_ADJUSTMENT.copy(days = 11)),
+        listOf(BASE_10_DAY_ADJUSTMENT.copy(days = 11, effectiveDays = 11)),
       )
       whenever(prisonApiClient.getAdjudications(NOMS_ID)).thenReturn(threeAdjudicationsSearchResponse)
       whenever(prisonApiClient.getAdjudication(NOMS_ID, 1525916)).thenReturn(adjudicationOne)
@@ -472,7 +472,7 @@ class AdditionalDaysAddedServiceTest {
           ADDITIONAL_DAYS_AWARDED,
         ),
       ).thenReturn(
-        listOf(BASE_10_DAY_ADJUSTMENT.copy(days = 5)),
+        listOf(BASE_10_DAY_ADJUSTMENT.copy(days = 5, effectiveDays = 5)),
       )
       whenever(prisonApiClient.getAdjudications(NOMS_ID)).thenReturn(threeAdjudicationsSearchResponse)
       whenever(prisonApiClient.getAdjudication(NOMS_ID, 1525916)).thenReturn(adjudicationOne)
@@ -555,6 +555,7 @@ class AdditionalDaysAddedServiceTest {
     val BASE_10_DAY_ADJUSTMENT = Adjustment(
       person = "AA1234A",
       days = 10,
+      effectiveDays = 10,
       adjustmentType = ADDITIONAL_DAYS_AWARDED,
       fromDate = LocalDate.of(2023, 8, 3),
       additionalDaysAwarded = AdditionalDaysAwarded(

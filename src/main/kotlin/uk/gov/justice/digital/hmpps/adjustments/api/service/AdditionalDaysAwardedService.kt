@@ -68,7 +68,7 @@ class AdditionalDaysAwardedService(
     val quashed = filterQuashedAdasByMatchingChargeIds(getAdasByDateCharged(adas, QUASHED), adaAdjustments)
     val totalQuashed = getTotalDays(quashed)
 
-    val totalExistingAdas = adaAdjustments.map { it.days!! }.reduceOrNull { acc, it -> acc + it } ?: 0
+    val totalExistingAdas = adaAdjustments.map { it.effectiveDays }.reduceOrNull { acc, it -> acc + it } ?: 0
 
     return AdaAdjudicationDetails(
       awarded,
@@ -118,7 +118,7 @@ class AdditionalDaysAwardedService(
   ): AdaIntercept {
     val anyUnlinkedAdas =
       adaAdjustments.any { it.additionalDaysAwarded?.adjudicationCharges?.isEmpty() ?: true && it.effectiveDays > 0 }
-    val totalAdjustments = adaAdjustments.sumOf { it.days ?: 0 }
+    val totalAdjustments = adaAdjustments.sumOf { it.effectiveDays }
     val totalAdjudications = allAwarded.sumOf { it.total ?: 0 }
     val numPendingApproval = pendingApproval.size
     val numQuashed = quashed.size
@@ -177,7 +177,7 @@ class AdditionalDaysAwardedService(
   }
 
   private fun adjustmentMatchesAdjudication(adjudication: AdasByDateCharged, adjustment: Adjustment): Boolean {
-    return adjudication.total == adjustment.days && adjudication.dateChargeProved == adjustment.fromDate && adjustment.additionalDaysAwarded != null && adjudication.charges.map { it.chargeNumber }
+    return adjudication.total == adjustment.effectiveDays && adjudication.dateChargeProved == adjustment.fromDate && adjustment.additionalDaysAwarded != null && adjudication.charges.map { it.chargeNumber }
       .toSet() == adjustment.additionalDaysAwarded!!.adjudicationCharges.map { it.adjudicationId }.toSet()
   }
 
