@@ -293,7 +293,7 @@ class AdjustmentsService(
   }
 
   private fun mapToDto(adjustment: Adjustment): AdjustmentDto {
-    val latestHistory = adjustment.adjustmentHistory.last()
+    val latestHistory = adjustment.adjustmentHistory.last { it.changeType !in listOf(ChangeType.MERGE, ChangeType.RELEASE, ChangeType.ADMISSION) }
     val legacyData = objectMapper.convertValue(adjustment.legacyData, LegacyData::class.java)
     val prisonDescription = latestHistory.prisonId?.let { prisonApiClient.getPrison(it).description }
     return AdjustmentDto(
