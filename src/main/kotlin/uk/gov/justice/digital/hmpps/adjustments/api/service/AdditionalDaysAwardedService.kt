@@ -195,7 +195,7 @@ class AdditionalDaysAwardedService(
         total = calculateTotal(it),
         status = if (filterStatus != AWARDED_OR_PENDING) AdaStatus.valueOf(filterStatus.name) else null,
       )
-    }
+    }.sortedBy { it.dateChargeProved }
   }
 
   private fun calculateTotal(adaByDateCharge: AdasByDateCharged): Int {
