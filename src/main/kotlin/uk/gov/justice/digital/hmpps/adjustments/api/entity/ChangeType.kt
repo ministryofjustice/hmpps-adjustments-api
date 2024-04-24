@@ -4,4 +4,7 @@ enum class ChangeType {
   CREATE,
   UPDATE,
   DELETE,
+  RELEASE,
+  ADMISSION,
+  MERGE,
 }
