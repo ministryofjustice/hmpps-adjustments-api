@@ -48,7 +48,4 @@ class AdaAdjudicationControllerIntTest : SqsIntegrationTestBase() {
     assertThat(adjudicationDetails.intercept.type).isEqualTo(InterceptType.NONE)
   }
 
-  companion object {
-    private val log = LoggerFactory.getLogger(this::class.java)
-  }
 }
