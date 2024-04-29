@@ -2,7 +2,6 @@ package uk.gov.justice.digital.hmpps.adjustments.api.controller
 
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
-import org.slf4j.LoggerFactory
 import org.springframework.http.MediaType
 import uk.gov.justice.digital.hmpps.adjustments.api.enums.InterceptType
 import uk.gov.justice.digital.hmpps.adjustments.api.integration.SqsIntegrationTestBase
@@ -47,5 +46,4 @@ class AdaAdjudicationControllerIntTest : SqsIntegrationTestBase() {
 
     assertThat(adjudicationDetails.intercept.type).isEqualTo(InterceptType.NONE)
   }
-
 }
