@@ -5,6 +5,7 @@ import org.springframework.transaction.annotation.Transactional
 import uk.gov.justice.digital.hmpps.adjustments.api.client.PrisonApiClient
 import uk.gov.justice.digital.hmpps.adjustments.api.entity.Adjustment
 import uk.gov.justice.digital.hmpps.adjustments.api.entity.AdjustmentType.ADDITIONAL_DAYS_AWARDED
+import uk.gov.justice.digital.hmpps.adjustments.api.entity.ProspectiveAdaRejection
 import uk.gov.justice.digital.hmpps.adjustments.api.enums.AdaStatus
 import uk.gov.justice.digital.hmpps.adjustments.api.enums.AdaStatus.AWARDED
 import uk.gov.justice.digital.hmpps.adjustments.api.enums.AdaStatus.PENDING_APPROVAL
@@ -17,6 +18,7 @@ import uk.gov.justice.digital.hmpps.adjustments.api.enums.InterceptType.FIRST_TI
 import uk.gov.justice.digital.hmpps.adjustments.api.enums.InterceptType.NONE
 import uk.gov.justice.digital.hmpps.adjustments.api.enums.InterceptType.PADA
 import uk.gov.justice.digital.hmpps.adjustments.api.enums.InterceptType.UPDATE
+import uk.gov.justice.digital.hmpps.adjustments.api.model.ProspectiveAdaRejectionDto
 import uk.gov.justice.digital.hmpps.adjustments.api.model.additionaldays.Ada
 import uk.gov.justice.digital.hmpps.adjustments.api.model.additionaldays.AdaAdjudicationDetails
 import uk.gov.justice.digital.hmpps.adjustments.api.model.additionaldays.AdaIntercept
@@ -25,6 +27,7 @@ import uk.gov.justice.digital.hmpps.adjustments.api.model.prisonapi.Adjudication
 import uk.gov.justice.digital.hmpps.adjustments.api.model.prisonapi.Hearing
 import uk.gov.justice.digital.hmpps.adjustments.api.model.prisonapi.Sanction
 import uk.gov.justice.digital.hmpps.adjustments.api.respository.AdjustmentRepository
+import uk.gov.justice.digital.hmpps.adjustments.api.respository.ProspectiveAdaRejectionRepository
 import java.time.LocalDate
 import java.time.LocalDateTime
 
@@ -34,11 +37,21 @@ class AdditionalDaysAwardedService(
   private val prisonService: PrisonService,
   private val adjustmentRepository: AdjustmentRepository,
   private val prisonApiClient: PrisonApiClient,
+  private val prospectiveAdaRejectionRepository: ProspectiveAdaRejectionRepository,
 ) {
 
+  @Transactional
+  fun rejectProspectiveAda(prospectiveAdaRejectionDto: ProspectiveAdaRejectionDto) {
+    prospectiveAdaRejectionRepository.save(ProspectiveAdaRejection(person = prospectiveAdaRejectionDto.person, dateChargeProved = prospectiveAdaRejectionDto.dateChargeProved, days = prospectiveAdaRejectionDto.days))
+  }
+
   fun getAdaAdjudicationDetails(nomsId: String, selectedProspectiveAdaDates: List<String> = listOf()): AdaAdjudicationDetails {
-    val startOfSentenceEnvelope = prisonService.getStartOfSentenceEnvelopeExcludingRecalls(nomsId)
-      ?: return AdaAdjudicationDetails()
+    val sentences = prisonService.getActiveSentencesExcludingRecalls(nomsId)
+    if (sentences.isEmpty()) {
+      return AdaAdjudicationDetails()
+    }
+    val latestSentenceDate = sentences.maxOf { it.sentenceDate }
+    val startOfSentenceEnvelope = sentences.minOf { it.sentenceDate }
     val adaAdjustments = adjustmentRepository.findByPersonAndAdjustmentTypeAndStatus(nomsId, ADDITIONAL_DAYS_AWARDED)
     val adas = lookupAdas(nomsId, startOfSentenceEnvelope)
 
@@ -70,6 +83,8 @@ class AdditionalDaysAwardedService(
 
     val totalExistingAdas = adaAdjustments.map { it.effectiveDays }.reduceOrNull { acc, it -> acc + it } ?: 0
 
+    val padaRejections = prospectiveAdaRejectionRepository.findByPerson(nomsId)
+
     return AdaAdjudicationDetails(
       awarded,
       totalAwarded,
@@ -88,6 +103,8 @@ class AdditionalDaysAwardedService(
         quashed,
         adaAdjustments,
         awarded,
+        latestSentenceDate,
+        padaRejections,
       ),
       totalExistingAdas,
       pendingApproval.isEmpty() && quashed.isEmpty() && awarded.isEmpty(),
@@ -115,6 +132,8 @@ class AdditionalDaysAwardedService(
     quashed: List<AdasByDateCharged>,
     adaAdjustments: List<Adjustment>,
     allAwarded: List<AdasByDateCharged>,
+    latestSentenceDate: LocalDate,
+    padaRejections: List<ProspectiveAdaRejection>,
   ): AdaIntercept {
     val anyUnlinkedAdas =
       adaAdjustments.any { it.additionalDaysAwarded?.adjudicationCharges?.isEmpty() ?: true && it.effectiveDays > 0 }
@@ -122,7 +141,11 @@ class AdditionalDaysAwardedService(
     val totalAdjudications = allAwarded.sumOf { it.total ?: 0 }
     val numPendingApproval = pendingApproval.size
     val numQuashed = quashed.size
-    val numProspective = prospective.size
+    val nonRejectedProspective = prospective.filter {
+      val rejection = padaRejections.find { reject -> reject.dateChargeProved == it.dateChargeProved && reject.days == it.total }
+      rejection == null || rejection.rejectionAt.isBefore(latestSentenceDate.atStartOfDay())
+    }
+    val numProspective = nonRejectedProspective.size
     val anyProspective = numProspective > 0
     return when {
       anyUnlinkedAdas -> AdaIntercept(FIRST_TIME, numProspective + numPendingApproval, anyProspective)

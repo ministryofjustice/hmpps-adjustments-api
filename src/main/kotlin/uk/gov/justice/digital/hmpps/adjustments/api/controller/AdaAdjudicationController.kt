@@ -9,9 +9,12 @@ import org.springframework.http.MediaType
 import org.springframework.security.access.prepost.PreAuthorize
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.PathVariable
+import org.springframework.web.bind.annotation.PostMapping
+import org.springframework.web.bind.annotation.RequestBody
 import org.springframework.web.bind.annotation.RequestMapping
 import org.springframework.web.bind.annotation.RequestParam
 import org.springframework.web.bind.annotation.RestController
+import uk.gov.justice.digital.hmpps.adjustments.api.model.ProspectiveAdaRejectionDto
 import uk.gov.justice.digital.hmpps.adjustments.api.model.additionaldays.AdaAdjudicationDetails
 import uk.gov.justice.digital.hmpps.adjustments.api.model.additionaldays.AdaIntercept
 import uk.gov.justice.digital.hmpps.adjustments.api.service.AdditionalDaysAwardedService
@@ -64,5 +67,26 @@ class AdaAdjudicationController(
     selectedProspectiveAdaDates: List<String>?,
   ): AdaAdjudicationDetails {
     return additionalDaysAwardedService.getAdaAdjudicationDetails(person, selectedProspectiveAdaDates ?: listOf())
+  }
+
+  @PostMapping("/{person}/reject-prospective-ada")
+  @Operation(
+    summary = "Reject prospective ADA.",
+  )
+  @ApiResponses(
+    value = [
+      ApiResponse(responseCode = "200", description = "Reject a prospective ADA"),
+      ApiResponse(responseCode = "401", description = "Unauthorised, requires a valid Oauth2 token"),
+      ApiResponse(responseCode = "404", description = "Adjustment not found"),
+    ],
+  )
+  @PreAuthorize("hasRole('ADJUSTMENTS_MAINTAINER')")
+  fun rejectProspectiveAda(
+    @Parameter(required = true, example = "AA1256A", description = "The noms ID of the person")
+    @PathVariable("person")
+    person: String,
+    @RequestBody prospectiveAdaRejectionDto: ProspectiveAdaRejectionDto,
+  ) {
+    additionalDaysAwardedService.rejectProspectiveAda(prospectiveAdaRejectionDto)
   }
 }

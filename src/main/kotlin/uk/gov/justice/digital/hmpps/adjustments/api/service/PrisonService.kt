@@ -28,6 +28,9 @@ class PrisonService(
   fun getActiveSentencesExcludingRecalls(bookingId: Long): List<SentenceAndOffences> =
     prisonApiClient.getSentencesAndOffences(bookingId).filter { it.sentenceStatus == "A" && !isRecall(it) }
 
+  fun getActiveSentencesExcludingRecalls(personId: String): List<SentenceAndOffences> =
+    getActiveSentencesExcludingRecalls(prisonApiClient.getPrisonerDetail(personId).bookingId)
+
   fun getStartOfSentenceEnvelope(person: String): LocalDate =
     getStartOfSentenceEnvelope(prisonApiClient.getPrisonerDetail(person).bookingId)
 
