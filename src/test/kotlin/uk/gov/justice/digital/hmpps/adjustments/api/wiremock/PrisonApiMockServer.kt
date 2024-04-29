@@ -35,6 +35,7 @@ class PrisonApiExtension : BeforeAllCallback, AfterAllCallback, BeforeEachCallba
     prisonApi.stubGetPrison("MRG", "Moorgate")
     prisonApi.stubGetRecallPrisonerDetails()
     prisonApi.stubRecallSentenceAndOffences()
+    prisonApi.stubAdjudications()
   }
 
   override fun beforeEach(context: ExtensionContext) {
@@ -189,5 +190,30 @@ class PrisonApiMockServer : WireMockServer(WIREMOCK_PORT) {
             .withStatus(200),
         ),
     )
+  }
+
+  fun stubAdjudications() {
+    val data = AdjudicationResponses()
+    stubFor(
+      get("/api/offenders/$PRISONER_ID/adjudications")
+        .willReturn(
+          aResponse()
+            .withHeader("Content-Type", "application/json")
+            .withBody(data.searchResponse)
+            .withStatus(200),
+        ),
+    )
+
+    data.adjudicationResponses.forEach { (adjudicationId, response) ->
+      stubFor(
+        get("/api/offenders/$PRISONER_ID/adjudications/$adjudicationId")
+          .willReturn(
+            aResponse()
+              .withHeader("Content-Type", "application/json")
+              .withBody(response)
+              .withStatus(200),
+          ),
+      )
+    }
   }
 }
