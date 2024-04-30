@@ -34,7 +34,7 @@ class LegacyService(
 
   @Transactional
   fun create(resource: LegacyAdjustment, migration: Boolean): LegacyAdjustmentCreatedResponse {
-    val prisonId = if (migration) null else systemPrisonApiClient.getPrisonerDetail(resource.offenderNo).agencyId
+    val prisonId = if (migration) null else getAgencyId(resource)
     val adjustment = Adjustment(
       person = resource.offenderNo,
       effectiveDays = resource.adjustmentDays,
@@ -57,6 +57,10 @@ class LegacyService(
     return LegacyAdjustmentCreatedResponse(adjustmentRepository.save(adjustment).id)
   }
 
+  private fun getAgencyId(resource: LegacyAdjustment): String {
+    return resource.agencyId ?: systemPrisonApiClient.getPrisonerDetail(resource.offenderNo).agencyId
+  }
+
   fun get(adjustmentId: UUID): LegacyAdjustment {
     val adjustment = adjustmentRepository.findById(adjustmentId)
       .map { if (it.status.isDeleted()) null else it }
@@ -75,6 +79,7 @@ class LegacyService(
       active = legacyData.adjustmentActive && !shouldSetAdjustmentToInactiveBecauseOfUnusedDeductions(adjustment),
       bookingReleased = !legacyData.bookingActive,
       comment = legacyData.comment,
+      agencyId = null,
     )
   }
 
@@ -95,7 +100,7 @@ class LegacyService(
       .orElseThrow {
         EntityNotFoundException("No adjustment found with id $adjustmentId")
       }
-    val prisonId = systemPrisonApiClient.getPrisonerDetail(resource.offenderNo).agencyId
+    val prisonId = getAgencyId(resource)
     val change = objectToJson(adjustment)
     adjustment.apply {
       effectiveDays = resource.adjustmentDays

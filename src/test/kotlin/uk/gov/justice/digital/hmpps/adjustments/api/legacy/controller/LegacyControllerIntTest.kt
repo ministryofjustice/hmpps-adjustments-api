@@ -34,19 +34,7 @@ class LegacyControllerIntTest : SqsIntegrationTestBase() {
 
   @BeforeEach
   fun setup() {
-    val result = webTestClient
-      .post()
-      .uri("/legacy/adjustments")
-      .headers(
-        setLegacySynchronisationAuth(),
-      )
-      .header("Content-Type", LegacyController.LEGACY_CONTENT_TYPE)
-      .bodyValue(CREATED_ADJUSTMENT)
-      .exchange()
-      .expectStatus().isCreated
-      .returnResult(LegacyAdjustmentCreatedResponse::class.java)
-      .responseBody.blockFirst()!!
-    createdId = result.adjustmentId
+    createdId = createAdjustment(CREATED_ADJUSTMENT).adjustmentId
   }
 
   @Test
@@ -59,6 +47,7 @@ class LegacyControllerIntTest : SqsIntegrationTestBase() {
     assertThat(adjustment.adjustmentHistory[0].changeType).isEqualTo(ChangeType.CREATE)
     assertThat(adjustment.adjustmentHistory[0].changeByUsername).isEqualTo("NOMIS")
     assertThat(adjustment.adjustmentHistory[0].changeSource).isEqualTo(AdjustmentSource.NOMIS)
+    assertThat(adjustment.adjustmentHistory[0].prisonId).isEqualTo("LDS")
     assertThat(adjustment.source).isEqualTo(AdjustmentSource.NOMIS)
     assertThat(adjustment.status).isEqualTo(AdjustmentStatus.INACTIVE)
 
@@ -75,6 +64,15 @@ class LegacyControllerIntTest : SqsIntegrationTestBase() {
     assertThat(latestMessage).contains(adjustment.id.toString())
     assertThat(latestMessage).contains(EventType.ADJUSTMENT_CREATED.value)
     assertThat(latestMessage).contains(AdjustmentSource.NOMIS.name)
+  }
+
+  @Test
+  fun `create with API agency ID`() {
+    val result = createAdjustment(CREATED_ADJUSTMENT.copy(agencyId = "ABC"))
+    val adjustment = adjustmentRepository.findById(result.adjustmentId).get()
+
+    assertThat(adjustment.adjustmentHistory).singleElement()
+    assertThat(adjustment.adjustmentHistory[0].prisonId).isEqualTo("ABC")
   }
 
   @Test
@@ -152,6 +150,7 @@ class LegacyControllerIntTest : SqsIntegrationTestBase() {
     assertThat(adjustment.adjustmentHistory[1].changeByUsername).isEqualTo("NOMIS")
     assertThat(adjustment.adjustmentHistory[1].changeSource).isEqualTo(AdjustmentSource.NOMIS)
     assertThat(adjustment.adjustmentHistory[1].change.toString()).contains("Created")
+    assertThat(adjustment.adjustmentHistory[1].prisonId).isEqualTo("LDS")
     assertThat(adjustment.status).isEqualTo(AdjustmentStatus.ACTIVE)
     assertThat(adjustment.source).isEqualTo(AdjustmentSource.NOMIS)
 
@@ -229,6 +228,21 @@ class LegacyControllerIntTest : SqsIntegrationTestBase() {
     assertThat(legacyData).isEqualTo(LegacyData(bookingId = 1, sentenceSequence = 1, postedDate = LocalDate.now(), comment = "Created", type = LegacyAdjustmentType.UR, migration = false, bookingActive = false, adjustmentActive = true))
   }
 
+  private fun createAdjustment(legacyAdjustment: LegacyAdjustment): LegacyAdjustmentCreatedResponse {
+    return webTestClient
+      .post()
+      .uri("/legacy/adjustments")
+      .headers(
+        setLegacySynchronisationAuth(),
+      )
+      .header("Content-Type", LegacyController.LEGACY_CONTENT_TYPE)
+      .bodyValue(legacyAdjustment)
+      .exchange()
+      .expectStatus().isCreated
+      .returnResult(LegacyAdjustmentCreatedResponse::class.java)
+      .responseBody.blockFirst()!!
+  }
+
   companion object {
     private val CREATED_ADJUSTMENT = LegacyAdjustment(
       bookingId = 1,
@@ -241,6 +255,7 @@ class LegacyControllerIntTest : SqsIntegrationTestBase() {
       comment = "Created",
       active = false,
       bookingReleased = false,
+      agencyId = null,
     )
   }
 }

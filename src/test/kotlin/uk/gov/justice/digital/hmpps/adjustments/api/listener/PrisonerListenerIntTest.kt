@@ -277,5 +277,6 @@ class PrisonerListenerIntTest : SqsIntegrationTestBase() {
     comment = "Created",
     active = true,
     bookingReleased = false,
+    agencyId = null,
   )
 }
