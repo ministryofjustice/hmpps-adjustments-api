@@ -554,7 +554,28 @@ class AdditionalDaysAddedServiceTest {
       )
       whenever(prisonApiClient.getAdjudications(NOMS_ID)).thenReturn(oneAdjudicationSearchResponse)
       whenever(prisonApiClient.getAdjudication(NOMS_ID, 1525916)).thenReturn(adjudicationOneProspective)
-      whenever(prospectiveAdaRejectionRepository.findByPerson(NOMS_ID)).thenReturn(listOf(ProspectiveAdaRejection(rejectionAt = LocalDate.of(2024, 1, 1).atStartOfDay(), days = 10, dateChargeProved = LocalDate.of(2023, 8, 3))))
+      whenever(prospectiveAdaRejectionRepository.findByPerson(NOMS_ID)).thenReturn(listOf(ProspectiveAdaRejection(rejectionAt = sentenceDate.plusDays(5).atStartOfDay(), days = 10, dateChargeProved = LocalDate.of(2023, 8, 3))))
+      whenever(prisonService.getActiveSentencesExcludingRecalls(NOMS_ID)).thenReturn(sentences)
+
+      val intercept = additionalDaysAwardedService.getAdaAdjudicationDetails(NOMS_ID).intercept
+
+      assertThat(intercept.type).isEqualTo(NONE)
+    }
+
+    @Test
+    fun `Shouldnt intercept if any prospective and rejected multiple times`() {
+      whenever(
+        adjustmentRepository.findByPersonAndAdjustmentTypeAndStatus(
+          NOMS_ID,
+          ADDITIONAL_DAYS_AWARDED,
+        ),
+      ).thenReturn(
+        emptyList(),
+      )
+      whenever(prisonApiClient.getAdjudications(NOMS_ID)).thenReturn(oneAdjudicationSearchResponse)
+      whenever(prisonApiClient.getAdjudication(NOMS_ID, 1525916)).thenReturn(adjudicationOneProspective)
+      whenever(prospectiveAdaRejectionRepository.findByPerson(NOMS_ID)).thenReturn(listOf(ProspectiveAdaRejection(rejectionAt = sentenceDate.minusDays(5).atStartOfDay(), days = 10, dateChargeProved = LocalDate.of(2023, 8, 3))))
+      whenever(prospectiveAdaRejectionRepository.findByPerson(NOMS_ID)).thenReturn(listOf(ProspectiveAdaRejection(rejectionAt = sentenceDate.plusDays(5).atStartOfDay(), days = 10, dateChargeProved = LocalDate.of(2023, 8, 3))))
       whenever(prisonService.getActiveSentencesExcludingRecalls(NOMS_ID)).thenReturn(sentences)
 
       val intercept = additionalDaysAwardedService.getAdaAdjudicationDetails(NOMS_ID).intercept
@@ -574,7 +595,7 @@ class AdditionalDaysAddedServiceTest {
       )
       whenever(prisonApiClient.getAdjudications(NOMS_ID)).thenReturn(oneAdjudicationSearchResponse)
       whenever(prisonApiClient.getAdjudication(NOMS_ID, 1525916)).thenReturn(adjudicationOneProspective)
-      whenever(prospectiveAdaRejectionRepository.findByPerson(NOMS_ID)).thenReturn(listOf(ProspectiveAdaRejection(rejectionAt = LocalDate.of(2022, 1, 1).atStartOfDay(), days = 10, dateChargeProved = LocalDate.of(2023, 8, 3))))
+      whenever(prospectiveAdaRejectionRepository.findByPerson(NOMS_ID)).thenReturn(listOf(ProspectiveAdaRejection(rejectionAt = sentenceDate.minusDays(5).atStartOfDay(), days = 10, dateChargeProved = LocalDate.of(2023, 8, 3))))
       whenever(prisonService.getActiveSentencesExcludingRecalls(NOMS_ID)).thenReturn(sentences)
 
       val intercept = additionalDaysAwardedService.getAdaAdjudicationDetails(NOMS_ID).intercept
@@ -920,6 +941,7 @@ class AdditionalDaysAddedServiceTest {
         adjudication3SearchResponse,
       ),
     )
-    private val sentences = listOf(SentenceAndOffences(sentenceDate = LocalDate.of(2023, 1, 1), bookingId = 1, sentenceSequence = 1, sentenceCalculationType = "", sentenceCategory = "", consecutiveToSequence = 1, caseSequence = 1, lineSequence = 1, sentenceStatus = "A", sentenceTypeDescription = ""))
+    private val sentenceDate = LocalDate.of(2023, 1, 1)
+    private val sentences = listOf(SentenceAndOffences(sentenceDate = sentenceDate, bookingId = 1, sentenceSequence = 1, sentenceCalculationType = "", sentenceCategory = "", consecutiveToSequence = 1, caseSequence = 1, lineSequence = 1, sentenceStatus = "A", sentenceTypeDescription = ""))
   }
 }
