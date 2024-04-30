@@ -142,8 +142,9 @@ class AdditionalDaysAwardedService(
     val numPendingApproval = pendingApproval.size
     val numQuashed = quashed.size
     val nonRejectedProspective = prospective.filter {
-      val rejection = padaRejections.find { reject -> reject.dateChargeProved == it.dateChargeProved && reject.days == it.total }
-      rejection == null || rejection.rejectionAt.isBefore(latestSentenceDate.atStartOfDay())
+      val rejections = padaRejections.filter { reject -> reject.dateChargeProved == it.dateChargeProved && reject.days == it.total }
+      val latestRejection = rejections.maxByOrNull { it.rejectionAt }
+      latestRejection == null || latestRejection.rejectionAt.isBefore(latestSentenceDate.atStartOfDay())
     }
     val numProspective = nonRejectedProspective.size
     val anyProspective = numProspective > 0
