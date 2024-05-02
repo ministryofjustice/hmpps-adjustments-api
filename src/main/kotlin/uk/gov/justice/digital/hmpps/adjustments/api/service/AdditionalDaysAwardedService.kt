@@ -135,8 +135,7 @@ class AdditionalDaysAwardedService(
     latestSentenceDate: LocalDate,
     padaRejections: List<ProspectiveAdaRejection>,
   ): AdaIntercept {
-    val anyUnlinkedAdas =
-      adaAdjustments.any { it.additionalDaysAwarded?.adjudicationCharges?.isEmpty() ?: true && it.effectiveDays > 0 }
+    val anyUnlinkedAdas = anyUnlinkedAdas(adaAdjustments)
     val totalAdjustments = adaAdjustments.sumOf { it.effectiveDays }
     val totalAdjudications = allAwarded.sumOf { it.total ?: 0 }
     val numPendingApproval = pendingApproval.size
@@ -164,6 +163,10 @@ class AdditionalDaysAwardedService(
     }
   }
 
+  private fun anyUnlinkedAdas(adaAdjustments: List<Adjustment>): Boolean {
+    return adaAdjustments.any { it.additionalDaysAwarded?.adjudicationCharges?.isEmpty() ?: true && it.effectiveDays > 0 }
+  }
+
   private fun filterQuashedAdasByMatchingChargeIds(
     adas: List<AdasByDateCharged>,
     adjustments: List<Adjustment>,
@@ -178,11 +181,11 @@ class AdditionalDaysAwardedService(
     adas: List<AdasByDateCharged>,
     adjustments: List<Adjustment>,
   ): Pair<List<AdasByDateCharged>, List<AdasByDateCharged>> {
-    return if (adjustments.any { it.additionalDaysAwarded == null }) {
+    return if (anyUnlinkedAdas(adjustments)) {
       // An ADA has been created in NOMIS, Revert everything to pending approval
       Pair(
-        adas.map { it.copy(status = PENDING_APPROVAL) },
         emptyList(),
+        adas.map { it.copy(status = PENDING_APPROVAL) },
       )
     } else {
       val awardedAndPendingAdas = adas.map { adasByDate ->
