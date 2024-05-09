@@ -23,21 +23,19 @@ import uk.gov.justice.digital.hmpps.adjustments.api.model.additionaldays.Ada
 import uk.gov.justice.digital.hmpps.adjustments.api.model.additionaldays.AdaAdjudicationDetails
 import uk.gov.justice.digital.hmpps.adjustments.api.model.additionaldays.AdaIntercept
 import uk.gov.justice.digital.hmpps.adjustments.api.model.additionaldays.AdasByDateCharged
-import uk.gov.justice.digital.hmpps.adjustments.api.model.prisonapi.AdjudicationDetail
-import uk.gov.justice.digital.hmpps.adjustments.api.model.prisonapi.Hearing
-import uk.gov.justice.digital.hmpps.adjustments.api.model.prisonapi.Sanction
 import uk.gov.justice.digital.hmpps.adjustments.api.respository.AdjustmentRepository
 import uk.gov.justice.digital.hmpps.adjustments.api.respository.ProspectiveAdaRejectionRepository
 import java.time.LocalDate
-import java.time.LocalDateTime
 
 @Service
 @Transactional(readOnly = true)
 class AdditionalDaysAwardedService(
   private val prisonService: PrisonService,
   private val adjustmentRepository: AdjustmentRepository,
-  private val prisonApiClient: PrisonApiClient,
   private val prospectiveAdaRejectionRepository: ProspectiveAdaRejectionRepository,
+  private val prisonApiClient: PrisonApiClient,
+  private val prisonApiLookupService: PrisonApiLookupService,
+  private val adjudicationsLookupService: AdjudicationsLookupService,
 ) {
 
   @Transactional
@@ -45,7 +43,7 @@ class AdditionalDaysAwardedService(
     prospectiveAdaRejectionRepository.save(ProspectiveAdaRejection(person = prospectiveAdaRejectionDto.person, dateChargeProved = prospectiveAdaRejectionDto.dateChargeProved, days = prospectiveAdaRejectionDto.days))
   }
 
-  fun getAdaAdjudicationDetails(nomsId: String, selectedProspectiveAdaDates: List<String> = listOf()): AdaAdjudicationDetails {
+  fun getAdaAdjudicationDetails(nomsId: String, service: String, selectedProspectiveAdaDates: List<String> = listOf()): AdaAdjudicationDetails {
     val sentences = prisonService.getActiveSentencesExcludingRecalls(nomsId)
     if (sentences.isEmpty()) {
       return AdaAdjudicationDetails()
@@ -53,7 +51,7 @@ class AdditionalDaysAwardedService(
     val latestSentenceDate = sentences.maxOf { it.sentenceDate }
     val startOfSentenceEnvelope = sentences.minOf { it.sentenceDate }
     val adaAdjustments = adjustmentRepository.findByPersonAndAdjustmentTypeAndStatus(nomsId, ADDITIONAL_DAYS_AWARDED)
-    val adas = lookupAdas(nomsId, startOfSentenceEnvelope)
+    val adas = if (service == PrisonApiLookupService.PRISON_API_LOOKUP_SERVICE)prisonApiLookupService.lookupAdas(nomsId, startOfSentenceEnvelope) else adjudicationsLookupService.lookupAdas(nomsId, startOfSentenceEnvelope)
 
     var (awarded, pendingApproval) = filterAdasByMatchingAdjustment(
       getAdasByDateCharged(adas, AWARDED_OR_PENDING),
@@ -208,13 +206,6 @@ class AdditionalDaysAwardedService(
       .toSet() == adjustment.additionalDaysAwarded!!.adjudicationCharges.map { it.adjudicationId }.toSet()
   }
 
-  private fun lookupAdas(nomsId: String, startOfSentenceEnvelope: LocalDate): List<Ada> {
-    val adjudications = prisonApiClient.getAdjudications(nomsId)
-    val individualAdjudications =
-      adjudications.results.map { prisonApiClient.getAdjudication(nomsId, it.adjudicationNumber) }
-    return getAdas(individualAdjudications, startOfSentenceEnvelope)
-  }
-
   private fun getAdasByDateCharged(adas: List<Ada>, filterStatus: ChargeStatus): List<AdasByDateCharged> {
     val adasByDateCharged = adas.filter { it.status == filterStatus }.groupBy { it.dateChargeProved }
     return associateConsecutiveAdas(adasByDateCharged, adas).map {
@@ -294,93 +285,5 @@ class AdditionalDaysAwardedService(
     allAdas.filter { ada -> ada.consecutiveToSequence != null && allAdas.any { it.sequence == ada.consecutiveToSequence } }
       .map { consecutiveAda -> allAdas.first { it.sequence == consecutiveAda.consecutiveToSequence } }
 
-  private fun prospectiveOrSanctioned(hearing: Hearing, startOfSentenceEnvelope: LocalDate): Boolean {
-    return hearing.results != null && hearing.results.any { r ->
-      r.sanctions != null && r.sanctions.any { s ->
-        isProspectiveOrSanctioned(s, hearing.hearingTime, startOfSentenceEnvelope)
-      }
-    }
-  }
-
-  private fun getAdas(
-    individualAdjudications: List<AdjudicationDetail>,
-    startOfSentenceEnvelope: LocalDate,
-  ): List<Ada> {
-    val adasToTransform = individualAdjudications.filter { ad ->
-      ad.hearings != null && ad.hearings.any { h -> prospectiveOrSanctioned(h, startOfSentenceEnvelope) }
-    }
-
-    return adasToTransform.fold(mutableListOf()) { acc, cur ->
-      cur.hearings!!.filter { h ->
-        h.results != null && h.results.any { r ->
-          r.sanctions != null && r.sanctions.any { s ->
-            isProspectiveOrSanctioned(s, h.hearingTime, startOfSentenceEnvelope)
-          }
-        }
-      }.forEach { h ->
-        val result = h.results!!.first { r ->
-          r.sanctions != null && r.sanctions.any { s ->
-            isProspectiveOrSanctioned(s, h.hearingTime, startOfSentenceEnvelope)
-          }
-        }
-        result.sanctions!!.filter { s -> isProspectiveOrSanctioned(s, h.hearingTime, startOfSentenceEnvelope) }
-          .forEach { sanction ->
-            acc.add(
-              Ada(
-                dateChargeProved = h.hearingTime.toLocalDate(),
-                days = sanction.sanctionDays,
-                chargeNumber = cur.adjudicationNumber,
-                consecutiveToSequence = sanction.consecutiveSanctionSeq,
-                heardAt = h.establishment,
-                sequence = sanction.sanctionSeq,
-                status = deriveChargeStatus(sanction),
-              ),
-            )
-          }
-      }
-      acc
-    }
-  }
-
-  private fun deriveChargeStatus(sanction: Sanction): ChargeStatus {
-    if (isSuspended(sanction)) return SUSPENDED
-    if (sanction.status == "Quashed") return QUASHED
-    if (isProspectiveAda(sanction)) return PROSPECTIVE
-    return AWARDED_OR_PENDING
-  }
-
-  private fun isProspectiveOrSanctioned(
-    sanction: Sanction,
-    hearingTime: LocalDateTime,
-    startOfSentenceEnvelope: LocalDate,
-  ) = isProspectiveAda(sanction) || isSanctionedAda(sanction, hearingTime.toLocalDate(), startOfSentenceEnvelope)
-
-  /* The adjudications status from NOMIS DB mapped to the adjudications API status are listed here temporarily to make it easier to implement the stories which use the NOMIS status
-   * 'AS_AWARDED' = 'Activated as Awarded'
-   * 'AWARD_RED' = 'Activated with Quantum Reduced'
-   * 'IMMEDIATE' = 'Immediate'
-   * 'PROSPECTIVE' = 'Prospective'
-   * 'QUASHED' = 'Quashed'
-   * 'REDAPP' = 'Reduced on Appeal'
-   * 'SUSPENDED' = 'Suspended'
-   * 'SUSPEN_EXT' = 'Period of Suspension Extended'
-   * 'SUSPEN_RED' = 'Period of Suspension Shortened
-   * 'SUSP_PROSP' = 'Suspended and Prospective'
-   */
-  private fun sanctionIsProspective(s: Sanction) = s.status == "Prospective" || s.status == "Suspended and Prospective"
-
-  private fun sanctionIsAda(s: Sanction) = s.sanctionType == "Additional Days Added"
-  private fun isSanctionedAda(sanction: Sanction, hearingDate: LocalDate, startOfSentenceEnvelope: LocalDate) =
-    sanctionIsAda(sanction) &&
-      !sanctionIsProspective(sanction) &&
-      sanction.sanctionDays > 0 && hearingDate >= startOfSentenceEnvelope
-
-  private fun isProspectiveAda(s: Sanction) = sanctionIsAda(s) && sanctionIsProspective(s)
-
-  private fun adaHasSequence(sequence: Long?, ada: Ada) = sequence != null && sequence == ada.sequence
-
-  private fun isSuspended(sanction: Sanction): Boolean = sanction.status == "Suspended" ||
-    sanction.status == "Suspended and Prospective" ||
-    sanction.status == "Period of Suspension Extended" ||
-    sanction.status == "Period of Suspension Shortened"
+  private fun adaHasSequence(sequence: String?, ada: Ada) = sequence != null && sequence == ada.sequence
 }

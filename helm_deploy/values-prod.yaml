@@ -10,6 +10,7 @@ generic-service:
     HMPPS_AUTH_URL: https://sign-in.hmpps.service.justice.gov.uk/auth
     PRISON_API_URL: https://api.prison.service.justice.gov.uk
     CALCULATERELEASEDATES_API_URL: https://calculate-release-dates-api.hmpps.service.justice.gov.uk
+    ADJUDICATIONS_API_URL: https://manage-adjudications-api.hmpps.service.justice.gov.uk
 
   postgresDatabaseRestore:
     enabled: true
