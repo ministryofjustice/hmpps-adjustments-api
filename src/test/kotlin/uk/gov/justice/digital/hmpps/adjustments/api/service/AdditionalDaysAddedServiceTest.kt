@@ -412,7 +412,7 @@ class AdditionalDaysAddedServiceTest {
 
       val intercept = additionalDaysAwardedService.getAdaAdjudicationDetails(NOMS_ID, PrisonApiLookupService.PRISON_API_LOOKUP_SERVICE).intercept
 
-      assertThat(intercept).isEqualTo(AdaIntercept(FIRST_TIME, 0, false, emptyList()))
+      assertThat(intercept).isEqualTo(AdaIntercept(FIRST_TIME, 1, false, emptyList()))
       assertThat(intercept.message).isEqualTo("The first time you use the adjustments service, you need to check if the existing adjustment information from NOMIS is correct.")
     }
 
