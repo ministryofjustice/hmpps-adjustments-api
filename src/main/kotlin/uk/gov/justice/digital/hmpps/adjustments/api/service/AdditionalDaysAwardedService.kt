@@ -58,14 +58,17 @@ class AdditionalDaysAwardedService(
       adaAdjustments,
     )
 
-    val suspended = getAdasByDateCharged(adas, SUSPENDED)
+    val suspended = sortAdaChargesByForthwithFirst(getAdasByDateCharged(adas, SUSPENDED))
     val totalSuspended = getTotalDays(suspended)
 
-    val (prospectiveAwarded, prospective) = filterAdasByMatchingAdjustment(
+    var (prospectiveAwarded, prospective) = filterAdasByMatchingAdjustment(
       getAdasByDateCharged(adas, PROSPECTIVE),
       adaAdjustments,
     )
+    prospective = sortAdaChargesByForthwithFirst(prospective)
+
     awarded = awarded + prospectiveAwarded
+    awarded = this.sortAdaChargesByForthwithFirst(awarded)
     val totalAwarded = getTotalDays(awarded)
 
     val totalProspective = getTotalDays(prospective)
@@ -74,9 +77,10 @@ class AdditionalDaysAwardedService(
       selectedProspectiveAdaDates.contains(it.dateChargeProved.toString())
     }
     pendingApproval = pendingApproval + selectedProspectiveAdas
+    pendingApproval = sortAdaChargesByForthwithFirst(pendingApproval)
     val totalAwaitingApproval = getTotalDays(pendingApproval)
 
-    val quashed = filterQuashedAdasByMatchingChargeIds(getAdasByDateCharged(adas, QUASHED), adaAdjustments)
+    val quashed = sortAdaChargesByForthwithFirst(filterQuashedAdasByMatchingChargeIds(getAdasByDateCharged(adas, QUASHED), adaAdjustments))
     val totalQuashed = getTotalDays(quashed)
 
     val totalExistingAdas = adaAdjustments.map { it.effectiveDays }.reduceOrNull { acc, it -> acc + it } ?: 0
@@ -111,6 +115,20 @@ class AdditionalDaysAwardedService(
 
   private fun getTotalDays(adas: List<AdasByDateCharged>): Int {
     return adas.map { it.total!! }.reduceOrNull { acc, it -> acc + it } ?: 0
+  }
+
+  private fun sortAdaChargesByForthwithFirst(adas: List<AdasByDateCharged>): List<AdasByDateCharged> {
+    adas.forEach { ada ->
+      ada.charges.sortBy { charge ->
+        when (charge.toBeServed) {
+            "Forthwith" -> 0
+            null -> 2
+            else -> 1
+        }
+      }
+    }
+
+    return adas
   }
 
   private fun getMessageParams(nomsId: String): List<String> {
