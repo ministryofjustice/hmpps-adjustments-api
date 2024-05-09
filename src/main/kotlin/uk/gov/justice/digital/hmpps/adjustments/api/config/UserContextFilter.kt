@@ -9,8 +9,6 @@ import jakarta.servlet.ServletResponse
 import jakarta.servlet.http.HttpServletRequest
 import org.springframework.core.annotation.Order
 import org.springframework.http.HttpHeaders
-import org.springframework.security.authentication.AbstractAuthenticationToken
-import org.springframework.security.core.context.SecurityContextHolder
 import org.springframework.stereotype.Component
 import java.io.IOException
 
