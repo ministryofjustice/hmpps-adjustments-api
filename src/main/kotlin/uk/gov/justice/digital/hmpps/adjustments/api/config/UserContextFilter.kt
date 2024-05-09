@@ -19,10 +19,16 @@ class UserContextFilter : Filter {
   override fun doFilter(servletRequest: ServletRequest, servletResponse: ServletResponse, filterChain: FilterChain) {
     val httpServletRequest = servletRequest as HttpServletRequest
     val authToken = httpServletRequest.getHeader(HttpHeaders.AUTHORIZATION)
+    val activeCaseloadId = httpServletRequest.getHeader(ACTIVE_CASELOAD)
     UserContext.setAuthToken(authToken)
+    UserContext.setActiveCaseloadId(activeCaseloadId)
     filterChain.doFilter(httpServletRequest, servletResponse)
   }
 
   override fun init(filterConfig: FilterConfig) {}
   override fun destroy() {}
+
+  companion object {
+    const val ACTIVE_CASELOAD = "Active-Caseload"
+  }
 }

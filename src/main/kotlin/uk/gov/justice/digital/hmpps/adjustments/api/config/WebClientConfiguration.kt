@@ -19,6 +19,7 @@ import org.springframework.web.reactive.function.client.WebClient
 class WebClientConfiguration(
   @Value("\${hmpps.auth.url}") private val oauthApiUrl: String,
   @Value("\${prison.api.url}") private val prisonApiUri: String,
+  @Value("\${adjudications.api.url}") private val adjudicationsApiUri: String,
 ) {
   @Bean
   fun prisonApiWebClient(): WebClient {
@@ -38,6 +39,15 @@ class WebClientConfiguration(
       .build()
   }
 
+  @Bean
+  fun adjudicationApiWebClient(authorizedClientManager: OAuth2AuthorizedClientManager): WebClient {
+    val filter = ServletOAuth2AuthorizedClientExchangeFilterFunction(authorizedClientManager)
+    filter.setDefaultClientRegistrationId("hmpps-api")
+    return WebClient.builder()
+      .baseUrl(adjudicationsApiUri)
+      .filter(filter)
+      .build()
+  }
   private fun addAuthHeaderFilterFunction(): ExchangeFilterFunction {
     return ExchangeFilterFunction { request: ClientRequest, next: ExchangeFunction ->
       val filtered = ClientRequest.from(request)

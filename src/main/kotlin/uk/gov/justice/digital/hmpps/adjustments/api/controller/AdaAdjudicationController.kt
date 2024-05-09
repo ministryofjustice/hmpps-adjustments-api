@@ -18,6 +18,7 @@ import uk.gov.justice.digital.hmpps.adjustments.api.model.ProspectiveAdaRejectio
 import uk.gov.justice.digital.hmpps.adjustments.api.model.additionaldays.AdaAdjudicationDetails
 import uk.gov.justice.digital.hmpps.adjustments.api.model.additionaldays.AdaIntercept
 import uk.gov.justice.digital.hmpps.adjustments.api.service.AdditionalDaysAwardedService
+import uk.gov.justice.digital.hmpps.adjustments.api.service.PrisonApiLookupService
 
 @RestController
 @RequestMapping("/adjustments/additional-days", produces = [MediaType.APPLICATION_JSON_VALUE])
@@ -43,7 +44,7 @@ class AdaAdjudicationController(
     @PathVariable("person")
     person: String,
   ): AdaIntercept {
-    return additionalDaysAwardedService.getAdaAdjudicationDetails(person).intercept
+    return additionalDaysAwardedService.getAdaAdjudicationDetails(person, PrisonApiLookupService.PRISON_API_LOOKUP_SERVICE).intercept
   }
 
   @GetMapping("/{person}/adjudication-details")
@@ -65,8 +66,11 @@ class AdaAdjudicationController(
     @Parameter(required = false, example = "2022-01-10,2022-02-11", description = "The dates of selected prospective adas")
     @RequestParam("selectedProspectiveAdaDates")
     selectedProspectiveAdaDates: List<String>?,
+    @Parameter(required = false, example = "PRISON-API", description = "Which service to look adas from, defaults to prison api.")
+    @RequestParam("service")
+    service: String?,
   ): AdaAdjudicationDetails {
-    return additionalDaysAwardedService.getAdaAdjudicationDetails(person, selectedProspectiveAdaDates ?: listOf())
+    return additionalDaysAwardedService.getAdaAdjudicationDetails(person, service ?: PrisonApiLookupService.PRISON_API_LOOKUP_SERVICE, selectedProspectiveAdaDates ?: listOf())
   }
 
   @PostMapping("/{person}/reject-prospective-ada")
