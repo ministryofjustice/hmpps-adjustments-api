@@ -121,9 +121,9 @@ class AdditionalDaysAwardedService(
     adas.forEach { ada ->
       ada.charges.sortBy { charge ->
         when (charge.toBeServed) {
-            "Forthwith" -> 0
-            null -> 2
-            else -> 1
+          "Forthwith" -> 0
+          null -> 2
+          else -> 1
         }
       }
     }
