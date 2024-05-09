@@ -1,6 +1,6 @@
 package uk.gov.justice.digital.hmpps.adjustments.api.model.adjudications
 
-data class AdjudicationOutcome(
+data class OutcomeAndHearing(
   val hearing: Hearing?,
-  val outcome: Outcome?,
+  val outcome: NestedOutcome?,
 )

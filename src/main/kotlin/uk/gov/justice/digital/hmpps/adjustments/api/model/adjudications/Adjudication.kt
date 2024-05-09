@@ -4,6 +4,6 @@ data class Adjudication(
   val chargeNumber: String,
   val prisonerNumber: String,
   val status: String,
-  val outcomes: List<AdjudicationOutcome>,
+  val outcomes: List<OutcomeAndHearing>,
   val punishments: List<Punishment>,
 )
