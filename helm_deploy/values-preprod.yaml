@@ -12,6 +12,7 @@ generic-service:
     HMPPS_AUTH_URL: https://sign-in-preprod.hmpps.service.justice.gov.uk/auth
     PRISON_API_URL: https://prison-api-preprod.prison.service.justice.gov.uk
     CALCULATERELEASEDATES_API_URL: https://calculate-release-dates-api-preprod.hmpps.service.justice.gov.uk
+    ADJUDICATIONS_API_URL: https://manage-adjudications-api-preprod.hmpps.service.justice.gov.uk
 
   allowlist:
     cymulate-1: 54.217.50.18/32

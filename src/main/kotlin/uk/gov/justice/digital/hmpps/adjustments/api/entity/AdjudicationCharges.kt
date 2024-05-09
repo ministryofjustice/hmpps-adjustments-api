@@ -6,5 +6,5 @@ import jakarta.validation.constraints.NotNull
 @Embeddable
 data class AdjudicationCharges(
   @NotNull
-  var adjudicationId: Long = -1,
+  var adjudicationId: String = "",
 )

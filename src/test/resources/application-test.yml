@@ -48,6 +48,10 @@ prison:
   api:
     url: http://localhost:8332
 
+adjudications:
+  api:
+    url: http://localhost:8333
+
 hmpps.sqs:
   reactiveApi: true
   provider: localstack

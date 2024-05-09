@@ -1,0 +1,1 @@
+ALTER TABLE adjudication_charges ALTER COLUMN adjudication_id TYPE varchar(255);

@@ -362,7 +362,7 @@ class AdjustmentControllerIntTest : SqsIntegrationTestBase() {
         person = PrisonApiExtension.PRISONER_ID,
         adjustmentType = AdjustmentType.ADDITIONAL_DAYS_AWARDED,
         additionalDaysAwarded = AdditionalDaysAwardedDto(
-          adjudicationId = listOf(987654321, 23456789),
+          adjudicationId = listOf("987654321", "23456789"),
           prospective = true,
         ),
       )
@@ -372,9 +372,9 @@ class AdjustmentControllerIntTest : SqsIntegrationTestBase() {
       assertThat(adjustment.additionalDaysAwarded!!.adjudicationCharges).containsAll(
         listOf(
           AdjudicationCharges(
-            987654321,
+            "987654321",
           ),
-          AdjudicationCharges(23456789),
+          AdjudicationCharges("23456789"),
         ),
       )
       assertThat(adjustment.additionalDaysAwarded!!.prospective).isTrue
@@ -382,7 +382,7 @@ class AdjustmentControllerIntTest : SqsIntegrationTestBase() {
       var adjustmentDto = getAdjustmentById(adjustmentId)
       assertThat(adjustmentDto.additionalDaysAwarded).isEqualTo(
         AdditionalDaysAwardedDto(
-          listOf(987654321, 23456789),
+          listOf("987654321", "23456789"),
           true,
         ),
       )
@@ -397,21 +397,21 @@ class AdjustmentControllerIntTest : SqsIntegrationTestBase() {
         person = PrisonApiExtension.PRISONER_ID,
         adjustmentType = AdjustmentType.ADDITIONAL_DAYS_AWARDED,
         additionalDaysAwarded = AdditionalDaysAwardedDto(
-          adjudicationId = listOf(32415555),
+          adjudicationId = listOf("32415555"),
           prospective = false,
         ),
       )
       putAdjustmentUpdate(adjustmentId, updateDto)
 
       adjustmentDto = getAdjustmentById(adjustmentId)
-      assertThat(adjustmentDto.additionalDaysAwarded).isEqualTo(AdditionalDaysAwardedDto(listOf(32415555), false))
+      assertThat(adjustmentDto.additionalDaysAwarded).isEqualTo(AdditionalDaysAwardedDto(listOf("32415555"), false))
 
       // Assert that non-prospective adas before the earliest sentence date are not included.
       adjustments = getAdjustmentsByPerson(PrisonApiExtension.PRISONER_ID, startOfSentenceEnvelope = earliestSentenceDate)
       assertThat(adjustments.contains(adjustmentDto)).isFalse
 
       entityManager.refresh(adjustment)
-      assertThat(adjustment.additionalDaysAwarded!!.adjudicationCharges).containsAll(listOf(AdjudicationCharges(32415555)))
+      assertThat(adjustment.additionalDaysAwarded!!.adjudicationCharges).containsAll(listOf(AdjudicationCharges("32415555")))
       assertThat(adjustment.additionalDaysAwarded!!.prospective).isFalse
     }
   }

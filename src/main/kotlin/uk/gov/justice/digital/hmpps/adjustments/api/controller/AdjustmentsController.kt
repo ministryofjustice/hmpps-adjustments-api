@@ -29,6 +29,7 @@ import uk.gov.justice.digital.hmpps.adjustments.api.model.additionaldays.AdaInte
 import uk.gov.justice.digital.hmpps.adjustments.api.service.AdditionalDaysAwardedService
 import uk.gov.justice.digital.hmpps.adjustments.api.service.AdjustmentsEventService
 import uk.gov.justice.digital.hmpps.adjustments.api.service.AdjustmentsService
+import uk.gov.justice.digital.hmpps.adjustments.api.service.PrisonApiLookupService
 import uk.gov.justice.digital.hmpps.adjustments.api.service.ValidationService
 import java.time.LocalDate
 import java.util.UUID
@@ -241,6 +242,6 @@ class AdjustmentsController(
     @PathVariable("person")
     person: String,
   ): AdaIntercept {
-    return additionalDaysAwardedService.getAdaAdjudicationDetails(person).intercept
+    return additionalDaysAwardedService.getAdaAdjudicationDetails(person, PrisonApiLookupService.PRISON_API_LOOKUP_SERVICE).intercept
   }
 }
