@@ -51,24 +51,22 @@ class AdditionalDaysAwardedService(
     val latestSentenceDate = sentences.maxOf { it.sentenceDate }
     val startOfSentenceEnvelope = sentences.minOf { it.sentenceDate }
     val adaAdjustments = adjustmentRepository.findByPersonAndAdjustmentTypeAndStatus(nomsId, ADDITIONAL_DAYS_AWARDED)
-    val adas = if (service == PrisonApiLookupService.PRISON_API_LOOKUP_SERVICE)prisonApiLookupService.lookupAdas(nomsId, startOfSentenceEnvelope) else adjudicationsLookupService.lookupAdas(nomsId, startOfSentenceEnvelope)
+    val adas = if (service == PrisonApiLookupService.PRISON_API_LOOKUP_SERVICE) prisonApiLookupService.lookupAdas(nomsId, startOfSentenceEnvelope) else adjudicationsLookupService.lookupAdas(nomsId, startOfSentenceEnvelope)
 
     var (awarded, pendingApproval) = filterAdasByMatchingAdjustment(
       getAdasByDateCharged(adas, AWARDED_OR_PENDING),
       adaAdjustments,
     )
 
-    val suspended = sortAdaChargesByForthwithFirst(getAdasByDateCharged(adas, SUSPENDED))
+    val suspended = getAdasByDateCharged(adas, SUSPENDED)
     val totalSuspended = getTotalDays(suspended)
 
-    var (prospectiveAwarded, prospective) = filterAdasByMatchingAdjustment(
+    val (prospectiveAwarded, prospective) = filterAdasByMatchingAdjustment(
       getAdasByDateCharged(adas, PROSPECTIVE),
       adaAdjustments,
     )
-    prospective = sortAdaChargesByForthwithFirst(prospective)
 
     awarded = awarded + prospectiveAwarded
-    awarded = this.sortAdaChargesByForthwithFirst(awarded)
     val totalAwarded = getTotalDays(awarded)
 
     val totalProspective = getTotalDays(prospective)
@@ -77,10 +75,9 @@ class AdditionalDaysAwardedService(
       selectedProspectiveAdaDates.contains(it.dateChargeProved.toString())
     }
     pendingApproval = pendingApproval + selectedProspectiveAdas
-    pendingApproval = sortAdaChargesByForthwithFirst(pendingApproval)
     val totalAwaitingApproval = getTotalDays(pendingApproval)
 
-    val quashed = sortAdaChargesByForthwithFirst(filterQuashedAdasByMatchingChargeIds(getAdasByDateCharged(adas, QUASHED), adaAdjustments))
+    val quashed = filterQuashedAdasByMatchingChargeIds(getAdasByDateCharged(adas, QUASHED), adaAdjustments)
     val totalQuashed = getTotalDays(quashed)
 
     val totalExistingAdas = adaAdjustments.map { it.effectiveDays }.reduceOrNull { acc, it -> acc + it } ?: 0
@@ -115,20 +112,6 @@ class AdditionalDaysAwardedService(
 
   private fun getTotalDays(adas: List<AdasByDateCharged>): Int {
     return adas.map { it.total!! }.reduceOrNull { acc, it -> acc + it } ?: 0
-  }
-
-  private fun sortAdaChargesByForthwithFirst(adas: List<AdasByDateCharged>): List<AdasByDateCharged> {
-    adas.forEach { ada ->
-      ada.charges.sortBy { charge ->
-        when (charge.toBeServed) {
-          "Forthwith" -> 0
-          null -> 2
-          else -> 1
-        }
-      }
-    }
-
-    return adas
   }
 
   private fun getMessageParams(nomsId: String): List<String> {
@@ -263,7 +246,10 @@ class AdditionalDaysAwardedService(
     adas: List<Ada>,
   ): List<AdasByDateCharged> {
     val consecutiveSourceAdas = getSourceAdaForConsecutive(adas)
-    return adasByDateCharged.map { (date, charges) ->
+    return adasByDateCharged.map { (date, originalCharges) ->
+      val charges = originalCharges.sortedBy { charge ->
+        if (charge.toBeServed == "Forthwith") 0 else 1
+      }
       if (charges.size == 1) {
         AdasByDateCharged(date, mutableListOf(charges[0].copy(toBeServed = "Forthwith")))
       } else {
