@@ -51,7 +51,7 @@ class AdditionalDaysAwardedService(
     val latestSentenceDate = sentences.maxOf { it.sentenceDate }
     val startOfSentenceEnvelope = sentences.minOf { it.sentenceDate }
     val adaAdjustments = adjustmentRepository.findByPersonAndAdjustmentTypeAndStatus(nomsId, ADDITIONAL_DAYS_AWARDED)
-    val adas = if (service == PrisonApiLookupService.PRISON_API_LOOKUP_SERVICE)prisonApiLookupService.lookupAdas(nomsId, startOfSentenceEnvelope) else adjudicationsLookupService.lookupAdas(nomsId, startOfSentenceEnvelope)
+    val adas = if (service == PrisonApiLookupService.PRISON_API_LOOKUP_SERVICE) prisonApiLookupService.lookupAdas(nomsId, startOfSentenceEnvelope) else adjudicationsLookupService.lookupAdas(nomsId, startOfSentenceEnvelope)
 
     var (awarded, pendingApproval) = filterAdasByMatchingAdjustment(
       getAdasByDateCharged(adas, AWARDED_OR_PENDING),
@@ -65,6 +65,7 @@ class AdditionalDaysAwardedService(
       getAdasByDateCharged(adas, PROSPECTIVE),
       adaAdjustments,
     )
+
     awarded = awarded + prospectiveAwarded
     val totalAwarded = getTotalDays(awarded)
 
@@ -264,6 +265,8 @@ class AdditionalDaysAwardedService(
 
             else -> charge.copy(toBeServed = "Forthwith")
           }
+        }.sortedBy { charge ->
+          if (charge.toBeServed == "Forthwith") 0 else 1
         }
         AdasByDateCharged(date, consecutiveAndConcurrentCharges.toMutableList())
       }

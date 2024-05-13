@@ -938,9 +938,9 @@ class AdditionalDaysAddedServiceTest {
     )
     private val threeAdjudicationsSearchResponse = AdjudicationSearchResponse(
       listOf(
-        adjudication1SearchResponse,
         adjudication2SearchResponse,
         adjudication3SearchResponse,
+        adjudication1SearchResponse,
       ),
     )
     private val sentenceDate = LocalDate.of(2023, 1, 1)
