@@ -938,8 +938,8 @@ class AdditionalDaysAddedServiceTest {
     )
     private val threeAdjudicationsSearchResponse = AdjudicationSearchResponse(
       listOf(
-        adjudication3SearchResponse,
         adjudication2SearchResponse,
+        adjudication3SearchResponse,
         adjudication1SearchResponse,
       ),
     )
