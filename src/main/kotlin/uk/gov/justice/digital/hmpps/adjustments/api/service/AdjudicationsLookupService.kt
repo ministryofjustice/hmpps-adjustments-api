@@ -3,7 +3,6 @@ package uk.gov.justice.digital.hmpps.adjustments.api.service
 import org.springframework.stereotype.Service
 import uk.gov.justice.digital.hmpps.adjustments.api.client.AdjudicationApiClient
 import uk.gov.justice.digital.hmpps.adjustments.api.client.PrisonApiClient
-import uk.gov.justice.digital.hmpps.adjustments.api.client.SystemPrisonApiClient
 import uk.gov.justice.digital.hmpps.adjustments.api.enums.ChargeStatus
 import uk.gov.justice.digital.hmpps.adjustments.api.error.AdjudicationError
 import uk.gov.justice.digital.hmpps.adjustments.api.model.additionaldays.Ada
@@ -14,7 +13,7 @@ import java.time.LocalDate
 @Service
 class AdjudicationsLookupService(
   private val adjudicationApiClient: AdjudicationApiClient,
-  private val prisonApiClient: PrisonApiClient
+  private val prisonApiClient: PrisonApiClient,
 ) : LookupService {
 
   override fun lookupAdas(nomsId: String, startOfSentenceEnvelope: LocalDate): List<Ada> {
@@ -42,7 +41,7 @@ class AdjudicationsLookupService(
       }
     }.map {
       it.copy(
-        heardAt = fromAgencyId(it.heardAt, agencies)
+        heardAt = fromAgencyId(it.heardAt, agencies),
       )
     }
   }
