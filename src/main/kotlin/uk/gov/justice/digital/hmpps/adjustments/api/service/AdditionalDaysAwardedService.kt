@@ -246,10 +246,7 @@ class AdditionalDaysAwardedService(
     adas: List<Ada>,
   ): List<AdasByDateCharged> {
     val consecutiveSourceAdas = getSourceAdaForConsecutive(adas)
-    return adasByDateCharged.map { (date, originalCharges) ->
-      val charges = originalCharges.sortedBy { charge ->
-        if (charge.toBeServed == "Forthwith") 0 else 1
-      }
+    return adasByDateCharged.map { (date, charges) ->
       if (charges.size == 1) {
         AdasByDateCharged(date, mutableListOf(charges[0].copy(toBeServed = "Forthwith")))
       } else {
@@ -268,6 +265,8 @@ class AdditionalDaysAwardedService(
 
             else -> charge.copy(toBeServed = "Forthwith")
           }
+        }.sortedBy { charge ->
+          if (charge.toBeServed == "Forthwith") 0 else 1
         }
         AdasByDateCharged(date, consecutiveAndConcurrentCharges.toMutableList())
       }
