@@ -26,7 +26,7 @@ class AdjudicationsLookupService(
       val outcome = it.outcomes.last { out -> out.hearing != null }
       Ada(
         dateChargeProved = outcome.hearing!!.dateTimeOfHearing.toLocalDate(),
-        days = punishment.schedule.days,
+        days = punishment.schedule.duration,
         chargeNumber = it.chargeNumber,
         consecutiveToSequence = punishment.consecutiveChargeNumber,
         heardAt = outcome.hearing.agencyId,
