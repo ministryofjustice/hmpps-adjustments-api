@@ -10,25 +10,25 @@ import org.junit.jupiter.api.extension.ExtensionContext
 import uk.gov.justice.digital.hmpps.adjustments.api.wiremock.PrisonApiExtension.Companion.PRISONER_ID
 
 /*
-    This class mocks the prison-api.
+    This class mocks the adjudication-api.
  */
 class AdjudicationApiExtension : BeforeAllCallback, AfterAllCallback, BeforeEachCallback {
   companion object {
     @JvmField
-    val prisonApi = AdjudicationsApiMockServer()
+    val adjudicationApi = AdjudicationsApiMockServer()
   }
 
   override fun beforeAll(context: ExtensionContext) {
-    prisonApi.start()
-    prisonApi.stubAdjudications()
+    adjudicationApi.start()
+    adjudicationApi.stubAdjudications()
   }
 
   override fun beforeEach(context: ExtensionContext) {
-    prisonApi.resetRequests()
+    adjudicationApi.resetRequests()
   }
 
   override fun afterAll(context: ExtensionContext) {
-    prisonApi.stop()
+    adjudicationApi.stop()
   }
 }
 
