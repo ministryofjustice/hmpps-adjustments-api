@@ -34,7 +34,6 @@ class AdditionalDaysAwardedService(
   private val adjustmentRepository: AdjustmentRepository,
   private val prospectiveAdaRejectionRepository: ProspectiveAdaRejectionRepository,
   private val prisonApiClient: PrisonApiClient,
-  private val prisonApiLookupService: PrisonApiLookupService,
   private val adjudicationsLookupService: AdjudicationsLookupService,
 ) {
 
@@ -43,7 +42,7 @@ class AdditionalDaysAwardedService(
     prospectiveAdaRejectionRepository.save(ProspectiveAdaRejection(person = prospectiveAdaRejectionDto.person, dateChargeProved = prospectiveAdaRejectionDto.dateChargeProved, days = prospectiveAdaRejectionDto.days))
   }
 
-  fun getAdaAdjudicationDetails(nomsId: String, service: String, selectedProspectiveAdaDates: List<String> = listOf()): AdaAdjudicationDetails {
+  fun getAdaAdjudicationDetails(nomsId: String, selectedProspectiveAdaDates: List<String> = listOf()): AdaAdjudicationDetails {
     val sentences = prisonService.getActiveSentencesExcludingRecalls(nomsId)
     if (sentences.isEmpty()) {
       return AdaAdjudicationDetails()
@@ -51,7 +50,7 @@ class AdditionalDaysAwardedService(
     val latestSentenceDate = sentences.maxOf { it.sentenceDate }
     val startOfSentenceEnvelope = sentences.minOf { it.sentenceDate }
     val adaAdjustments = adjustmentRepository.findByPersonAndAdjustmentTypeAndStatus(nomsId, ADDITIONAL_DAYS_AWARDED)
-    val adas = if (service == PrisonApiLookupService.PRISON_API_LOOKUP_SERVICE) prisonApiLookupService.lookupAdas(nomsId, startOfSentenceEnvelope) else adjudicationsLookupService.lookupAdas(nomsId, startOfSentenceEnvelope)
+    val adas = adjudicationsLookupService.lookupAdas(nomsId, startOfSentenceEnvelope)
 
     var (awarded, pendingApproval) = filterAdasByMatchingAdjustment(
       getAdasByDateCharged(adas, AWARDED_OR_PENDING),
@@ -221,8 +220,8 @@ class AdditionalDaysAwardedService(
     return if (adaByDateCharge.charges.size == 1) {
       adaByDateCharge.charges[0].days
     } else {
-      val baseCharges = adaByDateCharge.charges.filter { it.consecutiveToSequence == null }
-      val consecCharges = adaByDateCharge.charges.filter { it.consecutiveToSequence != null }
+      val baseCharges = adaByDateCharge.charges.filter { it.consecutiveToChargeNumber == null }
+      val consecCharges = adaByDateCharge.charges.filter { it.consecutiveToChargeNumber != null }
       val chains = mutableListOf<MutableList<Ada>>()
       baseCharges.forEach { ada ->
         val chain = mutableListOf(ada)
@@ -234,7 +233,7 @@ class AdditionalDaysAwardedService(
   }
 
   private fun createChain(ada: Ada, chain: MutableList<Ada>, consecCharges: List<Ada>) {
-    val consecFrom = consecCharges.find { it.consecutiveToSequence == ada.sequence }
+    val consecFrom = consecCharges.find { it.consecutiveToChargeNumber == ada.chargeNumber }
     consecFrom?.let {
       chain.add(it)
       createChain(it, chain, consecCharges)
@@ -254,7 +253,7 @@ class AdditionalDaysAwardedService(
           when {
             validConsecutiveSequence(charge, consecutiveSourceAdas) -> {
               val consecutiveAda =
-                consecutiveSourceAdas.first { c -> adaHasSequence(charge.consecutiveToSequence!!, c) }
+                consecutiveSourceAdas.first { c -> adaHasChargeNumber(charge.consecutiveToChargeNumber!!, c) }
               charge.copy(toBeServed = "Consecutive to ${consecutiveAda.chargeNumber}")
             }
 
@@ -274,19 +273,19 @@ class AdditionalDaysAwardedService(
   }
 
   private fun isSourceForConsecutiveChain(consecutiveSourceAdas: List<Ada>, charge: Ada) =
-    consecutiveSourceAdas.any { consecutiveAda -> adaHasSequence(charge.sequence, consecutiveAda) }
+    consecutiveSourceAdas.any { consecutiveAda -> adaHasChargeNumber(charge.chargeNumber, consecutiveAda) }
 
   private fun validConsecutiveSequence(charge: Ada, consecutiveSourceAdas: List<Ada>): Boolean =
-    charge.consecutiveToSequence != null && consecutiveSourceAdas.any { consecutiveAda ->
-      adaHasSequence(
-        charge.consecutiveToSequence,
+    charge.consecutiveToChargeNumber != null && consecutiveSourceAdas.any { consecutiveAda ->
+      adaHasChargeNumber(
+        charge.consecutiveToChargeNumber,
         consecutiveAda,
       )
     }
 
   private fun getSourceAdaForConsecutive(allAdas: List<Ada>): List<Ada> =
-    allAdas.filter { ada -> ada.consecutiveToSequence != null && allAdas.any { it.sequence == ada.consecutiveToSequence } }
-      .map { consecutiveAda -> allAdas.first { it.sequence == consecutiveAda.consecutiveToSequence } }
+    allAdas.filter { ada -> ada.consecutiveToChargeNumber != null && allAdas.any { it.chargeNumber == ada.consecutiveToChargeNumber } }
+      .map { consecutiveAda -> allAdas.first { it.chargeNumber == consecutiveAda.consecutiveToChargeNumber } }
 
-  private fun adaHasSequence(sequence: String?, ada: Ada) = sequence != null && sequence == ada.sequence
+  private fun adaHasChargeNumber(chargeNumber: String, ada: Ada) = chargeNumber == ada.chargeNumber
 }

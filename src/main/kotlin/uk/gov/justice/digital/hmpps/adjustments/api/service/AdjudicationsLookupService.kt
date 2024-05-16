@@ -14,9 +14,9 @@ import java.time.LocalDate
 class AdjudicationsLookupService(
   private val adjudicationApiClient: AdjudicationApiClient,
   private val prisonApiClient: PrisonApiClient,
-) : LookupService {
+) {
 
-  override fun lookupAdas(nomsId: String, startOfSentenceEnvelope: LocalDate): List<Ada> {
+  fun lookupAdas(nomsId: String, startOfSentenceEnvelope: LocalDate): List<Ada> {
     val adjudications = adjudicationApiClient.getAdjudications(nomsId)
     val agencies = mutableMapOf<String, String>()
 
@@ -28,9 +28,8 @@ class AdjudicationsLookupService(
         dateChargeProved = outcome.hearing!!.dateTimeOfHearing.toLocalDate(),
         days = punishment.schedule.duration,
         chargeNumber = it.chargeNumber,
-        consecutiveToSequence = punishment.consecutiveChargeNumber,
+        consecutiveToChargeNumber = punishment.consecutiveChargeNumber,
         heardAt = outcome.hearing.agencyId,
-        sequence = it.chargeNumber,
         status = deriveChargeStatus(it, punishment),
       )
     }.filter {

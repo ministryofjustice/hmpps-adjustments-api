@@ -25,11 +25,8 @@ import uk.gov.justice.digital.hmpps.adjustments.api.model.AdjustmentEffectiveDay
 import uk.gov.justice.digital.hmpps.adjustments.api.model.CreateResponseDto
 import uk.gov.justice.digital.hmpps.adjustments.api.model.RestoreAdjustmentsDto
 import uk.gov.justice.digital.hmpps.adjustments.api.model.ValidationMessage
-import uk.gov.justice.digital.hmpps.adjustments.api.model.additionaldays.AdaIntercept
-import uk.gov.justice.digital.hmpps.adjustments.api.service.AdditionalDaysAwardedService
 import uk.gov.justice.digital.hmpps.adjustments.api.service.AdjustmentsEventService
 import uk.gov.justice.digital.hmpps.adjustments.api.service.AdjustmentsService
-import uk.gov.justice.digital.hmpps.adjustments.api.service.PrisonApiLookupService
 import uk.gov.justice.digital.hmpps.adjustments.api.service.ValidationService
 import java.time.LocalDate
 import java.util.UUID
@@ -41,7 +38,6 @@ class AdjustmentsController(
   val adjustmentsService: AdjustmentsService,
   val eventService: AdjustmentsEventService,
   val validationService: ValidationService,
-  val additionalDaysAwardedService: AdditionalDaysAwardedService,
 ) {
 
   @PostMapping
@@ -223,25 +219,5 @@ class AdjustmentsController(
   @PreAuthorize("hasRole('ADJUSTMENTS_MAINTAINER') and hasRole('RELEASE_DATES_CALCULATOR')")
   fun validate(@RequestBody adjustment: AdjustmentDto): List<ValidationMessage> {
     return validationService.validate(adjustment)
-  }
-
-  @GetMapping("/{person}/intercept")
-  @Operation(
-    summary = "Determine if there needs to be an adjustment-interception for this person",
-  )
-  @ApiResponses(
-    value = [
-      ApiResponse(responseCode = "200", description = "Intercept decision returned"),
-      ApiResponse(responseCode = "401", description = "Unauthorised, requires a valid Oauth2 token"),
-      ApiResponse(responseCode = "404", description = "Adjustment not found"),
-    ],
-  )
-  @PreAuthorize("hasRole('ADJUSTMENTS_MAINTAINER')")
-  fun determineAdaIntercept(
-    @Parameter(required = true, example = "AA1256A", description = "The noms ID of the person")
-    @PathVariable("person")
-    person: String,
-  ): AdaIntercept {
-    return additionalDaysAwardedService.getAdaAdjudicationDetails(person, PrisonApiLookupService.PRISON_API_LOOKUP_SERVICE).intercept
   }
 }
