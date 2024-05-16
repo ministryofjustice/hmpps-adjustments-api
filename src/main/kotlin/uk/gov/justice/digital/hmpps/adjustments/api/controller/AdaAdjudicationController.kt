@@ -16,9 +16,7 @@ import org.springframework.web.bind.annotation.RequestParam
 import org.springframework.web.bind.annotation.RestController
 import uk.gov.justice.digital.hmpps.adjustments.api.model.ProspectiveAdaRejectionDto
 import uk.gov.justice.digital.hmpps.adjustments.api.model.additionaldays.AdaAdjudicationDetails
-import uk.gov.justice.digital.hmpps.adjustments.api.model.additionaldays.AdaIntercept
 import uk.gov.justice.digital.hmpps.adjustments.api.service.AdditionalDaysAwardedService
-import uk.gov.justice.digital.hmpps.adjustments.api.service.PrisonApiLookupService
 
 @RestController
 @RequestMapping("/adjustments/additional-days", produces = [MediaType.APPLICATION_JSON_VALUE])
@@ -26,26 +24,6 @@ import uk.gov.justice.digital.hmpps.adjustments.api.service.PrisonApiLookupServi
 class AdaAdjudicationController(
   val additionalDaysAwardedService: AdditionalDaysAwardedService,
 ) {
-
-  @GetMapping("/{person}/intercept")
-  @Operation(
-    summary = "Determine if there needs to be an adjustment-interception for this person",
-  )
-  @ApiResponses(
-    value = [
-      ApiResponse(responseCode = "200", description = "Intercept decision returned"),
-      ApiResponse(responseCode = "401", description = "Unauthorised, requires a valid Oauth2 token"),
-      ApiResponse(responseCode = "404", description = "Adjustment not found"),
-    ],
-  )
-  @PreAuthorize("hasRole('ADJUSTMENTS_MAINTAINER')")
-  fun determineAdaIntercept(
-    @Parameter(required = true, example = "AA1256A", description = "The noms ID of the person")
-    @PathVariable("person")
-    person: String,
-  ): AdaIntercept {
-    return additionalDaysAwardedService.getAdaAdjudicationDetails(person, PrisonApiLookupService.PRISON_API_LOOKUP_SERVICE).intercept
-  }
 
   @GetMapping("/{person}/adjudication-details")
   @Operation(
@@ -66,11 +44,8 @@ class AdaAdjudicationController(
     @Parameter(required = false, example = "2022-01-10,2022-02-11", description = "The dates of selected prospective adas")
     @RequestParam("selectedProspectiveAdaDates")
     selectedProspectiveAdaDates: List<String>?,
-    @Parameter(required = false, example = "PRISON-API", description = "Which service to look adas from, defaults to prison api.")
-    @RequestParam("service")
-    service: String?,
   ): AdaAdjudicationDetails {
-    return additionalDaysAwardedService.getAdaAdjudicationDetails(person, service ?: PrisonApiLookupService.PRISON_API_LOOKUP_SERVICE, selectedProspectiveAdaDates ?: listOf())
+    return additionalDaysAwardedService.getAdaAdjudicationDetails(person, selectedProspectiveAdaDates ?: listOf())
   }
 
   @PostMapping("/{person}/reject-prospective-ada")

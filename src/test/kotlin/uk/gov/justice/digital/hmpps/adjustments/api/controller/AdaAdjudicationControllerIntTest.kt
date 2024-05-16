@@ -17,6 +17,7 @@ class AdaAdjudicationControllerIntTest : SqsIntegrationTestBase() {
       .get()
       .uri("/adjustments/additional-days/${PrisonApiExtension.PRISONER_ID}/adjudication-details")
       .headers(setAdjustmentsMaintainerAuth())
+      .header("Active-Caseload", "KMI")
       .exchange()
       .expectStatus().isOk
       .returnResult(AdaAdjudicationDetails::class.java)
@@ -39,6 +40,7 @@ class AdaAdjudicationControllerIntTest : SqsIntegrationTestBase() {
       .get()
       .uri("/adjustments/additional-days/${PrisonApiExtension.PRISONER_ID}/adjudication-details")
       .headers(setAdjustmentsMaintainerAuth())
+      .header("Active-Caseload", "KMI")
       .exchange()
       .expectStatus().isOk
       .returnResult(AdaAdjudicationDetails::class.java)

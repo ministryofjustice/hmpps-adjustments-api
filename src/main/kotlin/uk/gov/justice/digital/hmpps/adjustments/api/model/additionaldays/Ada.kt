@@ -10,6 +10,5 @@ data class Ada(
   val heardAt: String? = null,
   val status: ChargeStatus,
   val days: Int,
-  val sequence: String? = null,
-  val consecutiveToSequence: String? = null,
+  val consecutiveToChargeNumber: String? = null,
 )

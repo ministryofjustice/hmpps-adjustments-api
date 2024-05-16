@@ -6,6 +6,7 @@ import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.whenever
+import uk.gov.justice.digital.hmpps.adjustments.api.client.AdjudicationApiClient
 import uk.gov.justice.digital.hmpps.adjustments.api.client.PrisonApiClient
 import uk.gov.justice.digital.hmpps.adjustments.api.entity.AdditionalDaysAwarded
 import uk.gov.justice.digital.hmpps.adjustments.api.entity.AdjudicationCharges
@@ -22,13 +23,14 @@ import uk.gov.justice.digital.hmpps.adjustments.api.model.additionaldays.Ada
 import uk.gov.justice.digital.hmpps.adjustments.api.model.additionaldays.AdaAdjudicationDetails
 import uk.gov.justice.digital.hmpps.adjustments.api.model.additionaldays.AdaIntercept
 import uk.gov.justice.digital.hmpps.adjustments.api.model.additionaldays.AdasByDateCharged
-import uk.gov.justice.digital.hmpps.adjustments.api.model.prisonapi.Adjudication
-import uk.gov.justice.digital.hmpps.adjustments.api.model.prisonapi.AdjudicationDetail
-import uk.gov.justice.digital.hmpps.adjustments.api.model.prisonapi.AdjudicationSearchResponse
-import uk.gov.justice.digital.hmpps.adjustments.api.model.prisonapi.Hearing
-import uk.gov.justice.digital.hmpps.adjustments.api.model.prisonapi.HearingResult
+import uk.gov.justice.digital.hmpps.adjustments.api.model.adjudications.Adjudication
+import uk.gov.justice.digital.hmpps.adjustments.api.model.adjudications.AdjudicationResponse
+import uk.gov.justice.digital.hmpps.adjustments.api.model.adjudications.Hearing
+import uk.gov.justice.digital.hmpps.adjustments.api.model.adjudications.OutcomeAndHearing
+import uk.gov.justice.digital.hmpps.adjustments.api.model.adjudications.Punishment
+import uk.gov.justice.digital.hmpps.adjustments.api.model.adjudications.Schedule
+import uk.gov.justice.digital.hmpps.adjustments.api.model.prisonapi.Prison
 import uk.gov.justice.digital.hmpps.adjustments.api.model.prisonapi.PrisonerDetails
-import uk.gov.justice.digital.hmpps.adjustments.api.model.prisonapi.Sanction
 import uk.gov.justice.digital.hmpps.adjustments.api.model.prisonapi.SentenceAndOffences
 import uk.gov.justice.digital.hmpps.adjustments.api.respository.AdjustmentRepository
 import uk.gov.justice.digital.hmpps.adjustments.api.respository.ProspectiveAdaRejectionRepository
@@ -41,10 +43,11 @@ class AdditionalDaysAddedServiceTest {
   private val adjustmentRepository = mock<AdjustmentRepository>()
   private val prisonApiClient = mock<PrisonApiClient>()
   private val prospectiveAdaRejectionRepository = mock<ProspectiveAdaRejectionRepository>()
-  private val prisonApiLookupService = PrisonApiLookupService(prisonApiClient)
-  private val adjudicationsLookupService = mock<AdjudicationsLookupService>()
+  private val adjudicationApiClient = mock<AdjudicationApiClient>()
+  private val adjudicationsLookupService = AdjudicationsLookupService(adjudicationApiClient, prisonApiClient)
+
   private val additionalDaysAwardedService =
-    AdditionalDaysAwardedService(prisonService, adjustmentRepository, prospectiveAdaRejectionRepository, prisonApiClient, prisonApiLookupService, adjudicationsLookupService)
+    AdditionalDaysAwardedService(prisonService, adjustmentRepository, prospectiveAdaRejectionRepository, prisonApiClient, adjudicationsLookupService)
 
   @BeforeEach
   fun setup() {
@@ -57,6 +60,7 @@ class AdditionalDaysAddedServiceTest {
         dateOfBirth = LocalDate.parse("1995-03-08"),
       ),
     )
+    whenever(prisonApiClient.getPrison("MOR")).thenReturn(Prison(agencyId = "MOR", description = "Moorland (HMP & YOI)"))
   }
 
   @Nested
@@ -70,14 +74,12 @@ class AdditionalDaysAddedServiceTest {
           ADDITIONAL_DAYS_AWARDED,
         ),
       ).thenReturn(emptyList())
-      whenever(prisonApiClient.getAdjudications(NOMS_ID)).thenReturn(threeAdjudicationsSearchResponse)
-      whenever(prisonApiClient.getAdjudication(NOMS_ID, 1525916)).thenReturn(adjudicationOne)
-      whenever(prisonApiClient.getAdjudication(NOMS_ID, 1525917)).thenReturn(adjudicationTwoConsecutiveToOne)
-      whenever(prisonApiClient.getAdjudication(NOMS_ID, 1525918)).thenReturn(adjudicationThreeConcurrentToOne)
+
+      whenever(adjudicationApiClient.getAdjudications(NOMS_ID)).thenReturn(AdjudicationResponse(listOf(adjudicationOne, adjudicationTwoConsecutiveToOne, adjudicationThreeConcurrentToOne)))
       whenever(prospectiveAdaRejectionRepository.findByPerson(NOMS_ID)).thenReturn(emptyList())
       whenever(prisonService.getActiveSentencesExcludingRecalls(NOMS_ID)).thenReturn(sentences)
 
-      val adaAdjudicationDetails = additionalDaysAwardedService.getAdaAdjudicationDetails(NOMS_ID, PrisonApiLookupService.PRISON_API_LOOKUP_SERVICE)
+      val adaAdjudicationDetails = additionalDaysAwardedService.getAdaAdjudicationDetails(NOMS_ID)
 
       assertThat(
         adaAdjudicationDetails,
@@ -89,33 +91,30 @@ class AdditionalDaysAddedServiceTest {
               charges = mutableListOf(
                 Ada(
                   dateChargeProved = LocalDate.of(2023, 8, 3),
-                  chargeNumber = "1525916",
+                  chargeNumber = "MOR-1525916",
                   toBeServed = "Forthwith",
                   heardAt = "Moorland (HMP & YOI)",
                   status = ChargeStatus.AWARDED_OR_PENDING,
                   days = 5,
-                  sequence = "15",
-                  consecutiveToSequence = null,
+                  consecutiveToChargeNumber = null,
                 ),
                 Ada(
                   dateChargeProved = LocalDate.of(2023, 8, 3),
-                  chargeNumber = "1525917",
-                  toBeServed = "Consecutive to 1525916",
+                  chargeNumber = "MOR-1525917",
+                  toBeServed = "Consecutive to MOR-1525916",
                   heardAt = "Moorland (HMP & YOI)",
                   status = ChargeStatus.AWARDED_OR_PENDING,
                   days = 5,
-                  sequence = "16",
-                  consecutiveToSequence = "15",
+                  consecutiveToChargeNumber = "MOR-1525916",
                 ),
                 Ada(
                   dateChargeProved = LocalDate.of(2023, 8, 3),
-                  chargeNumber = "1525918",
+                  chargeNumber = "MOR-1525918",
                   toBeServed = "Concurrent",
                   heardAt = "Moorland (HMP & YOI)",
                   status = ChargeStatus.AWARDED_OR_PENDING,
                   days = 5,
-                  sequence = "17",
-                  consecutiveToSequence = null,
+                  consecutiveToChargeNumber = null,
                 ),
               ),
               total = 10,
@@ -137,14 +136,11 @@ class AdditionalDaysAddedServiceTest {
           ADDITIONAL_DAYS_AWARDED,
         ),
       ).thenReturn(listOf(BASE_10_DAY_ADJUSTMENT))
-      whenever(prisonApiClient.getAdjudications(NOMS_ID)).thenReturn(threeAdjudicationsSearchResponse)
-      whenever(prisonApiClient.getAdjudication(NOMS_ID, 1525916)).thenReturn(adjudicationOne)
-      whenever(prisonApiClient.getAdjudication(NOMS_ID, 1525917)).thenReturn(adjudicationTwoConsecutiveToOne)
-      whenever(prisonApiClient.getAdjudication(NOMS_ID, 1525918)).thenReturn(adjudicationThreeConcurrentToOne)
+      whenever(adjudicationApiClient.getAdjudications(NOMS_ID)).thenReturn(AdjudicationResponse(listOf(adjudicationOne, adjudicationTwoConsecutiveToOne, adjudicationThreeConcurrentToOne)))
       whenever(prospectiveAdaRejectionRepository.findByPerson(NOMS_ID)).thenReturn(emptyList())
       whenever(prisonService.getActiveSentencesExcludingRecalls(NOMS_ID)).thenReturn(sentences)
 
-      val adaAdjudicationDetails = additionalDaysAwardedService.getAdaAdjudicationDetails(NOMS_ID, PrisonApiLookupService.PRISON_API_LOOKUP_SERVICE)
+      val adaAdjudicationDetails = additionalDaysAwardedService.getAdaAdjudicationDetails(NOMS_ID)
 
       assertThat(
         adaAdjudicationDetails,
@@ -156,33 +152,30 @@ class AdditionalDaysAddedServiceTest {
               charges = mutableListOf(
                 Ada(
                   dateChargeProved = LocalDate.of(2023, 8, 3),
-                  chargeNumber = "1525916",
+                  chargeNumber = "MOR-1525916",
                   toBeServed = "Forthwith",
                   heardAt = "Moorland (HMP & YOI)",
                   status = ChargeStatus.AWARDED_OR_PENDING,
                   days = 5,
-                  sequence = "15",
-                  consecutiveToSequence = null,
+                  consecutiveToChargeNumber = null,
                 ),
                 Ada(
                   dateChargeProved = LocalDate.of(2023, 8, 3),
-                  chargeNumber = "1525917",
-                  toBeServed = "Consecutive to 1525916",
+                  chargeNumber = "MOR-1525917",
+                  toBeServed = "Consecutive to MOR-1525916",
                   heardAt = "Moorland (HMP & YOI)",
                   status = ChargeStatus.AWARDED_OR_PENDING,
                   days = 5,
-                  sequence = "16",
-                  consecutiveToSequence = "15",
+                  consecutiveToChargeNumber = "MOR-1525916",
                 ),
                 Ada(
                   dateChargeProved = LocalDate.of(2023, 8, 3),
-                  chargeNumber = "1525918",
+                  chargeNumber = "MOR-1525918",
                   toBeServed = "Concurrent",
                   heardAt = "Moorland (HMP & YOI)",
                   status = ChargeStatus.AWARDED_OR_PENDING,
                   days = 5,
-                  sequence = "17",
-                  consecutiveToSequence = null,
+                  consecutiveToChargeNumber = null,
                 ),
               ),
               total = 10,
@@ -208,12 +201,12 @@ class AdditionalDaysAddedServiceTest {
       ).thenReturn(
         emptyList(),
       )
-      whenever(prisonApiClient.getAdjudications(NOMS_ID)).thenReturn(oneAdjudicationSearchResponse)
-      whenever(prisonApiClient.getAdjudication(NOMS_ID, 1525916)).thenReturn(adjudicationOneProspective)
+
+      whenever(adjudicationApiClient.getAdjudications(NOMS_ID)).thenReturn(AdjudicationResponse(listOf(adjudicationOneProspective)))
       whenever(prospectiveAdaRejectionRepository.findByPerson(NOMS_ID)).thenReturn(emptyList())
       whenever(prisonService.getActiveSentencesExcludingRecalls(NOMS_ID)).thenReturn(sentences)
 
-      val adaAdjudicationDetails = additionalDaysAwardedService.getAdaAdjudicationDetails(NOMS_ID, PrisonApiLookupService.PRISON_API_LOOKUP_SERVICE, selectedProspectiveAdaDates = listOf("2023-08-03"))
+      val adaAdjudicationDetails = additionalDaysAwardedService.getAdaAdjudicationDetails(NOMS_ID, selectedProspectiveAdaDates = listOf("2023-08-03"))
 
       assertThat(
         adaAdjudicationDetails,
@@ -225,13 +218,12 @@ class AdditionalDaysAddedServiceTest {
               charges = mutableListOf(
                 Ada(
                   dateChargeProved = LocalDate.of(2023, 8, 3),
-                  chargeNumber = "1525916",
+                  chargeNumber = "MOR-1525916",
                   toBeServed = "Forthwith",
                   heardAt = "Moorland (HMP & YOI)",
                   status = ChargeStatus.PROSPECTIVE,
                   days = 10,
-                  sequence = "15",
-                  consecutiveToSequence = null,
+                  consecutiveToChargeNumber = null,
                 ),
               ),
               total = 10,
@@ -246,13 +238,12 @@ class AdditionalDaysAddedServiceTest {
               charges = mutableListOf(
                 Ada(
                   dateChargeProved = LocalDate.of(2023, 8, 3),
-                  chargeNumber = "1525916",
+                  chargeNumber = "MOR-1525916",
                   toBeServed = "Forthwith",
                   heardAt = "Moorland (HMP & YOI)",
                   status = ChargeStatus.PROSPECTIVE,
                   days = 10,
-                  sequence = "15",
-                  consecutiveToSequence = null,
+                  consecutiveToChargeNumber = null,
                 ),
               ),
               total = 10,
@@ -278,18 +269,17 @@ class AdditionalDaysAddedServiceTest {
           BASE_10_DAY_ADJUSTMENT.copy(
             additionalDaysAwarded = AdditionalDaysAwarded(
               adjudicationCharges = mutableListOf(
-                AdjudicationCharges("1525916"),
+                AdjudicationCharges("MOR-1525916"),
               ),
             ),
           ),
         ),
       )
-      whenever(prisonApiClient.getAdjudications(NOMS_ID)).thenReturn(oneAdjudicationSearchResponse)
-      whenever(prisonApiClient.getAdjudication(NOMS_ID, 1525916)).thenReturn(adjudicationOneProspective)
+      whenever(adjudicationApiClient.getAdjudications(NOMS_ID)).thenReturn(AdjudicationResponse(listOf(adjudicationOneProspective)))
       whenever(prospectiveAdaRejectionRepository.findByPerson(NOMS_ID)).thenReturn(emptyList())
       whenever(prisonService.getActiveSentencesExcludingRecalls(NOMS_ID)).thenReturn(sentences)
 
-      val adaAdjudicationDetails = additionalDaysAwardedService.getAdaAdjudicationDetails(NOMS_ID, PrisonApiLookupService.PRISON_API_LOOKUP_SERVICE, selectedProspectiveAdaDates = listOf("2023-08-03"))
+      val adaAdjudicationDetails = additionalDaysAwardedService.getAdaAdjudicationDetails(NOMS_ID, selectedProspectiveAdaDates = listOf("2023-08-03"))
 
       assertThat(
         adaAdjudicationDetails,
@@ -301,13 +291,12 @@ class AdditionalDaysAddedServiceTest {
               charges = mutableListOf(
                 Ada(
                   dateChargeProved = LocalDate.of(2023, 8, 3),
-                  chargeNumber = "1525916",
+                  chargeNumber = "MOR-1525916",
                   toBeServed = "Forthwith",
                   heardAt = "Moorland (HMP & YOI)",
                   status = ChargeStatus.PROSPECTIVE,
                   days = 10,
-                  sequence = "15",
-                  consecutiveToSequence = null,
+                  consecutiveToChargeNumber = null,
                 ),
               ),
               total = 10,
@@ -330,11 +319,11 @@ class AdditionalDaysAddedServiceTest {
           ADDITIONAL_DAYS_AWARDED,
         ),
       ).thenReturn(listOf(BASE_10_DAY_ADJUSTMENT.copy(additionalDaysAwarded = null)))
-      whenever(prisonApiClient.getAdjudications(NOMS_ID)).thenReturn(emptyAdjudicationSearchResponse)
+      whenever(adjudicationApiClient.getAdjudications(NOMS_ID)).thenReturn(AdjudicationResponse(listOf()))
       whenever(prospectiveAdaRejectionRepository.findByPerson(NOMS_ID)).thenReturn(emptyList())
       whenever(prisonService.getActiveSentencesExcludingRecalls(NOMS_ID)).thenReturn(sentences)
 
-      val adaAdjudicationDetails = additionalDaysAwardedService.getAdaAdjudicationDetails(NOMS_ID, PrisonApiLookupService.PRISON_API_LOOKUP_SERVICE)
+      val adaAdjudicationDetails = additionalDaysAwardedService.getAdaAdjudicationDetails(NOMS_ID)
 
       assertThat(
         adaAdjudicationDetails,
@@ -355,7 +344,7 @@ class AdditionalDaysAddedServiceTest {
     fun `Should not intercept if no sentence date`() {
       whenever(prisonService.getStartOfSentenceEnvelopeExcludingRecalls(NOMS_ID)).thenReturn(null)
 
-      val intercept = additionalDaysAwardedService.getAdaAdjudicationDetails(NOMS_ID, PrisonApiLookupService.PRISON_API_LOOKUP_SERVICE).intercept
+      val intercept = additionalDaysAwardedService.getAdaAdjudicationDetails(NOMS_ID).intercept
 
       assertThat(intercept).isEqualTo(AdaIntercept(NONE, 0, false, emptyList()))
     }
@@ -375,14 +364,11 @@ class AdditionalDaysAddedServiceTest {
           ),
         ),
       )
-      whenever(prisonApiClient.getAdjudications(NOMS_ID)).thenReturn(threeAdjudicationsSearchResponse)
-      whenever(prisonApiClient.getAdjudication(NOMS_ID, 1525916)).thenReturn(adjudicationOne)
-      whenever(prisonApiClient.getAdjudication(NOMS_ID, 1525917)).thenReturn(adjudicationTwoConsecutiveToOne)
-      whenever(prisonApiClient.getAdjudication(NOMS_ID, 1525918)).thenReturn(adjudicationThreeConcurrentToOne)
+      whenever(adjudicationApiClient.getAdjudications(NOMS_ID)).thenReturn(AdjudicationResponse(listOf(adjudicationOne, adjudicationTwoConsecutiveToOne, adjudicationThreeConcurrentToOne)))
       whenever(prospectiveAdaRejectionRepository.findByPerson(NOMS_ID)).thenReturn(emptyList())
       whenever(prisonService.getActiveSentencesExcludingRecalls(NOMS_ID)).thenReturn(sentences)
 
-      val intercept = additionalDaysAwardedService.getAdaAdjudicationDetails(NOMS_ID, PrisonApiLookupService.PRISON_API_LOOKUP_SERVICE).intercept
+      val intercept = additionalDaysAwardedService.getAdaAdjudicationDetails(NOMS_ID).intercept
 
       assertThat(intercept).isEqualTo(AdaIntercept(FIRST_TIME, 1, false, emptyList()))
       assertThat(intercept.message).isEqualTo("The first time you use the adjustments service, you need to check if the existing adjustment information from NOMIS is correct.")
@@ -403,14 +389,11 @@ class AdditionalDaysAddedServiceTest {
           ),
         ),
       )
-      whenever(prisonApiClient.getAdjudications(NOMS_ID)).thenReturn(threeAdjudicationsSearchResponse)
-      whenever(prisonApiClient.getAdjudication(NOMS_ID, 1525916)).thenReturn(adjudicationOne)
-      whenever(prisonApiClient.getAdjudication(NOMS_ID, 1525917)).thenReturn(adjudicationTwoConsecutiveToOne)
-      whenever(prisonApiClient.getAdjudication(NOMS_ID, 1525918)).thenReturn(adjudicationThreeConcurrentToOne)
+      whenever(adjudicationApiClient.getAdjudications(NOMS_ID)).thenReturn(AdjudicationResponse(listOf(adjudicationOne, adjudicationTwoConsecutiveToOne, adjudicationThreeConcurrentToOne)))
       whenever(prospectiveAdaRejectionRepository.findByPerson(NOMS_ID)).thenReturn(emptyList())
       whenever(prisonService.getActiveSentencesExcludingRecalls(NOMS_ID)).thenReturn(sentences)
 
-      val intercept = additionalDaysAwardedService.getAdaAdjudicationDetails(NOMS_ID, PrisonApiLookupService.PRISON_API_LOOKUP_SERVICE).intercept
+      val intercept = additionalDaysAwardedService.getAdaAdjudicationDetails(NOMS_ID).intercept
 
       assertThat(intercept).isEqualTo(AdaIntercept(FIRST_TIME, 1, false, emptyList()))
       assertThat(intercept.message).isEqualTo("The first time you use the adjustments service, you need to check if the existing adjustment information from NOMIS is correct.")
@@ -426,14 +409,11 @@ class AdditionalDaysAddedServiceTest {
       ).thenReturn(
         listOf(BASE_10_DAY_ADJUSTMENT.copy(days = 11, effectiveDays = 11)),
       )
-      whenever(prisonApiClient.getAdjudications(NOMS_ID)).thenReturn(threeAdjudicationsSearchResponse)
-      whenever(prisonApiClient.getAdjudication(NOMS_ID, 1525916)).thenReturn(adjudicationOne)
-      whenever(prisonApiClient.getAdjudication(NOMS_ID, 1525917)).thenReturn(adjudicationTwoConsecutiveToOne)
-      whenever(prisonApiClient.getAdjudication(NOMS_ID, 1525918)).thenReturn(adjudicationThreeConcurrentToOne)
+      whenever(adjudicationApiClient.getAdjudications(NOMS_ID)).thenReturn(AdjudicationResponse(listOf(adjudicationOne, adjudicationTwoConsecutiveToOne, adjudicationThreeConcurrentToOne)))
       whenever(prospectiveAdaRejectionRepository.findByPerson(NOMS_ID)).thenReturn(emptyList())
       whenever(prisonService.getActiveSentencesExcludingRecalls(NOMS_ID)).thenReturn(sentences)
 
-      val intercept = additionalDaysAwardedService.getAdaAdjudicationDetails(NOMS_ID, PrisonApiLookupService.PRISON_API_LOOKUP_SERVICE).intercept
+      val intercept = additionalDaysAwardedService.getAdaAdjudicationDetails(NOMS_ID).intercept
 
       assertUpdateIntercept(intercept, 1, false)
     }
@@ -446,14 +426,11 @@ class AdditionalDaysAddedServiceTest {
           ADDITIONAL_DAYS_AWARDED,
         ),
       ).thenReturn(emptyList())
-      whenever(prisonApiClient.getAdjudications(NOMS_ID)).thenReturn(threeAdjudicationsSearchResponse)
-      whenever(prisonApiClient.getAdjudication(NOMS_ID, 1525916)).thenReturn(adjudicationOne)
-      whenever(prisonApiClient.getAdjudication(NOMS_ID, 1525917)).thenReturn(adjudicationTwoConsecutiveToOne)
-      whenever(prisonApiClient.getAdjudication(NOMS_ID, 1525918)).thenReturn(adjudicationThreeConcurrentToOne)
+      whenever(adjudicationApiClient.getAdjudications(NOMS_ID)).thenReturn(AdjudicationResponse(listOf(adjudicationOne, adjudicationTwoConsecutiveToOne, adjudicationThreeConcurrentToOne)))
       whenever(prospectiveAdaRejectionRepository.findByPerson(NOMS_ID)).thenReturn(emptyList())
       whenever(prisonService.getActiveSentencesExcludingRecalls(NOMS_ID)).thenReturn(sentences)
 
-      val intercept = additionalDaysAwardedService.getAdaAdjudicationDetails(NOMS_ID, PrisonApiLookupService.PRISON_API_LOOKUP_SERVICE).intercept
+      val intercept = additionalDaysAwardedService.getAdaAdjudicationDetails(NOMS_ID).intercept
 
       assertUpdateIntercept(intercept, 1, false)
     }
@@ -468,13 +445,10 @@ class AdditionalDaysAddedServiceTest {
       ).thenReturn(
         listOf(BASE_10_DAY_ADJUSTMENT),
       )
-      whenever(prisonApiClient.getAdjudications(NOMS_ID)).thenReturn(threeAdjudicationsSearchResponse)
-      whenever(prisonApiClient.getAdjudication(NOMS_ID, 1525916)).thenReturn(adjudicationOne)
-      whenever(prisonApiClient.getAdjudication(NOMS_ID, 1525917)).thenReturn(adjudicationTwoConsecutiveToOne)
-      whenever(prisonApiClient.getAdjudication(NOMS_ID, 1525918)).thenReturn(adjudicationThreeConcurrentToOne)
+      whenever(adjudicationApiClient.getAdjudications(NOMS_ID)).thenReturn(AdjudicationResponse(listOf(adjudicationOne, adjudicationTwoConsecutiveToOne, adjudicationThreeConcurrentToOne)))
       whenever(prisonService.getActiveSentencesExcludingRecalls(NOMS_ID)).thenReturn(sentences)
 
-      val intercept = additionalDaysAwardedService.getAdaAdjudicationDetails(NOMS_ID, PrisonApiLookupService.PRISON_API_LOOKUP_SERVICE).intercept
+      val intercept = additionalDaysAwardedService.getAdaAdjudicationDetails(NOMS_ID).intercept
 
       assertThat(intercept).isEqualTo(AdaIntercept(NONE, 0, false))
     }
@@ -489,14 +463,11 @@ class AdditionalDaysAddedServiceTest {
       ).thenReturn(
         listOf(BASE_10_DAY_ADJUSTMENT.copy(days = 5, effectiveDays = 5)),
       )
-      whenever(prisonApiClient.getAdjudications(NOMS_ID)).thenReturn(threeAdjudicationsSearchResponse)
-      whenever(prisonApiClient.getAdjudication(NOMS_ID, 1525916)).thenReturn(adjudicationOne)
-      whenever(prisonApiClient.getAdjudication(NOMS_ID, 1525917)).thenReturn(adjudicationTwoConsecutiveToOne)
-      whenever(prisonApiClient.getAdjudication(NOMS_ID, 1525918)).thenReturn(adjudicationThreeConcurrentToOne)
+      whenever(adjudicationApiClient.getAdjudications(NOMS_ID)).thenReturn(AdjudicationResponse(listOf(adjudicationOne, adjudicationTwoConsecutiveToOne, adjudicationThreeConcurrentToOne)))
       whenever(prospectiveAdaRejectionRepository.findByPerson(NOMS_ID)).thenReturn(emptyList())
       whenever(prisonService.getActiveSentencesExcludingRecalls(NOMS_ID)).thenReturn(sentences)
 
-      val intercept = additionalDaysAwardedService.getAdaAdjudicationDetails(NOMS_ID, PrisonApiLookupService.PRISON_API_LOOKUP_SERVICE).intercept
+      val intercept = additionalDaysAwardedService.getAdaAdjudicationDetails(NOMS_ID).intercept
 
       assertUpdateIntercept(intercept, 1, false)
     }
@@ -511,15 +482,20 @@ class AdditionalDaysAddedServiceTest {
       ).thenReturn(
         listOf(BASE_10_DAY_ADJUSTMENT),
       )
-      whenever(prisonApiClient.getAdjudications(NOMS_ID)).thenReturn(threeAdjudicationsSearchResponse)
-      whenever(prisonApiClient.getAdjudication(NOMS_ID, 1525916)).thenReturn(adjudicationOneQuashed)
-      whenever(prisonApiClient.getAdjudication(NOMS_ID, 1525917)).thenReturn(adjudicationTwoConsecutiveToOneQuashed)
-      whenever(prisonApiClient.getAdjudication(NOMS_ID, 1525918)).thenReturn(adjudicationThreeConcurrentToOneQuashed)
+      whenever(adjudicationApiClient.getAdjudications(NOMS_ID)).thenReturn(
+        AdjudicationResponse(
+          listOf(
+            adjudicationOneQuashed,
+            adjudicationTwoConsecutiveToOneQuashed,
+            adjudicationThreeConcurrentToOneQuashed,
+          ),
+        ),
+      )
       whenever(prospectiveAdaRejectionRepository.findByPerson(NOMS_ID)).thenReturn(emptyList())
 
       whenever(prisonService.getActiveSentencesExcludingRecalls(NOMS_ID)).thenReturn(sentences)
 
-      val intercept = additionalDaysAwardedService.getAdaAdjudicationDetails(NOMS_ID, PrisonApiLookupService.PRISON_API_LOOKUP_SERVICE).intercept
+      val intercept = additionalDaysAwardedService.getAdaAdjudicationDetails(NOMS_ID).intercept
 
       assertUpdateIntercept(intercept, 1, false)
     }
@@ -534,12 +510,11 @@ class AdditionalDaysAddedServiceTest {
       ).thenReturn(
         emptyList(),
       )
-      whenever(prisonApiClient.getAdjudications(NOMS_ID)).thenReturn(oneAdjudicationSearchResponse)
-      whenever(prisonApiClient.getAdjudication(NOMS_ID, 1525916)).thenReturn(adjudicationOneProspective)
+      whenever(adjudicationApiClient.getAdjudications(NOMS_ID)).thenReturn(AdjudicationResponse(listOf(adjudicationOneProspective)))
       whenever(prospectiveAdaRejectionRepository.findByPerson(NOMS_ID)).thenReturn(emptyList())
       whenever(prisonService.getActiveSentencesExcludingRecalls(NOMS_ID)).thenReturn(sentences)
 
-      val intercept = additionalDaysAwardedService.getAdaAdjudicationDetails(NOMS_ID, PrisonApiLookupService.PRISON_API_LOOKUP_SERVICE).intercept
+      val intercept = additionalDaysAwardedService.getAdaAdjudicationDetails(NOMS_ID).intercept
 
       assertPadaIntercept(intercept, 1, true)
     }
@@ -554,12 +529,11 @@ class AdditionalDaysAddedServiceTest {
       ).thenReturn(
         emptyList(),
       )
-      whenever(prisonApiClient.getAdjudications(NOMS_ID)).thenReturn(oneAdjudicationSearchResponse)
-      whenever(prisonApiClient.getAdjudication(NOMS_ID, 1525916)).thenReturn(adjudicationOneProspective)
+      whenever(adjudicationApiClient.getAdjudications(NOMS_ID)).thenReturn(AdjudicationResponse(listOf(adjudicationOneProspective)))
       whenever(prospectiveAdaRejectionRepository.findByPerson(NOMS_ID)).thenReturn(listOf(ProspectiveAdaRejection(rejectionAt = sentenceDate.plusDays(5).atStartOfDay(), days = 10, dateChargeProved = LocalDate.of(2023, 8, 3))))
       whenever(prisonService.getActiveSentencesExcludingRecalls(NOMS_ID)).thenReturn(sentences)
 
-      val intercept = additionalDaysAwardedService.getAdaAdjudicationDetails(NOMS_ID, PrisonApiLookupService.PRISON_API_LOOKUP_SERVICE).intercept
+      val intercept = additionalDaysAwardedService.getAdaAdjudicationDetails(NOMS_ID).intercept
 
       assertThat(intercept.type).isEqualTo(NONE)
     }
@@ -574,13 +548,12 @@ class AdditionalDaysAddedServiceTest {
       ).thenReturn(
         emptyList(),
       )
-      whenever(prisonApiClient.getAdjudications(NOMS_ID)).thenReturn(oneAdjudicationSearchResponse)
-      whenever(prisonApiClient.getAdjudication(NOMS_ID, 1525916)).thenReturn(adjudicationOneProspective)
+      whenever(adjudicationApiClient.getAdjudications(NOMS_ID)).thenReturn(AdjudicationResponse(listOf(adjudicationOneProspective)))
       whenever(prospectiveAdaRejectionRepository.findByPerson(NOMS_ID)).thenReturn(listOf(ProspectiveAdaRejection(rejectionAt = sentenceDate.minusDays(5).atStartOfDay(), days = 10, dateChargeProved = LocalDate.of(2023, 8, 3))))
       whenever(prospectiveAdaRejectionRepository.findByPerson(NOMS_ID)).thenReturn(listOf(ProspectiveAdaRejection(rejectionAt = sentenceDate.plusDays(5).atStartOfDay(), days = 10, dateChargeProved = LocalDate.of(2023, 8, 3))))
       whenever(prisonService.getActiveSentencesExcludingRecalls(NOMS_ID)).thenReturn(sentences)
 
-      val intercept = additionalDaysAwardedService.getAdaAdjudicationDetails(NOMS_ID, PrisonApiLookupService.PRISON_API_LOOKUP_SERVICE).intercept
+      val intercept = additionalDaysAwardedService.getAdaAdjudicationDetails(NOMS_ID).intercept
 
       assertThat(intercept.type).isEqualTo(NONE)
     }
@@ -595,12 +568,11 @@ class AdditionalDaysAddedServiceTest {
       ).thenReturn(
         emptyList(),
       )
-      whenever(prisonApiClient.getAdjudications(NOMS_ID)).thenReturn(oneAdjudicationSearchResponse)
-      whenever(prisonApiClient.getAdjudication(NOMS_ID, 1525916)).thenReturn(adjudicationOneProspective)
+      whenever(adjudicationApiClient.getAdjudications(NOMS_ID)).thenReturn(AdjudicationResponse(listOf(adjudicationOneProspective)))
       whenever(prospectiveAdaRejectionRepository.findByPerson(NOMS_ID)).thenReturn(listOf(ProspectiveAdaRejection(rejectionAt = sentenceDate.minusDays(5).atStartOfDay(), days = 10, dateChargeProved = LocalDate.of(2023, 8, 3))))
       whenever(prisonService.getActiveSentencesExcludingRecalls(NOMS_ID)).thenReturn(sentences)
 
-      val intercept = additionalDaysAwardedService.getAdaAdjudicationDetails(NOMS_ID, PrisonApiLookupService.PRISON_API_LOOKUP_SERVICE).intercept
+      val intercept = additionalDaysAwardedService.getAdaAdjudicationDetails(NOMS_ID).intercept
 
       assertPadaIntercept(intercept, 1, true)
     }
@@ -615,12 +587,11 @@ class AdditionalDaysAddedServiceTest {
       ).thenReturn(
         emptyList(),
       )
-      whenever(prisonApiClient.getAdjudications(NOMS_ID)).thenReturn(oneAdjudicationSearchResponse)
-      whenever(prisonApiClient.getAdjudication(NOMS_ID, 1525916)).thenReturn(adjudicationOneProspective)
+      whenever(adjudicationApiClient.getAdjudications(NOMS_ID)).thenReturn(AdjudicationResponse(listOf(adjudicationOneProspective)))
       whenever(prospectiveAdaRejectionRepository.findByPerson(NOMS_ID)).thenReturn(listOf(ProspectiveAdaRejection(rejectionAt = LocalDate.of(2024, 1, 1).atStartOfDay(), days = 99, dateChargeProved = LocalDate.of(2023, 8, 3))))
       whenever(prisonService.getActiveSentencesExcludingRecalls(NOMS_ID)).thenReturn(sentences)
 
-      val intercept = additionalDaysAwardedService.getAdaAdjudicationDetails(NOMS_ID, PrisonApiLookupService.PRISON_API_LOOKUP_SERVICE).intercept
+      val intercept = additionalDaysAwardedService.getAdaAdjudicationDetails(NOMS_ID).intercept
 
       assertPadaIntercept(intercept, 1, true)
     }
@@ -653,296 +624,94 @@ class AdditionalDaysAddedServiceTest {
   companion object {
     const val NOMS_ID = "AA1234A"
     val BASE_10_DAY_ADJUSTMENT = Adjustment(
-      person = "AA1234A",
+      person = NOMS_ID,
       days = 10,
       effectiveDays = 10,
       adjustmentType = ADDITIONAL_DAYS_AWARDED,
       fromDate = LocalDate.of(2023, 8, 3),
       additionalDaysAwarded = AdditionalDaysAwarded(
         adjudicationCharges = mutableListOf(
-          AdjudicationCharges("1525916"),
-          AdjudicationCharges("1525917"),
-          AdjudicationCharges("1525918"),
+          AdjudicationCharges("MOR-1525916"),
+          AdjudicationCharges("MOR-1525917"),
+          AdjudicationCharges("MOR-1525918"),
         ),
       ),
     )
-    private val adjudication1SearchResponse = Adjudication(
-      adjudicationNumber = 1525916,
-      reportTime = LocalDateTime.parse("2023-08-02T09:09:00"),
-      agencyIncidentId = 1503215,
-      agencyId = "MDI",
-      partySeq = 1,
-    )
-    private val adjudication2SearchResponse = Adjudication(
-      adjudicationNumber = 1525917,
-      reportTime = LocalDateTime.parse("2023-08-02T09:09:00"),
-      agencyIncidentId = 1503215,
-      agencyId = "MDI",
-      partySeq = 1,
-    )
-    private val adjudication3SearchResponse = Adjudication(
-      adjudicationNumber = 1525918,
-      reportTime = LocalDateTime.parse("2023-08-02T09:09:00"),
-      agencyIncidentId = 1503215,
-      agencyId = "MDI",
-      partySeq = 1,
-    )
-    val adjudicationOne = AdjudicationDetail(
-      adjudicationNumber = 1525916,
-      hearings = listOf(
-        Hearing(
-          hearingTime = LocalDateTime.of(2023, 8, 3, 16, 45),
-          results = listOf(
-            HearingResult(
-              offenceType = "Prison Rule 51",
-              offenceDescription = "Intentionally or recklessly sets fire to any part of a prison or any other property, whether or not his own",
-              plea = "Guilty",
-              finding = "Charge Proved",
-              sanctions = listOf(
-                Sanction(
-                  sanctionType = "Additional Days Added",
-                  sanctionDays = 5,
-                  status = "Immediate",
-                  sanctionSeq = 15,
-                ),
-              ),
-            ),
-          ),
-          establishment = "Moorland (HMP & YOI)",
-        ),
-      ),
-      incidentTime = LocalDateTime.of(2023, 8, 1, 9, 0),
-      establishment = "Moorland (HMP & YOI)",
-      interiorLocation = "Circuit",
-      incidentDetails = "some details",
-      reportNumber = 1503215,
-      reportType = "Governor's Report",
-      reporterFirstName = "TIM",
-      reporterLastName = "WRIGHT",
-      reportTime = LocalDateTime.of(2023, 8, 2, 9, 9),
-    )
-    val adjudicationThreeConcurrentToOne = AdjudicationDetail(
-      adjudicationNumber = 1525918,
-      incidentTime = LocalDateTime.parse("2023-08-01T09:00:00"),
-      establishment = "Moorland (HMP & YOI)",
-      interiorLocation = "Circuit",
-      incidentDetails = "some details",
-      reportNumber = 1503215,
-      reportType = "Governor's Report",
-      reporterFirstName = "TIM",
-      reporterLastName = "WRIGHT",
-      reportTime = LocalDateTime.parse("2023-08-02T09:09:00"),
-      hearings = listOf(
-        Hearing(
-          hearingTime = LocalDateTime.parse("2023-08-03T16:45:00"),
-          establishment = "Moorland (HMP & YOI)",
-          results = listOf(
-            HearingResult(
-              offenceType = "Prison Rule 51",
-              offenceDescription = "Intentionally or recklessly sets fire to any part of a prison or any other property, whether or not his own",
-              plea = "Guilty",
-              finding = "Charge Proved",
-              sanctions = listOf(
-                Sanction(
-                  sanctionType = "Additional Days Added",
-                  sanctionDays = 5,
-                  status = "Immediate",
-                  sanctionSeq = 17,
-                ),
-              ),
-            ),
+    val adjudicationOne = Adjudication(
+      chargeNumber = "MOR-1525916",
+      prisonerNumber = NOMS_ID,
+      status = "CHARGE_PROVED",
+      outcomes = listOf(
+        OutcomeAndHearing(
+          Hearing(
+            dateTimeOfHearing = LocalDateTime.of(2023, 8, 3, 16, 45),
+            agencyId = "MOR",
           ),
         ),
       ),
-    )
-    val adjudicationTwoConsecutiveToOne = AdjudicationDetail(
-      adjudicationNumber = 1525917,
-      incidentTime = LocalDateTime.parse("2023-08-01T09:00:00"),
-      establishment = "Moorland (HMP & YOI)",
-      interiorLocation = "Circuit",
-      incidentDetails = "some details",
-      reportNumber = 1503215,
-      reportType = "Governor's Report",
-      reporterFirstName = "TIM",
-      reporterLastName = "WRIGHT",
-      reportTime = LocalDateTime.parse("2023-08-02T09:09:00"),
-      hearings = listOf(
-        Hearing(
-          hearingTime = LocalDateTime.parse("2023-08-03T16:45:00"),
-          establishment = "Moorland (HMP & YOI)",
-          results = listOf(
-            HearingResult(
-              offenceType = "Prison Rule 51",
-              offenceDescription = "Intentionally or recklessly sets fire to any part of a prison or any other property, whether or not his own",
-              plea = "Guilty",
-              finding = "Charge Proved",
-              sanctions = listOf(
-                Sanction(
-                  sanctionType = "Additional Days Added",
-                  sanctionDays = 5,
-                  status = "Immediate",
-                  sanctionSeq = 16,
-                  consecutiveSanctionSeq = 15,
-                ),
-              ),
-            ),
-          ),
+      punishments = listOf(
+        Punishment(
+          type = "ADDITIONAL_DAYS",
+          schedule = Schedule(5, null),
+          consecutiveChargeNumber = null,
         ),
       ),
     )
-    val adjudicationOneQuashed = AdjudicationDetail(
-      adjudicationNumber = 1525916,
-      incidentTime = LocalDateTime.parse("2023-08-01T09:00:00"),
-      establishment = "Moorland (HMP & YOI)",
-      interiorLocation = "Circuit",
-      incidentDetails = "some details",
-      reportNumber = 1503215,
-      reportType = "Governor's Report",
-      reporterFirstName = "TIM",
-      reporterLastName = "WRIGHT",
-      reportTime = LocalDateTime.parse("2023-08-02T09:09:00"),
-      hearings = listOf(
-        Hearing(
-          hearingTime = LocalDateTime.parse("2023-08-03T16:45:00"),
-          establishment = "Moorland (HMP & YOI)",
-          results = listOf(
-            HearingResult(
-              offenceType = "Prison Rule 51",
-              offenceDescription = "Intentionally or recklessly sets fire to any part of a prison or any other property, whether or not his own",
-              plea = "Guilty",
-              finding = "Charge Proved",
-              sanctions = listOf(
-                Sanction(
-                  sanctionType = "Additional Days Added",
-                  sanctionDays = 5,
-                  status = "Quashed",
-                  sanctionSeq = 15,
-                ),
-              ),
-            ),
+    val adjudicationThreeConcurrentToOne = Adjudication(
+      chargeNumber = "MOR-1525918",
+      prisonerNumber = NOMS_ID,
+      status = "CHARGE_PROVED",
+      outcomes = listOf(
+        OutcomeAndHearing(
+          Hearing(
+            dateTimeOfHearing = LocalDateTime.of(2023, 8, 3, 16, 45),
+            agencyId = "MOR",
           ),
         ),
       ),
-    )
-    val adjudicationTwoConsecutiveToOneQuashed = AdjudicationDetail(
-      adjudicationNumber = 1525917,
-      incidentTime = LocalDateTime.parse("2023-08-01T09:00:00"),
-      establishment = "Moorland (HMP & YOI)",
-      interiorLocation = "Circuit",
-      incidentDetails = "some details",
-      reportNumber = 1503215,
-      reportType = "Governor's Report",
-      reporterFirstName = "TIM",
-      reporterLastName = "WRIGHT",
-      reportTime = LocalDateTime.parse("2023-08-02T09:09:00"),
-      hearings = listOf(
-        Hearing(
-          hearingTime = LocalDateTime.parse("2023-08-03T16:45:00"),
-          establishment = "Moorland (HMP & YOI)",
-          results = listOf(
-            HearingResult(
-              offenceType = "Prison Rule 51",
-              offenceDescription = "Intentionally or recklessly sets fire to any part of a prison or any other property, whether or not his own",
-              plea = "Guilty",
-              finding = "Charge Proved",
-              sanctions = listOf(
-                Sanction(
-                  sanctionType = "Additional Days Added",
-                  sanctionDays = 5,
-                  status = "Quashed",
-                  sanctionSeq = 16,
-                  consecutiveSanctionSeq = 15,
-                ),
-              ),
-            ),
-          ),
+      punishments = listOf(
+        Punishment(
+          type = "ADDITIONAL_DAYS",
+          schedule = Schedule(5, null),
+          consecutiveChargeNumber = null,
         ),
       ),
     )
-    val adjudicationThreeConcurrentToOneQuashed = AdjudicationDetail(
-      adjudicationNumber = 1525918,
-      incidentTime = LocalDateTime.parse("2023-08-01T09:00:00"),
-      establishment = "Moorland (HMP & YOI)",
-      interiorLocation = "Circuit",
-      incidentDetails = "some details",
-      reportNumber = 1503215,
-      reportType = "Governor's Report",
-      reporterFirstName = "TIM",
-      reporterLastName = "WRIGHT",
-      reportTime = LocalDateTime.parse("2023-08-02T09:09:00"),
-      hearings = listOf(
-        Hearing(
-          hearingTime = LocalDateTime.parse("2023-08-03T16:45:00"),
-          establishment = "Moorland (HMP & YOI)",
-          results = listOf(
-            HearingResult(
-              offenceType = "Prison Rule 51",
-              offenceDescription = "Intentionally or recklessly sets fire to any part of a prison or any other property, whether or not his own",
-              plea = "Guilty",
-              finding = "Charge Proved",
-              sanctions = listOf(
-                Sanction(
-                  sanctionType = "Additional Days Added",
-                  sanctionDays = 5,
-                  status = "Quashed",
-                  sanctionSeq = 17,
-                ),
-              ),
-            ),
+    val adjudicationTwoConsecutiveToOne = Adjudication(
+      chargeNumber = "MOR-1525917",
+      prisonerNumber = NOMS_ID,
+      status = "CHARGE_PROVED",
+      outcomes = listOf(
+        OutcomeAndHearing(
+          Hearing(
+            dateTimeOfHearing = LocalDateTime.of(2023, 8, 3, 16, 45),
+            agencyId = "MOR",
           ),
         ),
       ),
-    )
-    val adjudicationOneProspective = AdjudicationDetail(
-      adjudicationNumber = 1525916,
-      incidentTime = LocalDateTime.parse("2023-08-01T09:00:00"),
-      establishment = "Moorland (HMP & YOI)",
-      interiorLocation = "Circuit",
-      incidentDetails = "some details",
-      reportNumber = 1503215,
-      reportType = "Governor's Report",
-      reporterFirstName = "TIM",
-      reporterLastName = "WRIGHT",
-      reportTime = LocalDateTime.parse("2023-08-02T09:09:00"),
-      hearings = listOf(
-        Hearing(
-          hearingTime = LocalDateTime.parse("2023-08-03T16:45:00"),
-          establishment = "Moorland (HMP & YOI)",
-          results = listOf(
-            HearingResult(
-              offenceType = "Prison Rule 51",
-              offenceDescription = "Intentionally or recklessly sets fire to any part of a prison or any other property, whether or not his own",
-              plea = "Guilty",
-              finding = "Charge Proved",
-              sanctions = listOf(
-                Sanction(
-                  sanctionType = "Additional Days Added",
-                  sanctionDays = 10,
-                  status = "Prospective",
-                  sanctionSeq = 15,
-                ),
-              ),
-            ),
-          ),
+      punishments = listOf(
+        Punishment(
+          type = "ADDITIONAL_DAYS",
+          schedule = Schedule(5, null),
+          consecutiveChargeNumber = "MOR-1525916",
         ),
       ),
-    )
-    private val emptyAdjudicationSearchResponse = AdjudicationSearchResponse(
-      listOf(),
     )
 
-    private val oneAdjudicationSearchResponse = AdjudicationSearchResponse(
-      listOf(
-        adjudication1SearchResponse,
+    val adjudicationOneQuashed = adjudicationOne.copy(status = "QUASHED")
+    val adjudicationTwoConsecutiveToOneQuashed = adjudicationTwoConsecutiveToOne.copy(status = "QUASHED")
+    val adjudicationThreeConcurrentToOneQuashed = adjudicationThreeConcurrentToOne.copy(status = "QUASHED")
+
+    val adjudicationOneProspective = adjudicationOne.copy(
+      punishments = listOf(
+        Punishment(
+          type = "PROSPECTIVE_DAYS",
+          schedule = Schedule(10, null),
+          consecutiveChargeNumber = null,
+        ),
       ),
     )
-    private val threeAdjudicationsSearchResponse = AdjudicationSearchResponse(
-      listOf(
-        adjudication2SearchResponse,
-        adjudication3SearchResponse,
-        adjudication1SearchResponse,
-      ),
-    )
+
     private val sentenceDate = LocalDate.of(2023, 1, 1)
     private val sentences = listOf(SentenceAndOffences(sentenceDate = sentenceDate, bookingId = 1, sentenceSequence = 1, sentenceCalculationType = "", sentenceCategory = "", consecutiveToSequence = 1, caseSequence = 1, lineSequence = 1, sentenceStatus = "A", sentenceTypeDescription = ""))
   }
