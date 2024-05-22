@@ -318,6 +318,7 @@ class AdjustmentsService(
       adjustmentTypeText = adjustment.adjustmentType.text,
       days = adjustment.days ?: daysBetween(adjustment.fromDate, adjustment.toDate) ?: adjustment.effectiveDays,
       adjustmentArithmeticType = adjustment.adjustmentType.arithmeticType,
+      source = adjustment.source,
     )
   }
 
