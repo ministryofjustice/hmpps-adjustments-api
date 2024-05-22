@@ -1,6 +1,7 @@
 package uk.gov.justice.digital.hmpps.adjustments.api.model
 
 import io.swagger.v3.oas.annotations.media.Schema
+import uk.gov.justice.digital.hmpps.adjustments.api.entity.AdjustmentSource
 import uk.gov.justice.digital.hmpps.adjustments.api.entity.AdjustmentStatus
 import uk.gov.justice.digital.hmpps.adjustments.api.entity.AdjustmentType
 import uk.gov.justice.digital.hmpps.adjustments.api.enums.ArithmeticType
@@ -54,4 +55,6 @@ data class AdjustmentDto(
   val createdDate: LocalDateTime? = null,
   @Schema(description = "The number of days effective in a calculation. (for example remand minus any unused deductions)", readOnly = true)
   val effectiveDays: Int? = null,
+  @Schema(description = "Where was the adjustment last changed", readOnly = true)
+  val source: AdjustmentSource? = null,
 )

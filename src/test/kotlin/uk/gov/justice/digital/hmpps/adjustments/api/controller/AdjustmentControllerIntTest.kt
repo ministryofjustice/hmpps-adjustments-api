@@ -52,19 +52,7 @@ class AdjustmentControllerIntTest : SqsIntegrationTestBase() {
   lateinit var entityManager: EntityManager
 
   @Nested
-  inner class RemandTests {
-    @Test
-    fun `Create remand adjustment where charge ids do not exist`() {
-      webTestClient
-        .post()
-        .uri("/adjustments")
-        .headers(setAdjustmentsMaintainerAuth())
-        .contentType(MediaType.APPLICATION_JSON)
-        .bodyValue(listOf(CREATED_ADJUSTMENT.copy(remand = RemandDto(listOf(98765432)))))
-        .exchange()
-        .expectStatus().isBadRequest
-    }
-
+  inner class GeneralTests {
     @Test
     @Transactional
     fun create() {
@@ -155,6 +143,7 @@ class AdjustmentControllerIntTest : SqsIntegrationTestBase() {
             prisonId = "LDS",
             prisonName = "Leeds",
             adjustmentArithmeticType = CREATED_ADJUSTMENT.adjustmentType.arithmeticType,
+            source = AdjustmentSource.DPS,
           ),
         )
       awaitAtMost30Secs untilCallTo { getNumberOfMessagesCurrentlyOnQueue() } matches { it == 0 }
@@ -305,6 +294,21 @@ class AdjustmentControllerIntTest : SqsIntegrationTestBase() {
   }
 
   @Nested
+  inner class RemandTests {
+    @Test
+    fun `Create remand adjustment where charge ids do not exist`() {
+      webTestClient
+        .post()
+        .uri("/adjustments")
+        .headers(setAdjustmentsMaintainerAuth())
+        .contentType(MediaType.APPLICATION_JSON)
+        .bodyValue(listOf(CREATED_ADJUSTMENT.copy(remand = RemandDto(listOf(98765432)))))
+        .exchange()
+        .expectStatus().isBadRequest
+    }
+  }
+
+  @Nested
   inner class FindByTests {
     @Test
     @Sql(
@@ -343,6 +347,7 @@ class AdjustmentControllerIntTest : SqsIntegrationTestBase() {
             prisonId = "LDS",
             prisonName = "Leeds",
             adjustmentArithmeticType = CREATED_ADJUSTMENT.adjustmentType.arithmeticType,
+            source = AdjustmentSource.DPS,
           ),
         )
 
@@ -480,6 +485,7 @@ class AdjustmentControllerIntTest : SqsIntegrationTestBase() {
             prisonId = "LDS",
             prisonName = "Leeds",
             adjustmentArithmeticType = TAGGED_BAIL.arithmeticType,
+            source = AdjustmentSource.DPS,
           ),
         )
 
@@ -533,6 +539,7 @@ class AdjustmentControllerIntTest : SqsIntegrationTestBase() {
             prisonId = "LDS",
             prisonName = "Leeds",
             adjustmentArithmeticType = UNLAWFULLY_AT_LARGE.arithmeticType,
+            source = AdjustmentSource.DPS,
           ),
         )
 
@@ -567,6 +574,7 @@ class AdjustmentControllerIntTest : SqsIntegrationTestBase() {
           adjustment.copy(
             lastUpdatedBy = "Test User",
             unlawfullyAtLarge = UnlawfullyAtLargeDto(type = RECALL),
+            source = AdjustmentSource.DPS,
           ),
         )
     }
@@ -673,6 +681,7 @@ class AdjustmentControllerIntTest : SqsIntegrationTestBase() {
             unlawfullyAtLarge = UnlawfullyAtLargeDto(type = RECALL),
             prisonId = "LDS",
             prisonName = "Leeds",
+            source = AdjustmentSource.DPS,
           ),
         )
     }
