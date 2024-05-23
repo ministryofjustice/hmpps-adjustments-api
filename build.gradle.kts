@@ -1,7 +1,7 @@
 plugins {
   id("uk.gov.justice.hmpps.gradle-spring-boot") version "5.15.6"
-  kotlin("plugin.spring") version "1.9.23"
-  kotlin("plugin.jpa") version "1.9.23"
+  kotlin("plugin.spring") version "1.9.24"
+  kotlin("plugin.jpa") version "1.9.24"
   id("se.patrikerdes.use-latest-versions") version "0.2.18"
 }
 
@@ -20,14 +20,14 @@ dependencies {
   implementation("org.springframework.boot:spring-boot-starter-data-jpa")
   implementation("org.springframework.boot:spring-boot-starter-actuator")
 
-  implementation("io.hypersistence:hypersistence-utils-hibernate-63:3.7.4")
+  implementation("io.hypersistence:hypersistence-utils-hibernate-63:3.7.5")
 
   // Enable kotlin reflect
-  implementation("org.jetbrains.kotlin:kotlin-reflect:1.9.23")
+  implementation("org.jetbrains.kotlin:kotlin-reflect:1.9.24")
 
   implementation("uk.gov.justice.service.hmpps:hmpps-sqs-spring-boot-starter:3.1.3")
 
-  implementation("org.springframework:spring-jms:6.1.6")
+  implementation("org.springframework:spring-jms:6.1.8")
 
   // Database dependencies
   runtimeOnly("org.flywaydb:flyway-core")
@@ -47,7 +47,7 @@ dependencies {
   testImplementation("org.mockito:mockito-inline:5.2.0")
   testImplementation("org.junit.jupiter:junit-jupiter:5.10.2")
   testImplementation("com.h2database:h2")
-  testImplementation("org.testcontainers:localstack:1.19.7")
+  testImplementation("org.testcontainers:localstack:1.19.8")
 }
 
 kotlin {
