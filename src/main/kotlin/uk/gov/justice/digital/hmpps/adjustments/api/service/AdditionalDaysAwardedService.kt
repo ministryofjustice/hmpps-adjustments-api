@@ -105,7 +105,7 @@ class AdditionalDaysAwardedService(
         padaRejections,
       ),
       totalExistingAdas,
-      pendingApproval.isEmpty() && quashed.isEmpty() && awarded.isEmpty(),
+      pendingApproval.isEmpty() && quashed.isEmpty() && awarded.isEmpty() && prospective.isEmpty(),
     )
   }
 
