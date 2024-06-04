@@ -25,7 +25,7 @@ import uk.gov.justice.digital.hmpps.adjustments.api.model.AdjustmentEffectiveDay
 import uk.gov.justice.digital.hmpps.adjustments.api.model.CreateResponseDto
 import uk.gov.justice.digital.hmpps.adjustments.api.model.RestoreAdjustmentsDto
 import uk.gov.justice.digital.hmpps.adjustments.api.model.ValidationMessage
-import uk.gov.justice.digital.hmpps.adjustments.api.service.AdjustmentsEventService
+import uk.gov.justice.digital.hmpps.adjustments.api.service.AdjustmentsDomainEventService
 import uk.gov.justice.digital.hmpps.adjustments.api.service.AdjustmentsService
 import uk.gov.justice.digital.hmpps.adjustments.api.service.ValidationService
 import java.time.LocalDate
@@ -36,7 +36,7 @@ import java.util.UUID
 @Tag(name = "adjustment-controller", description = "CRUD operations for adjustments.")
 class AdjustmentsController(
   val adjustmentsService: AdjustmentsService,
-  val eventService: AdjustmentsEventService,
+  val adjustmentsDomainEventService: AdjustmentsDomainEventService,
   val validationService: ValidationService,
 ) {
 
@@ -55,7 +55,7 @@ class AdjustmentsController(
   )
   fun create(@RequestBody adjustments: List<AdjustmentDto>): CreateResponseDto {
     return adjustmentsService.create(adjustments).also {
-      eventService.create(it.adjustmentIds, adjustments[0].person, AdjustmentSource.DPS, adjustments[0].adjustmentType)
+      adjustmentsDomainEventService.create(it.adjustmentIds, adjustments[0].person, AdjustmentSource.DPS, adjustments[0].adjustmentType)
     }
   }
 
@@ -130,7 +130,7 @@ class AdjustmentsController(
     @RequestBody adjustment: AdjustmentDto,
   ) {
     adjustmentsService.update(adjustmentId, adjustment).also {
-      eventService.update(adjustmentId, adjustment.person, AdjustmentSource.DPS, adjustment.adjustmentType)
+      adjustmentsDomainEventService.update(adjustmentId, adjustment.person, AdjustmentSource.DPS, adjustment.adjustmentType)
     }
   }
 
@@ -153,7 +153,7 @@ class AdjustmentsController(
     adjustments: RestoreAdjustmentsDto,
   ) {
     adjustmentsService.restore(adjustments).also {
-      eventService.create(adjustments.ids, it[0].person, AdjustmentSource.DPS, it[0].adjustmentType)
+      adjustmentsDomainEventService.create(adjustments.ids, it[0].person, AdjustmentSource.DPS, it[0].adjustmentType)
     }
   }
 
@@ -177,7 +177,7 @@ class AdjustmentsController(
     @RequestBody adjustment: AdjustmentEffectiveDaysDto,
   ) {
     adjustmentsService.updateEffectiveDays(adjustmentId, adjustment).also {
-      eventService.updateEffectiveDays(adjustmentId, adjustment.person, AdjustmentSource.DPS)
+      adjustmentsDomainEventService.updateEffectiveDays(adjustmentId, adjustment.person, AdjustmentSource.DPS)
     }
   }
 
@@ -201,7 +201,7 @@ class AdjustmentsController(
   ) {
     adjustmentsService.get(adjustmentId).also {
       adjustmentsService.delete(adjustmentId)
-      eventService.delete(adjustmentId, it.person, AdjustmentSource.DPS, it.adjustmentType)
+      adjustmentsDomainEventService.delete(adjustmentId, it.person, AdjustmentSource.DPS, it.adjustmentType)
     }
   }
 
