@@ -42,7 +42,7 @@ class AdjustmentsController(
 
   @PostMapping
   @ResponseStatus(HttpStatus.CREATED)
-  @PreAuthorize("hasRole('ADJUSTMENTS_MAINTAINER') and hasRole('RELEASE_DATES_CALCULATOR')")
+  @PreAuthorize("hasAnyRole('ADJUSTMENTS_MAINTAINER', 'ADJUSTMENTS__ADJUSTMENTS_RW')")
   @Operation(
     summary = "Create adjustments",
     description = "Create adjustment.",
@@ -71,7 +71,7 @@ class AdjustmentsController(
       ApiResponse(responseCode = "404", description = "Adjustment not found"),
     ],
   )
-  @PreAuthorize("(hasRole('ADJUSTMENTS_MAINTAINER') and hasRole('RELEASE_DATES_CALCULATOR')) or hasRole('VIEW_SENTENCE_ADJUSTMENTS')")
+  @PreAuthorize("hasAnyRole('ADJUSTMENTS_MAINTAINER', 'VIEW_SENTENCE_ADJUSTMENTS', 'ADJUSTMENTS__ADJUSTMENTS_RW')")
   fun findByPerson(
     @Parameter(required = true, description = "The noms ID of the person")
     @RequestParam("person")
@@ -101,7 +101,7 @@ class AdjustmentsController(
       ApiResponse(responseCode = "404", description = "Adjustment not found"),
     ],
   )
-  @PreAuthorize("(hasRole('ADJUSTMENTS_MAINTAINER') and hasRole('RELEASE_DATES_CALCULATOR')) or hasRole('VIEW_SENTENCE_ADJUSTMENTS')")
+  @PreAuthorize("hasAnyRole('ADJUSTMENTS_MAINTAINER', 'VIEW_SENTENCE_ADJUSTMENTS', 'ADJUSTMENTS__ADJUSTMENTS_RW')")
   fun get(
     @Parameter(required = true, description = "The adjustment UUID")
     @PathVariable("adjustmentId")
@@ -122,7 +122,7 @@ class AdjustmentsController(
       ApiResponse(responseCode = "404", description = "Adjustment not found"),
     ],
   )
-  @PreAuthorize("hasRole('ADJUSTMENTS_MAINTAINER')")
+  @PreAuthorize("hasAnyRole('ADJUSTMENTS_MAINTAINER', 'ADJUSTMENTS__ADJUSTMENTS_RW')")
   fun update(
     @Parameter(required = true, description = "The adjustment UUID")
     @PathVariable("adjustmentId")
@@ -146,7 +146,7 @@ class AdjustmentsController(
       ApiResponse(responseCode = "404", description = "Adjustment not found"),
     ],
   )
-  @PreAuthorize("hasRole('ADJUSTMENTS_MAINTAINER')")
+  @PreAuthorize("hasAnyRole('ADJUSTMENTS_MAINTAINER', 'ADJUSTMENTS__ADJUSTMENTS_RW')")
   fun restore(
     @Parameter(required = true, description = "The adjustment UUID")
     @RequestBody
@@ -169,7 +169,7 @@ class AdjustmentsController(
       ApiResponse(responseCode = "404", description = "Adjustment not found"),
     ],
   )
-  @PreAuthorize("hasRole('ADJUSTMENTS_MAINTAINER')")
+  @PreAuthorize("hasAnyRole('ADJUSTMENTS_MAINTAINER', 'ADJUSTMENTS__ADJUSTMENTS_RW')")
   fun updateEffectiveDays(
     @Parameter(required = true, description = "The adjustment UUID")
     @PathVariable("adjustmentId")
@@ -193,7 +193,7 @@ class AdjustmentsController(
       ApiResponse(responseCode = "404", description = "Adjustment not found"),
     ],
   )
-  @PreAuthorize("hasRole('ADJUSTMENTS_MAINTAINER') and hasRole('RELEASE_DATES_CALCULATOR')")
+  @PreAuthorize("hasAnyRole('ADJUSTMENTS_MAINTAINER', 'ADJUSTMENTS__ADJUSTMENTS_RW')")
   fun delete(
     @Parameter(required = true, description = "The adjustment UUID")
     @PathVariable("adjustmentId")
@@ -216,7 +216,7 @@ class AdjustmentsController(
       ApiResponse(responseCode = "401", description = "Unauthorised, requires a valid Oauth2 token"),
     ],
   )
-  @PreAuthorize("hasRole('ADJUSTMENTS_MAINTAINER') and hasRole('RELEASE_DATES_CALCULATOR')")
+  @PreAuthorize("hasAnyRole('ADJUSTMENTS_MAINTAINER', 'ADJUSTMENTS__ADJUSTMENTS_RW')")
   fun validate(@RequestBody adjustment: AdjustmentDto): List<ValidationMessage> {
     return validationService.validate(adjustment)
   }
