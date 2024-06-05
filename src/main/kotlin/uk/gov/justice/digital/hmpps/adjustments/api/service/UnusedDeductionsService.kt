@@ -9,6 +9,7 @@ import uk.gov.justice.digital.hmpps.adjustments.api.entity.AdjustmentStatus
 import uk.gov.justice.digital.hmpps.adjustments.api.entity.AdjustmentType
 import uk.gov.justice.digital.hmpps.adjustments.api.model.AdjustmentDto
 import uk.gov.justice.digital.hmpps.adjustments.api.model.AdjustmentEffectiveDaysDto
+import uk.gov.justice.digital.hmpps.adjustments.api.model.ManualUnusedDeductionsDto
 import kotlin.math.max
 
 @Service
@@ -91,6 +92,14 @@ class UnusedDeductionsService(
         )
       }
     }
+  }
+  fun setUnusedDaysManually(person: String, manualUnusedDeductionsDto: ManualUnusedDeductionsDto) {
+    val adjustments = adjustmentService.findCurrentAdjustments(person, AdjustmentStatus.ACTIVE, null)
+    val deductions = adjustments
+      .filter { it.adjustmentType === AdjustmentType.REMAND || it.adjustmentType === AdjustmentType.TAGGED_BAIL }
+
+    setUnusedDeductions(manualUnusedDeductionsDto.days, adjustments, deductions)
+    setEffectiveDays(manualUnusedDeductionsDto.days, deductions)
   }
 
   private companion object {
