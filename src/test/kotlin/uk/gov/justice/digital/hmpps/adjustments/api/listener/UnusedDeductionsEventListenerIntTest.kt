@@ -90,7 +90,7 @@ class UnusedDeductionsEventListenerIntTest : SqsIntegrationTestBase() {
       val adjustments = adjustmentRepository.findByPerson(UNUSED_DEDUCTIONS_PRISONER_ID)
       val remand = adjustments.find { it.id.toString() == REMAND_ID }!!
       val taggedBail = adjustments.find { it.id.toString() == TAGGED_BAIL_ID }!!
-      val unusedDeductions = adjustments.find { it.adjustmentType == AdjustmentType.UNUSED_DEDUCTIONS }!!
+      val unusedDeductions = adjustments.find { it.adjustmentType == AdjustmentType.UNUSED_DEDUCTIONS }
 
       assertThat(remand.daysCalculated).isEqualTo(100)
       assertThat(remand.effectiveDays).isEqualTo(0)
@@ -98,7 +98,8 @@ class UnusedDeductionsEventListenerIntTest : SqsIntegrationTestBase() {
       assertThat(taggedBail.days).isEqualTo(100)
       assertThat(taggedBail.effectiveDays).isEqualTo(0)
 
-      assertThat(unusedDeductions.days).isEqualTo(150)
+      assertThat(unusedDeductions).isNotNull
+      assertThat(unusedDeductions!!.days).isEqualTo(150)
     }
   }
 
