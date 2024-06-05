@@ -8,6 +8,7 @@ import org.junit.jupiter.api.extension.AfterAllCallback
 import org.junit.jupiter.api.extension.BeforeAllCallback
 import org.junit.jupiter.api.extension.BeforeEachCallback
 import org.junit.jupiter.api.extension.ExtensionContext
+import uk.gov.justice.digital.hmpps.adjustments.api.listener.UNUSED_DEDUCTIONS_PRISONER_ID
 import uk.gov.justice.digital.hmpps.adjustments.api.wiremock.PrisonApiExtension.Companion.BOOKING_ID
 import uk.gov.justice.digital.hmpps.adjustments.api.wiremock.PrisonApiExtension.Companion.PRISONER_ID
 import uk.gov.justice.digital.hmpps.adjustments.api.wiremock.PrisonApiExtension.Companion.RECALL_BOOKING_ID
@@ -31,6 +32,7 @@ class PrisonApiExtension : BeforeAllCallback, AfterAllCallback, BeforeEachCallba
     prisonApi.start()
     prisonApi.stubSentencesAndOffences()
     prisonApi.stubGetPrisonerDetails()
+    prisonApi.stubGetUnusedDeductionsPrisonerDetails()
     prisonApi.stubGetPrison("LDS", "Leeds")
     prisonApi.stubGetPrison("MRG", "Moorgate")
     prisonApi.stubGetPrison("KMI", "Kirkham (HMP)")
@@ -103,6 +105,27 @@ class PrisonApiMockServer : WireMockServer(WIREMOCK_PORT) {
               """
               {
                  "offenderNo": "$PRISONER_ID",
+                 "bookingId": $BOOKING_ID,
+                 "firstName": "Default",
+                 "lastName": "Prisoner",
+                 "dateOfBirth": "1995-03-08",
+                 "agencyId": "LDS"
+              }
+              """.trimIndent(),
+            )
+            .withStatus(200),
+        ),
+    )
+  fun stubGetUnusedDeductionsPrisonerDetails(): StubMapping =
+    stubFor(
+      get("/api/offenders/$UNUSED_DEDUCTIONS_PRISONER_ID")
+        .willReturn(
+          aResponse()
+            .withHeader("Content-Type", "application/json")
+            .withBody(
+              """
+              {
+                 "offenderNo": "$UNUSED_DEDUCTIONS_PRISONER_ID",
                  "bookingId": $BOOKING_ID,
                  "firstName": "Default",
                  "lastName": "Prisoner",

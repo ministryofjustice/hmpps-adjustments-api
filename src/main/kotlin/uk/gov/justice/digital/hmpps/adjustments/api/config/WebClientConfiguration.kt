@@ -20,21 +20,26 @@ class WebClientConfiguration(
   @Value("\${hmpps.auth.url}") private val oauthApiUrl: String,
   @Value("\${prison.api.url}") private val prisonApiUri: String,
   @Value("\${adjudications.api.url}") private val adjudicationsApiUri: String,
+  @Value("\${calculate-release-dates.api.url}") private val calculateReleaseDatesApiUrl: String,
 ) {
-  @Bean
-  fun prisonApiWebClient(): WebClient {
-    return WebClient.builder()
-      .baseUrl(prisonApiUri)
-      .filter(addAuthHeaderFilterFunction())
-      .build()
-  }
 
   @Bean
-  fun systemPrisonApiWebClient(authorizedClientManager: OAuth2AuthorizedClientManager): WebClient {
+  fun prisonApiWebClient(authorizedClientManager: OAuth2AuthorizedClientManager): WebClient {
     val filter = ServletOAuth2AuthorizedClientExchangeFilterFunction(authorizedClientManager)
     filter.setDefaultClientRegistrationId("hmpps-api")
     return WebClient.builder()
       .baseUrl(prisonApiUri)
+      .filter(filter)
+      .build()
+  }
+
+  @Bean
+  fun calculateReleaseDatesApiWebClient(authorizedClientManager: OAuth2AuthorizedClientManager): WebClient {
+    val filter = ServletOAuth2AuthorizedClientExchangeFilterFunction(authorizedClientManager)
+    filter.setDefaultClientRegistrationId("hmpps-api")
+
+    return WebClient.builder()
+      .baseUrl(calculateReleaseDatesApiUrl)
       .filter(filter)
       .build()
   }

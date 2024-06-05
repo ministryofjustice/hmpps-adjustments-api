@@ -1,6 +1,7 @@
 package uk.gov.justice.digital.hmpps.adjustments.api.service
 
 import org.springframework.stereotype.Service
+import uk.gov.justice.digital.hmpps.adjustments.api.config.UserContext
 
 @Service
 class UnusedDeductionsEventService(
@@ -8,6 +9,7 @@ class UnusedDeductionsEventService(
 ) {
 
   fun handleAdjustmentMessage(adjustmentEvent: AdjustmentEvent) {
+    UserContext.setOverrideUsername("UnusedDeductionsListener")
     val (_, offenderNo, source, unusedDeductions, lastEvent) = adjustmentEvent.additionalInformation
     if (source == "DPS" && !unusedDeductions && lastEvent) {
       unusedDeductionsService.recalculateUnusedDeductions(offenderNo)
@@ -15,6 +17,7 @@ class UnusedDeductionsEventService(
   }
 
   fun handlePrisonerSearchEvent(prisonerSearchEvent: PrisonerSearchEvent) {
+    UserContext.setOverrideUsername("UnusedDeductionsListener")
     val (categoriesChanged, nomsNumber) = prisonerSearchEvent.additionalInformation
     if (categoriesChanged.contains("SENTENCE")) {
       unusedDeductionsService.recalculateUnusedDeductions(nomsNumber)

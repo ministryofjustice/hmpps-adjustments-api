@@ -6,7 +6,7 @@ import io.hypersistence.utils.hibernate.type.json.internal.JacksonUtil
 import jakarta.persistence.EntityNotFoundException
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
-import uk.gov.justice.digital.hmpps.adjustments.api.client.SystemPrisonApiClient
+import uk.gov.justice.digital.hmpps.adjustments.api.client.PrisonApiClient
 import uk.gov.justice.digital.hmpps.adjustments.api.entity.Adjustment
 import uk.gov.justice.digital.hmpps.adjustments.api.entity.AdjustmentHistory
 import uk.gov.justice.digital.hmpps.adjustments.api.entity.AdjustmentSource
@@ -29,7 +29,7 @@ import java.util.UUID
 class LegacyService(
   private val adjustmentRepository: AdjustmentRepository,
   private val objectMapper: ObjectMapper,
-  private val systemPrisonApiClient: SystemPrisonApiClient,
+  private val prisonApiClient: PrisonApiClient,
 ) {
 
   @Transactional
@@ -58,7 +58,7 @@ class LegacyService(
   }
 
   private fun getAgencyId(resource: LegacyAdjustment): String {
-    return resource.agencyId ?: systemPrisonApiClient.getPrisonerDetail(resource.offenderNo).agencyId
+    return resource.agencyId ?: prisonApiClient.getPrisonerDetail(resource.offenderNo).agencyId
   }
 
   fun get(adjustmentId: UUID): LegacyAdjustment {
@@ -132,7 +132,7 @@ class LegacyService(
       .orElseThrow {
         EntityNotFoundException("No adjustment found with id $adjustmentId")
       }
-    val prisonId = systemPrisonApiClient.getPrisonerDetail(adjustment.person).agencyId
+    val prisonId = prisonApiClient.getPrisonerDetail(adjustment.person).agencyId
     val change = objectToJson(adjustment)
     adjustment.apply {
       status = if (this.status == INACTIVE) INACTIVE_WHEN_DELETED else DELETED

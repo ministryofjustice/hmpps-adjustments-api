@@ -28,8 +28,8 @@ import java.util.UUID
 @RequestMapping("/legacy/adjustments", produces = [MediaType.APPLICATION_JSON_VALUE], consumes = [LegacyController.LEGACY_CONTENT_TYPE])
 @Tag(name = "legacy-controller", description = "CRUD operations for syncing data from NOMIS into adjustments api database.")
 class LegacyController(
-    val legacyService: LegacyService,
-    val eventService: AdjustmentsDomainEventService,
+  val legacyService: LegacyService,
+  val eventService: AdjustmentsDomainEventService,
 ) {
 
   @PostMapping

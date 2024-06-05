@@ -8,9 +8,8 @@ import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Service
 import uk.gov.justice.digital.hmpps.adjustments.api.service.UnusedDeductionsEventService
 
-
 @Service
-class DomainEventListener(
+class UnusedDeductionsEventListener(
   private val objectMapper: ObjectMapper,
   private val eventService: UnusedDeductionsEventService,
 ) {
@@ -47,5 +46,4 @@ class DomainEventListener(
       else -> log.info("Received a message I wasn't expecting: {}", eventType)
     }
   }
-
 }

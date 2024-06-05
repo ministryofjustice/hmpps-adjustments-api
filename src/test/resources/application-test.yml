@@ -52,6 +52,10 @@ adjudications:
   api:
     url: http://localhost:8333
 
+calculate-release-dates:
+  api:
+    url: http://localhost:8334
+
 hmpps.sqs:
   reactiveApi: true
   provider: localstack

@@ -9,12 +9,13 @@ import org.springframework.test.context.ActiveProfiles
 import org.springframework.test.web.reactive.server.WebTestClient
 import uk.gov.justice.digital.hmpps.adjustments.api.integration.helpers.JwtAuthHelper
 import uk.gov.justice.digital.hmpps.adjustments.api.wiremock.AdjudicationApiExtension
+import uk.gov.justice.digital.hmpps.adjustments.api.wiremock.CalculateReleaseDatesApiExtension
 import uk.gov.justice.digital.hmpps.adjustments.api.wiremock.HmppsAuthApiExtension
 import uk.gov.justice.digital.hmpps.adjustments.api.wiremock.PrisonApiExtension
 
 @SpringBootTest(webEnvironment = RANDOM_PORT)
 @ActiveProfiles("test")
-@ExtendWith(PrisonApiExtension::class, HmppsAuthApiExtension::class, AdjudicationApiExtension::class)
+@ExtendWith(PrisonApiExtension::class, HmppsAuthApiExtension::class, AdjudicationApiExtension::class, CalculateReleaseDatesApiExtension::class)
 abstract class IntegrationTestBase {
 
   @Suppress("SpringJavaInjectionPointsAutowiringInspection")

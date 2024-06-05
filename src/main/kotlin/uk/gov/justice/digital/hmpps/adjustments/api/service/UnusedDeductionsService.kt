@@ -13,12 +13,12 @@ import kotlin.math.max
 
 @Service
 class UnusedDeductionsService(
-  val adjustmentsService: AdjustmentsService,
+  val adjustmentService: AdjustmentsService,
   val calculateReleaseDatesApiClient: CalculateReleaseDatesApiClient,
-  val adjustmentsDomainEventService: AdjustmentsDomainEventService) {
+) {
 
   fun recalculateUnusedDeductions(offenderNo: String) {
-    val adjustments = adjustmentsService.findCurrentAdjustments(offenderNo, AdjustmentStatus.ACTIVE, null)
+    val adjustments = adjustmentService.findCurrentAdjustments(offenderNo, AdjustmentStatus.ACTIVE, null)
     val anyDpsAdjustments = adjustments.any { it.source == AdjustmentSource.DPS }
     if (anyDpsAdjustments) {
       log.info("Recalculating unused deductions from $offenderNo")
@@ -55,9 +55,7 @@ class UnusedDeductionsService(
       remainingDeductions -= adjustment.days
       remainingDeductions = max(remainingDeductions, 0)
       if (effectiveDays != adjustment.effectiveDays) {
-        adjustmentsService.updateEffectiveDays(adjustment.id!!, AdjustmentEffectiveDaysDto(adjustment.id, effectiveDays, adjustment.person)).also {
-          adjustmentsDomainEventService.updateEffectiveDays(adjustment.id, adjustment.person, AdjustmentSource.DPS)
-        }
+        adjustmentService.updateEffectiveDays(adjustment.id!!, AdjustmentEffectiveDaysDto(adjustment.id, effectiveDays, adjustment.person))
       }
     }
   }
@@ -71,30 +69,26 @@ class UnusedDeductionsService(
       adjustments.find { it.adjustmentType == AdjustmentType.UNUSED_DEDUCTIONS }
     if (unusedDeductionsAdjustment != null) {
       if (unusedDeductions == 0) {
-        adjustmentsService.delete(unusedDeductionsAdjustment.id!!).also {
-          adjustmentsDomainEventService.delete(unusedDeductionsAdjustment.id, unusedDeductionsAdjustment.person, AdjustmentSource.DPS, unusedDeductionsAdjustment.adjustmentType)
-        }
+        adjustmentService.delete(unusedDeductionsAdjustment.id!!)
       } else {
         if (unusedDeductionsAdjustment.days != unusedDeductions) {
-          adjustmentsService.update(unusedDeductionsAdjustment.id!!, unusedDeductionsAdjustment.copy(days = unusedDeductions)).also {
-            adjustmentsDomainEventService.update(unusedDeductionsAdjustment.id, unusedDeductionsAdjustment.person, AdjustmentSource.DPS, unusedDeductionsAdjustment.adjustmentType)
-          }
+          adjustmentService.update(unusedDeductionsAdjustment.id!!, unusedDeductionsAdjustment.copy(days = unusedDeductions))
         }
       }
     } else {
       if (unusedDeductions > 0) {
         val aDeduction = deductions[0]
-        adjustmentsService.create(listOf(
-          aDeduction.copy(
-            id = null,
-            fromDate = null,
-            toDate = null,
-            days = unusedDeductions,
-            adjustmentType = AdjustmentType.UNUSED_DEDUCTIONS,
-          )
-        )).also {
-          adjustmentsDomainEventService.create(it.adjustmentIds, aDeduction.person, AdjustmentSource.DPS, aDeduction.adjustmentType)
-        }
+        adjustmentService.create(
+          listOf(
+            aDeduction.copy(
+              id = null,
+              fromDate = null,
+              toDate = null,
+              days = unusedDeductions,
+              adjustmentType = AdjustmentType.UNUSED_DEDUCTIONS,
+            ),
+          ),
+        )
       }
     }
   }

@@ -52,7 +52,6 @@ class SqsIntegrationTestBase : IntegrationTestBase() {
   internal val unusedDeductionsQueueUrl by lazy { unusedDeductionsQueue.queueUrl }
   internal val unusedDeductionsDlqUrl by lazy { unusedDeductionsQueue.dlqUrl }
 
-
   fun HmppsSqsProperties.domaineventsTopicConfig() =
     topics["domainevents"] ?: throw MissingTopicException("domainevents has not been loaded from configuration properties")
 
