@@ -21,7 +21,7 @@ import uk.gov.justice.digital.hmpps.adjustments.api.entity.AdjustmentSource
 import uk.gov.justice.digital.hmpps.adjustments.api.legacy.model.LegacyAdjustment
 import uk.gov.justice.digital.hmpps.adjustments.api.legacy.model.LegacyAdjustmentCreatedResponse
 import uk.gov.justice.digital.hmpps.adjustments.api.legacy.service.LegacyService
-import uk.gov.justice.digital.hmpps.adjustments.api.service.AdjustmentsEventService
+import uk.gov.justice.digital.hmpps.adjustments.api.service.AdjustmentsDomainEventService
 import java.util.UUID
 
 @RestController
@@ -29,7 +29,7 @@ import java.util.UUID
 @Tag(name = "legacy-controller", description = "CRUD operations for syncing data from NOMIS into adjustments api database.")
 class LegacyController(
   val legacyService: LegacyService,
-  val eventService: AdjustmentsEventService,
+  val eventService: AdjustmentsDomainEventService,
 ) {
 
   @PostMapping

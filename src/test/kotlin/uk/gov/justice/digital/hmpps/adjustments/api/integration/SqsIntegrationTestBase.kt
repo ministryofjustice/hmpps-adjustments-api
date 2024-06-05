@@ -45,6 +45,12 @@ class SqsIntegrationTestBase : IntegrationTestBase() {
 
   protected val prisonerListenerQueue by lazy { hmppsQueueService.findByQueueId("prisonerlistener") as HmppsQueue }
   internal val prisonerListenerQueueUrl by lazy { prisonerListenerQueue.queueUrl }
+  internal val unusedDeductionsQueue by lazy { hmppsQueueService.findByQueueId("unuseddeductions") as HmppsQueue }
+
+  internal val awsSqsUnusedDeductionsClient by lazy { unusedDeductionsQueue.sqsClient }
+  internal val awsSqsUnusedDeductionsDlqClient by lazy { unusedDeductionsQueue.sqsDlqClient }
+  internal val unusedDeductionsQueueUrl by lazy { unusedDeductionsQueue.queueUrl }
+  internal val unusedDeductionsDlqUrl by lazy { unusedDeductionsQueue.dlqUrl }
 
   fun HmppsSqsProperties.domaineventsTopicConfig() =
     topics["domainevents"] ?: throw MissingTopicException("domainevents has not been loaded from configuration properties")
@@ -54,6 +60,14 @@ class SqsIntegrationTestBase : IntegrationTestBase() {
     await untilCallTo {
       adjustmentsQueue.sqsClient.purgeQueue(PurgeQueueRequest.builder().queueUrl(adjustmentsQueue.queueUrl).build())
       adjustmentsQueue.sqsClient.countMessagesOnQueue(adjustmentsQueue.queueUrl).get()
+    } matches { it == 0 }
+    await untilCallTo {
+      awsSqsUnusedDeductionsClient.purgeQueue(PurgeQueueRequest.builder().queueUrl(unusedDeductionsQueue.queueUrl).build())
+      unusedDeductionsQueue.sqsClient.countMessagesOnQueue(unusedDeductionsQueue.queueUrl).get()
+    } matches { it == 0 }
+    await untilCallTo {
+      awsSqsUnusedDeductionsDlqClient?.purgeQueue(PurgeQueueRequest.builder().queueUrl(unusedDeductionsQueue.dlqUrl).build())
+      unusedDeductionsQueue.sqsDlqClient!!.countMessagesOnQueue(unusedDeductionsQueue.dlqUrl!!).get()
     } matches { it == 0 }
   }
 

@@ -7,7 +7,7 @@ import java.time.LocalDateTime
 import java.util.UUID
 
 @Service
-class AdjustmentsEventService(
+class AdjustmentsDomainEventService(
   private val snsService: SnsService,
 ) {
 

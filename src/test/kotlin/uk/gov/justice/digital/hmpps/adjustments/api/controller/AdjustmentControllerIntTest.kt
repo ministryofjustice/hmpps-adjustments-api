@@ -36,7 +36,7 @@ import uk.gov.justice.digital.hmpps.adjustments.api.model.UnlawfullyAtLargeDto
 import uk.gov.justice.digital.hmpps.adjustments.api.model.ValidationCode
 import uk.gov.justice.digital.hmpps.adjustments.api.model.ValidationMessage
 import uk.gov.justice.digital.hmpps.adjustments.api.respository.AdjustmentRepository
-import uk.gov.justice.digital.hmpps.adjustments.api.service.AdjustmentsService
+import uk.gov.justice.digital.hmpps.adjustments.api.service.AdjustmentsTransactionalService
 import uk.gov.justice.digital.hmpps.adjustments.api.service.EventType
 import uk.gov.justice.digital.hmpps.adjustments.api.wiremock.PrisonApiExtension
 import java.time.LocalDate
@@ -178,8 +178,8 @@ class AdjustmentControllerIntTest : SqsIntegrationTestBase() {
       assertThat(adjustment.fromDate).isEqualTo(newFromDate)
       assertThat(adjustment.toDate).isEqualTo(newToDate)
       assertThat(adjustment.days).isNull()
-      assertThat(adjustment.daysCalculated).isEqualTo(AdjustmentsService.daysBetween(newFromDate, newToDate))
-      assertThat(adjustment.effectiveDays).isEqualTo(AdjustmentsService.daysBetween(newFromDate, newToDate))
+      assertThat(adjustment.daysCalculated).isEqualTo(AdjustmentsTransactionalService.daysBetween(newFromDate, newToDate))
+      assertThat(adjustment.effectiveDays).isEqualTo(AdjustmentsTransactionalService.daysBetween(newFromDate, newToDate))
 
       val legacyData = objectMapper.convertValue(adjustment.legacyData, LegacyData::class.java)
       assertThat(legacyData).isEqualTo(

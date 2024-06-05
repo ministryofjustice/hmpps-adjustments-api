@@ -52,6 +52,10 @@ generic-service:
       HMPPS_SQS_QUEUES_PRISONERLISTENER_QUEUE_NAME: "sqs_queue_name"
     sqs-adjustments-prisoner-events-dlq-secret:
       HMPPS_SQS_QUEUES_PRISONERLISTENER_DLQ_NAME: "sqs_queue_name"
+    sqs-adjustments-unused-deductions-secret:
+      HMPPS_SQS_QUEUES_UNUSEDDEDUCTIONS_QUEUE_NAME: "sqs_queue_name"
+    sqs-adjustments-unused-deductions-dlq-secret:
+      HMPPS_SQS_QUEUES_UNUSEDDEDUCTIONS_DLQ_NAME: "sqs_queue_name"
 
   allowlist:
     groups:

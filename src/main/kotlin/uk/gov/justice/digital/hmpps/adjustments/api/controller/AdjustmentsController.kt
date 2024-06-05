@@ -18,14 +18,12 @@ import org.springframework.web.bind.annotation.RequestMapping
 import org.springframework.web.bind.annotation.RequestParam
 import org.springframework.web.bind.annotation.ResponseStatus
 import org.springframework.web.bind.annotation.RestController
-import uk.gov.justice.digital.hmpps.adjustments.api.entity.AdjustmentSource
 import uk.gov.justice.digital.hmpps.adjustments.api.entity.AdjustmentStatus
 import uk.gov.justice.digital.hmpps.adjustments.api.model.AdjustmentDto
 import uk.gov.justice.digital.hmpps.adjustments.api.model.AdjustmentEffectiveDaysDto
 import uk.gov.justice.digital.hmpps.adjustments.api.model.CreateResponseDto
 import uk.gov.justice.digital.hmpps.adjustments.api.model.RestoreAdjustmentsDto
 import uk.gov.justice.digital.hmpps.adjustments.api.model.ValidationMessage
-import uk.gov.justice.digital.hmpps.adjustments.api.service.AdjustmentsEventService
 import uk.gov.justice.digital.hmpps.adjustments.api.service.AdjustmentsService
 import uk.gov.justice.digital.hmpps.adjustments.api.service.ValidationService
 import java.time.LocalDate
@@ -36,7 +34,6 @@ import java.util.UUID
 @Tag(name = "adjustment-controller", description = "CRUD operations for adjustments.")
 class AdjustmentsController(
   val adjustmentsService: AdjustmentsService,
-  val eventService: AdjustmentsEventService,
   val validationService: ValidationService,
 ) {
 
@@ -54,9 +51,7 @@ class AdjustmentsController(
     ],
   )
   fun create(@RequestBody adjustments: List<AdjustmentDto>): CreateResponseDto {
-    return adjustmentsService.create(adjustments).also {
-      eventService.create(it.adjustmentIds, adjustments[0].person, AdjustmentSource.DPS, adjustments[0].adjustmentType)
-    }
+    return adjustmentsService.create(adjustments)
   }
 
   @GetMapping("", params = ["person"])
@@ -129,9 +124,7 @@ class AdjustmentsController(
     adjustmentId: UUID,
     @RequestBody adjustment: AdjustmentDto,
   ) {
-    adjustmentsService.update(adjustmentId, adjustment).also {
-      eventService.update(adjustmentId, adjustment.person, AdjustmentSource.DPS, adjustment.adjustmentType)
-    }
+    adjustmentsService.update(adjustmentId, adjustment)
   }
 
   @PostMapping("/restore")
@@ -152,9 +145,7 @@ class AdjustmentsController(
     @RequestBody
     adjustments: RestoreAdjustmentsDto,
   ) {
-    adjustmentsService.restore(adjustments).also {
-      eventService.create(adjustments.ids, it[0].person, AdjustmentSource.DPS, it[0].adjustmentType)
-    }
+    adjustmentsService.restore(adjustments)
   }
 
   @PostMapping("/{adjustmentId}/effective-days")
@@ -176,9 +167,7 @@ class AdjustmentsController(
     adjustmentId: UUID,
     @RequestBody adjustment: AdjustmentEffectiveDaysDto,
   ) {
-    adjustmentsService.updateEffectiveDays(adjustmentId, adjustment).also {
-      eventService.updateEffectiveDays(adjustmentId, adjustment.person, AdjustmentSource.DPS)
-    }
+    adjustmentsService.updateEffectiveDays(adjustmentId, adjustment)
   }
 
   @DeleteMapping("/{adjustmentId}")
@@ -199,10 +188,7 @@ class AdjustmentsController(
     @PathVariable("adjustmentId")
     adjustmentId: UUID,
   ) {
-    adjustmentsService.get(adjustmentId).also {
-      adjustmentsService.delete(adjustmentId)
-      eventService.delete(adjustmentId, it.person, AdjustmentSource.DPS, it.adjustmentType)
-    }
+    adjustmentsService.delete(adjustmentId)
   }
 
   @PostMapping("/validate")

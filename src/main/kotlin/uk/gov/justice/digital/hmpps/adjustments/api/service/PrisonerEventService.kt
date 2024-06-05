@@ -3,12 +3,12 @@ package uk.gov.justice.digital.hmpps.adjustments.api.service
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Service
-import uk.gov.justice.digital.hmpps.adjustments.api.client.SystemPrisonApiClient
+import uk.gov.justice.digital.hmpps.adjustments.api.client.PrisonApiClient
 import uk.gov.justice.digital.hmpps.adjustments.api.legacy.service.LegacyService
 
 @Service
 class PrisonerEventService(
-  private val systemPrisonApiClient: SystemPrisonApiClient,
+  private val prisonApiClient: PrisonApiClient,
   private val legacyService: LegacyService,
 ) {
 
@@ -18,7 +18,7 @@ class PrisonerEventService(
   fun handleRelease(event: PrisonerEvent) {
     if (event.additionalInformation.reason == RELEASE_REASON) {
       log.info("Handling release of ${event.additionalInformation.nomsNumber}")
-      val prisoner = systemPrisonApiClient.getPrisonerDetail(event.additionalInformation.nomsNumber)
+      val prisoner = prisonApiClient.getPrisonerDetail(event.additionalInformation.nomsNumber)
       legacyService.setReleased(prisoner)
     }
   }
@@ -26,7 +26,7 @@ class PrisonerEventService(
   fun handleReceived(event: PrisonerEvent) {
     if (ADMISSION_REASONS.contains(event.additionalInformation.reason)) {
       log.info("Handling admission of ${event.additionalInformation.nomsNumber}")
-      val prisoner = systemPrisonApiClient.getPrisonerDetail(event.additionalInformation.nomsNumber)
+      val prisoner = prisonApiClient.getPrisonerDetail(event.additionalInformation.nomsNumber)
       legacyService.setAdmission(prisoner)
     }
   }
