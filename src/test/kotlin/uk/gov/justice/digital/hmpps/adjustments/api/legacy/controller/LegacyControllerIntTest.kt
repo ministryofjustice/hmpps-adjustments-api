@@ -255,7 +255,7 @@ class LegacyControllerIntTest : SqsIntegrationTestBase() {
       comment = "Created",
       active = false,
       bookingReleased = false,
-      agencyId = null,
+      agencyId = "LDS",
     )
   }
 }
