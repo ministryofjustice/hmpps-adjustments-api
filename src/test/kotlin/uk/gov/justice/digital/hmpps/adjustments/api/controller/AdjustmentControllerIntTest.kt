@@ -26,10 +26,14 @@ import uk.gov.justice.digital.hmpps.adjustments.api.enums.UnlawfullyAtLargeType.
 import uk.gov.justice.digital.hmpps.adjustments.api.enums.UnlawfullyAtLargeType.RECALL
 import uk.gov.justice.digital.hmpps.adjustments.api.integration.SqsIntegrationTestBase
 import uk.gov.justice.digital.hmpps.adjustments.api.legacy.model.LegacyData
+import uk.gov.justice.digital.hmpps.adjustments.api.listener.REMAND_ID
+import uk.gov.justice.digital.hmpps.adjustments.api.listener.TAGGED_BAIL_ID
+import uk.gov.justice.digital.hmpps.adjustments.api.listener.UNUSED_DEDUCTIONS_PRISONER_ID
 import uk.gov.justice.digital.hmpps.adjustments.api.model.AdditionalDaysAwardedDto
 import uk.gov.justice.digital.hmpps.adjustments.api.model.AdjustmentDto
 import uk.gov.justice.digital.hmpps.adjustments.api.model.AdjustmentEffectiveDaysDto
 import uk.gov.justice.digital.hmpps.adjustments.api.model.CreateResponseDto
+import uk.gov.justice.digital.hmpps.adjustments.api.model.ManualUnusedDeductionsDto
 import uk.gov.justice.digital.hmpps.adjustments.api.model.RemandDto
 import uk.gov.justice.digital.hmpps.adjustments.api.model.TaggedBailDto
 import uk.gov.justice.digital.hmpps.adjustments.api.model.UnlawfullyAtLargeDto
@@ -38,6 +42,7 @@ import uk.gov.justice.digital.hmpps.adjustments.api.model.ValidationMessage
 import uk.gov.justice.digital.hmpps.adjustments.api.respository.AdjustmentRepository
 import uk.gov.justice.digital.hmpps.adjustments.api.service.AdjustmentsTransactionalService
 import uk.gov.justice.digital.hmpps.adjustments.api.service.EventType
+import uk.gov.justice.digital.hmpps.adjustments.api.wiremock.CalculateReleaseDatesApiExtension
 import uk.gov.justice.digital.hmpps.adjustments.api.wiremock.PrisonApiExtension
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
@@ -227,6 +232,37 @@ class AdjustmentControllerIntTest : SqsIntegrationTestBase() {
       assertThat(latestMessage).contains(AdjustmentSource.DPS.name)
       assertThat(latestMessage).contains("\\\"unusedDeductions\\\":true")
       assertThat(latestMessage).contains("\\\"lastEvent\\\":true")
+    }
+
+    @Test
+    @Sql(
+      "classpath:test_data/reset-data.sql",
+      "classpath:test_data/insert-unused-deduction-adjustments.sql",
+    )
+    fun setManualUnusedDeductions() {
+      CalculateReleaseDatesApiExtension.calculateReleaseDatesApi.stubCalculateUnusedDeductionsCouldNotCalculate()
+      postSetManualUnusedDeductions(
+        UNUSED_DEDUCTIONS_PRISONER_ID,
+        ManualUnusedDeductionsDto(
+          50,
+        ),
+      )
+
+      val adjustments = adjustmentRepository.findByPerson(UNUSED_DEDUCTIONS_PRISONER_ID)
+      val remand = adjustments.find { it.id.toString() == REMAND_ID }!!
+      val taggedBail = adjustments.find { it.id.toString() == TAGGED_BAIL_ID }!!
+      val unusedDeductions = adjustments.find { it.adjustmentType == AdjustmentType.UNUSED_DEDUCTIONS }
+
+      assertThat(remand.daysCalculated).isEqualTo(100)
+      assertThat(remand.effectiveDays).isEqualTo(50)
+
+      assertThat(taggedBail.days).isEqualTo(100)
+      assertThat(taggedBail.effectiveDays).isEqualTo(100)
+
+      assertThat(unusedDeductions).isNotNull
+      assertThat(unusedDeductions!!.days).isEqualTo(50)
+
+      awaitAtMost30Secs untilCallTo { getNumberOfMessagesCurrentlyOnQueue() } matches { it == 2 }
     }
 
     @Test
@@ -798,9 +834,24 @@ class AdjustmentControllerIntTest : SqsIntegrationTestBase() {
       .exchange()
       .expectStatus().isOk
   }
+  private fun postSetManualUnusedDeductions(
+    person: String,
+    days: ManualUnusedDeductionsDto,
+  ) {
+    webTestClient
+      .post()
+      .uri("/adjustments/person/$person/manual-unused-deductions")
+      .headers(
+        setAdjustmentsMaintainerAuth(),
+      )
+      .bodyValue(
+        days,
+      )
+      .exchange()
+      .expectStatus().isOk
+  }
 
   companion object {
-
     private val CREATED_ADJUSTMENT = AdjustmentDto(
       id = null,
       bookingId = PrisonApiExtension.BOOKING_ID,

@@ -51,4 +51,20 @@ class CalculateReleaseDatesApiMockServer : WireMockServer(WIREMOCK_PORT) {
         ),
     )
   }
+
+  fun stubCalculateUnusedDeductionsCouldNotCalculate() {
+    stubFor(
+      post("/unused-deductions/$UNUSED_DEDUCTIONS_PRISONER_ID/calculation")
+        .willReturn(
+          aResponse()
+            .withHeader("Content-Type", "application/json")
+            .withBody(
+              """
+                {"unusedDeductions":null}
+              """.trimIndent(),
+            )
+            .withStatus(200),
+        ),
+    )
+  }
 }

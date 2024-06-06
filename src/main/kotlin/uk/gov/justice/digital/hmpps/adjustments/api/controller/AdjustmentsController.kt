@@ -22,9 +22,11 @@ import uk.gov.justice.digital.hmpps.adjustments.api.entity.AdjustmentStatus
 import uk.gov.justice.digital.hmpps.adjustments.api.model.AdjustmentDto
 import uk.gov.justice.digital.hmpps.adjustments.api.model.AdjustmentEffectiveDaysDto
 import uk.gov.justice.digital.hmpps.adjustments.api.model.CreateResponseDto
+import uk.gov.justice.digital.hmpps.adjustments.api.model.ManualUnusedDeductionsDto
 import uk.gov.justice.digital.hmpps.adjustments.api.model.RestoreAdjustmentsDto
 import uk.gov.justice.digital.hmpps.adjustments.api.model.ValidationMessage
 import uk.gov.justice.digital.hmpps.adjustments.api.service.AdjustmentsService
+import uk.gov.justice.digital.hmpps.adjustments.api.service.UnusedDeductionsService
 import uk.gov.justice.digital.hmpps.adjustments.api.service.ValidationService
 import java.time.LocalDate
 import java.util.UUID
@@ -35,6 +37,7 @@ import java.util.UUID
 class AdjustmentsController(
   val adjustmentsService: AdjustmentsService,
   val validationService: ValidationService,
+  val unusedDeductionsService: UnusedDeductionsService,
 ) {
 
   @PostMapping
@@ -168,6 +171,28 @@ class AdjustmentsController(
     @RequestBody adjustment: AdjustmentEffectiveDaysDto,
   ) {
     adjustmentsService.updateEffectiveDays(adjustmentId, adjustment)
+  }
+
+  @PostMapping("/person/{person}/manual-unused-deductions")
+  @Operation(
+    summary = "Update the unused deduction days for a person",
+    description = "Update the unused deduction days for a person",
+  )
+  @ApiResponses(
+    value = [
+      ApiResponse(responseCode = "200", description = "Adjustment update"),
+      ApiResponse(responseCode = "401", description = "Unauthorised, requires a valid Oauth2 token"),
+      ApiResponse(responseCode = "404", description = "Adjustment not found"),
+    ],
+  )
+  @PreAuthorize("hasAnyRole('ADJUSTMENTS_MAINTAINER', 'ADJUSTMENTS__ADJUSTMENTS_RW')")
+  fun setUnusedDaysManually(
+    @Parameter(required = true, description = "The person")
+    @PathVariable("person")
+    person: String,
+    @RequestBody manualUnusedDeductionsDto: ManualUnusedDeductionsDto,
+  ) {
+    unusedDeductionsService.setUnusedDaysManually(person, manualUnusedDeductionsDto)
   }
 
   @DeleteMapping("/{adjustmentId}")
