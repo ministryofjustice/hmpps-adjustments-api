@@ -1,5 +1,5 @@
 INSERT INTO adjustment(id,adjustment_type,person,days,effective_days,days_calculated,legacy_data,from_date,to_date,status,source) VALUES
-    ('72ba4684-5674-4ada-9aa4-41011ff23451','REMAND','A1234TT',null,100,100,'{"type": "UAL", "comment": "comment added on nomis", "bookingId": 123, "migration": false, "postedDate": "2023-07-27", "sentenceSequence": 1}','2023-07-27 00:00:00+01','2023-11-04 00:00:00+01','ACTIVE','DPS'),
+    ('72ba4684-5674-4ada-9aa4-41011ff23451','REMAND','A1234TT',null,100,100,'{"type": "UAL", "comment": "comment added on nomis", "bookingId": 123, "migration": false, "postedDate": "2023-07-27", "sentenceSequence": 1}','2023-07-27 05:00:00+01','2023-11-03 05:00:00+01','ACTIVE','DPS'),
     ('5d2c10d0-0a31-49d1-93a9-52213bb344a5','TAGGED_BAIL','A1234TT',100,100,null,'{"type": "UAL", "comment": "comment added on nomis", "bookingId": 123, "migration": false, "postedDate": "2023-07-27", "sentenceSequence": 1}',null,null,'ACTIVE','DPS');
 
 
