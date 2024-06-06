@@ -57,7 +57,7 @@ class UnusedDeductionsEventListenerIntTest : SqsIntegrationTestBase() {
       assertThat(remand.effectiveDays).isEqualTo(0)
 
       assertThat(taggedBail.days).isEqualTo(100)
-      assertThat(taggedBail.effectiveDays).isEqualTo(0)
+      assertThat(taggedBail.effectiveDays).isEqualTo(50)
 
       assertThat(unusedDeductions.days).isEqualTo(150)
     }
@@ -99,7 +99,7 @@ class UnusedDeductionsEventListenerIntTest : SqsIntegrationTestBase() {
       assertThat(remand.effectiveDays).isEqualTo(0)
 
       assertThat(taggedBail.days).isEqualTo(100)
-      assertThat(taggedBail.effectiveDays).isEqualTo(0)
+      assertThat(taggedBail.effectiveDays).isEqualTo(50)
 
       assertThat(unusedDeductions).isNotNull
       assertThat(unusedDeductions!!.days).isEqualTo(150)

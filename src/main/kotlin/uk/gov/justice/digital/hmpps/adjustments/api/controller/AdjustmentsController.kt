@@ -150,7 +150,7 @@ class AdjustmentsController(
   ) {
     adjustmentsService.restore(adjustments)
   }
-  
+
   @PostMapping("/{adjustmentId}/effective-days")
   @Operation(
     summary = "Update the effective calculable days for and adjustment",
@@ -172,6 +172,7 @@ class AdjustmentsController(
   ) {
     adjustmentsService.updateEffectiveDays(adjustmentId, adjustment)
   }
+
   @PostMapping("/person/{person}/manual-unused-deductions")
   @Operation(
     summary = "Update the unused deduction days for a person",

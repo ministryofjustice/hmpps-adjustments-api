@@ -31,6 +31,7 @@ import uk.gov.justice.digital.hmpps.adjustments.api.listener.TAGGED_BAIL_ID
 import uk.gov.justice.digital.hmpps.adjustments.api.listener.UNUSED_DEDUCTIONS_PRISONER_ID
 import uk.gov.justice.digital.hmpps.adjustments.api.model.AdditionalDaysAwardedDto
 import uk.gov.justice.digital.hmpps.adjustments.api.model.AdjustmentDto
+import uk.gov.justice.digital.hmpps.adjustments.api.model.AdjustmentEffectiveDaysDto
 import uk.gov.justice.digital.hmpps.adjustments.api.model.CreateResponseDto
 import uk.gov.justice.digital.hmpps.adjustments.api.model.ManualUnusedDeductionsDto
 import uk.gov.justice.digital.hmpps.adjustments.api.model.RemandDto
@@ -204,6 +205,7 @@ class AdjustmentControllerIntTest : SqsIntegrationTestBase() {
       assertThat(latestMessage).contains(AdjustmentSource.DPS.name)
       assertThat(latestMessage).contains("\\\"lastEvent\\\":true")
     }
+
     @Test
     @Transactional
     fun updateEffectiveDays() {
@@ -816,6 +818,22 @@ class AdjustmentControllerIntTest : SqsIntegrationTestBase() {
       .expectStatus().isOk
   }
 
+  private fun postAdjustmentEffectiveDaysUpdate(
+    adjustmentId: UUID,
+    updateDto: AdjustmentEffectiveDaysDto,
+  ) {
+    webTestClient
+      .post()
+      .uri("/adjustments/$adjustmentId/effective-days")
+      .headers(
+        setAdjustmentsMaintainerAuth(),
+      )
+      .bodyValue(
+        updateDto,
+      )
+      .exchange()
+      .expectStatus().isOk
+  }
   private fun postSetManualUnusedDeductions(
     person: String,
     days: ManualUnusedDeductionsDto,
