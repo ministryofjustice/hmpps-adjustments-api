@@ -185,7 +185,7 @@ class LegacyAndAdjustmentsControllerIntTest : SqsIntegrationTestBase() {
   }
 
   @Test
-  fun `Update an adjustment in NOMIS with effective days different to calculated - unused portion`() {
+  fun `Update an adjustment in NOMIS without changing number of days`() {
     // Create an adjustment int DPS with different calculated + effective days.
     var adjustment = ADJUSTMENT.copy()
     val id = postCreateAdjustments(listOf(adjustment))[0]
@@ -201,6 +201,26 @@ class LegacyAndAdjustmentsControllerIntTest : SqsIntegrationTestBase() {
     val daysBetweenResult = (ChronoUnit.DAYS.between(adjustment.fromDate, adjustment.toDate) + 1).toInt()
     assertThat(daysBetweenResult).isEqualTo(totalDays)
     assertThat(adjustment.status).isEqualTo(AdjustmentStatus.INACTIVE)
+  }
+
+  @Test
+  fun `Update a DPS adjustment in NOMIS when DPS unused days is shared over multiple adjustments`() {
+    // Create two adjustments with a used and unused part.
+    var adjustmentOne = ADJUSTMENT.copy()
+    var adjustmentTwo = ADJUSTMENT.copy()
+    val (idOne, idTwo) = postCreateAdjustments(listOf(adjustmentOne, adjustmentTwo))
+    postAdjustmentEffectiveDaysUpdate(idOne, AdjustmentEffectiveDaysDto(idOne, 5, adjustmentOne.person))
+    postAdjustmentEffectiveDaysUpdate(idTwo, AdjustmentEffectiveDaysDto(idTwo, 0, adjustmentTwo.person))
+
+    // Update the adjustment from NOMIS and change days
+    val legacyAdjustment = getLegacyAdjustment(idOne)
+    updateLegacyAdjustment(idOne, legacyAdjustment.copy(adjustmentDays = 4))
+
+    // Adjustment should have new days.
+    adjustmentOne = getAdjustmentById(idOne)
+    adjustmentTwo = getAdjustmentById(idTwo)
+    assertThat(adjustmentOne.days).isEqualTo(4)
+    assertThat(adjustmentTwo.status).isEqualTo(AdjustmentStatus.INACTIVE)
   }
 
   @Test

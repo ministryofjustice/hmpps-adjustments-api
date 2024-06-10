@@ -102,10 +102,14 @@ class LegacyService(
       }
     val prisonId = getAgencyId(resource)
     val change = objectToJson(adjustment)
+    val isChangeToDays = adjustment.effectiveDays != resource.adjustmentDays
+
     adjustment.apply {
       effectiveDays = resource.adjustmentDays
       fromDate = resource.adjustmentFromDate
-      toDate = if (adjustmentHasDPSUnusedDeductions(this)) this.toDate else resource.adjustmentFromDate?.plusDays(resource.adjustmentDays.toLong() - 1)
+      toDate = if (isChangeToDays) resource.adjustmentFromDate?.plusDays(resource.adjustmentDays.toLong() - 1) else this.toDate
+      days = if (this.days != null && isChangeToDays) resource.adjustmentDays else this.days
+      daysCalculated = if (this.daysCalculated != null && isChangeToDays) resource.adjustmentDays else this.daysCalculated
       source = AdjustmentSource.NOMIS
       status = if (resource.active && !resource.bookingReleased) ACTIVE else INACTIVE
       legacyData = objectToJson(LegacyData(resource.bookingId, resource.sentenceSequence, resource.adjustmentDate, resource.comment, resource.adjustmentType, false, adjustmentActive = resource.active, bookingActive = !resource.bookingReleased))
@@ -119,11 +123,25 @@ class LegacyService(
         prisonId = prisonId,
       )
     }
+
+    if (isChangeToDays) {
+      updateAllAdjustmentsToHaveEffectiveDaysAsDpsDays(resource.offenderNo)
+    }
   }
 
-  private fun adjustmentHasDPSUnusedDeductions(adjustment: Adjustment): Boolean {
-    val dpsDays = adjustment.days ?: adjustment.daysCalculated
-    return dpsDays != null && adjustment.effectiveDays != dpsDays
+  private fun updateAllAdjustmentsToHaveEffectiveDaysAsDpsDays(person: String) {
+    val adjustments = adjustmentRepository.findByPersonAndStatus(person, ACTIVE)
+    adjustments.forEach {
+      val dpsDays = it.days ?: it.daysCalculated
+      if (dpsDays != null && dpsDays != it.effectiveDays) {
+        it.apply {
+          toDate = it.fromDate?.plusDays(it.effectiveDays.toLong() - 1)
+          days = if (this.days != null) it.effectiveDays else this.days
+          daysCalculated = if (this.daysCalculated != null) it.effectiveDays else this.daysCalculated
+          status = if (it.effectiveDays == 0) INACTIVE else status
+        }
+      }
+    }
   }
 
   @Transactional
