@@ -221,6 +221,8 @@ class LegacyAndAdjustmentsControllerIntTest : SqsIntegrationTestBase() {
     adjustmentTwo = getAdjustmentById(idTwo)
     assertThat(adjustmentOne.days).isEqualTo(4)
     assertThat(adjustmentTwo.status).isEqualTo(AdjustmentStatus.INACTIVE)
+    assertThat(adjustmentOne.source).isEqualTo(AdjustmentSource.NOMIS)
+    assertThat(adjustmentTwo.source).isEqualTo(AdjustmentSource.NOMIS)
   }
 
   @Test
