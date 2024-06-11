@@ -125,20 +125,30 @@ class LegacyService(
     }
 
     if (isChangeToDays) {
-      updateAllAdjustmentsToHaveEffectiveDaysAsDpsDays(resource.offenderNo)
+      updateAllAdjustmentsToHaveEffectiveDaysAsDpsDays(resource.offenderNo, resource.agencyId)
     }
   }
 
-  private fun updateAllAdjustmentsToHaveEffectiveDaysAsDpsDays(person: String) {
+  private fun updateAllAdjustmentsToHaveEffectiveDaysAsDpsDays(person: String, prisonId: String?) {
     val adjustments = adjustmentRepository.findByPersonAndStatus(person, ACTIVE)
     adjustments.forEach {
       val dpsDays = it.days ?: it.daysCalculated
       if (dpsDays != null && dpsDays != it.effectiveDays) {
+        val change = objectToJson(it)
         it.apply {
           toDate = it.fromDate?.plusDays(it.effectiveDays.toLong() - 1)
           days = if (this.days != null) it.effectiveDays else this.days
           daysCalculated = if (this.daysCalculated != null) it.effectiveDays else this.daysCalculated
           status = if (it.effectiveDays == 0) INACTIVE else status
+          source = AdjustmentSource.NOMIS
+          adjustmentHistory += AdjustmentHistory(
+            changeByUsername = "NOMIS",
+            changeType = ChangeType.UPDATE,
+            change = change,
+            changeSource = AdjustmentSource.NOMIS,
+            adjustment = it,
+            prisonId = prisonId,
+          )
         }
       }
     }
