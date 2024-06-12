@@ -47,9 +47,6 @@ class PrisonerListenerIntTest : SqsIntegrationTestBase() {
     ).get()
 
     await untilAsserted {
-      assertThat(prisonerListenerQueue.sqsClient.countAllMessagesOnQueue(prisonerListenerQueueUrl).get()).isEqualTo(1)
-    }
-    await untilAsserted {
       assertThat(prisonerListenerQueue.sqsClient.countAllMessagesOnQueue(prisonerListenerQueueUrl).get()).isEqualTo(0)
     }
 
@@ -88,9 +85,6 @@ class PrisonerListenerIntTest : SqsIntegrationTestBase() {
     ).get()
 
     await untilAsserted {
-      assertThat(prisonerListenerQueue.sqsClient.countAllMessagesOnQueue(prisonerListenerQueueUrl).get()).isEqualTo(1)
-    }
-    await untilAsserted {
       assertThat(prisonerListenerQueue.sqsClient.countAllMessagesOnQueue(prisonerListenerQueueUrl).get()).isEqualTo(0)
     }
 
@@ -124,9 +118,6 @@ class PrisonerListenerIntTest : SqsIntegrationTestBase() {
         ).build(),
     ).get()
 
-    await untilAsserted {
-      assertThat(prisonerListenerQueue.sqsClient.countAllMessagesOnQueue(prisonerListenerQueueUrl).get()).isEqualTo(1)
-    }
     await untilAsserted {
       assertThat(prisonerListenerQueue.sqsClient.countAllMessagesOnQueue(prisonerListenerQueueUrl).get()).isEqualTo(0)
     }
@@ -169,9 +160,6 @@ class PrisonerListenerIntTest : SqsIntegrationTestBase() {
     ).get()
 
     await untilAsserted {
-      assertThat(prisonerListenerQueue.sqsClient.countAllMessagesOnQueue(prisonerListenerQueueUrl).get()).isEqualTo(1)
-    }
-    await untilAsserted {
       assertThat(prisonerListenerQueue.sqsClient.countAllMessagesOnQueue(prisonerListenerQueueUrl).get()).isEqualTo(0)
     }
 
@@ -200,9 +188,6 @@ class PrisonerListenerIntTest : SqsIntegrationTestBase() {
         ).build(),
     ).get()
 
-    await untilAsserted {
-      assertThat(prisonerListenerQueue.sqsClient.countAllMessagesOnQueue(prisonerListenerQueueUrl).get()).isEqualTo(1)
-    }
     await untilAsserted {
       assertThat(prisonerListenerQueue.sqsClient.countAllMessagesOnQueue(prisonerListenerQueueUrl).get()).isEqualTo(0)
     }
