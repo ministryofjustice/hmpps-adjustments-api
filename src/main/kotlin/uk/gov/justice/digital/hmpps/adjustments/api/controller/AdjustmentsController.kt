@@ -69,7 +69,7 @@ class AdjustmentsController(
       ApiResponse(responseCode = "404", description = "Adjustment not found"),
     ],
   )
-  @PreAuthorize("hasAnyRole('ADJUSTMENTS_MAINTAINER', 'VIEW_SENTENCE_ADJUSTMENTS', 'ADJUSTMENTS__ADJUSTMENTS_RW')")
+  @PreAuthorize("hasAnyRole('ADJUSTMENTS_MAINTAINER', 'VIEW_SENTENCE_ADJUSTMENTS', 'ADJUSTMENTS__ADJUSTMENTS_RW', 'ADJUSTMENTS__ADJUSTMENTS_RO')")
   fun findByPerson(
     @Parameter(required = true, description = "The noms ID of the person")
     @RequestParam("person")
@@ -99,7 +99,7 @@ class AdjustmentsController(
       ApiResponse(responseCode = "404", description = "Adjustment not found"),
     ],
   )
-  @PreAuthorize("hasAnyRole('ADJUSTMENTS_MAINTAINER', 'VIEW_SENTENCE_ADJUSTMENTS', 'ADJUSTMENTS__ADJUSTMENTS_RW')")
+  @PreAuthorize("hasAnyRole('ADJUSTMENTS_MAINTAINER', 'VIEW_SENTENCE_ADJUSTMENTS', 'ADJUSTMENTS__ADJUSTMENTS_RW', 'ADJUSTMENTS__ADJUSTMENTS_RO')")
   fun get(
     @Parameter(required = true, description = "The adjustment UUID")
     @PathVariable("adjustmentId")
