@@ -243,7 +243,7 @@ class PrisonerListenerIntTest : SqsIntegrationTestBase() {
     .get()
     .uri("/legacy/adjustments/$id")
     .headers(
-      setViewAdjustmentsAuth(),
+      setAdjustmentsROAuth(),
     )
     .header("Content-Type", LegacyController.LEGACY_CONTENT_TYPE)
     .exchange()

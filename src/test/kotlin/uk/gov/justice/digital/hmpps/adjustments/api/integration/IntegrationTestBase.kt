@@ -25,13 +25,13 @@ abstract class IntegrationTestBase {
   @Autowired
   lateinit var jwtAuthHelper: JwtAuthHelper
 
-  internal fun setAdjustmentsMaintainerAuth(
+  internal fun setAdjustmentsRWAuth(
     user: String = "Test User",
-    roles: List<String> = listOf("ROLE_ADJUSTMENTS_MAINTAINER", "ROLE_RELEASE_DATES_CALCULATOR"),
+    roles: List<String> = listOf("ROLE_ADJUSTMENTS__ADJUSTMENTS_RW"),
   ): (HttpHeaders) -> Unit = jwtAuthHelper.setAuthorisation(user, roles)
-  internal fun setViewAdjustmentsAuth(
+  internal fun setAdjustmentsROAuth(
     user: String = "Test User",
-    roles: List<String> = listOf("ROLE_VIEW_SENTENCE_ADJUSTMENTS"),
+    roles: List<String> = listOf("ROLE_ADJUSTMENTS__ADJUSTMENTS_RO"),
   ): (HttpHeaders) -> Unit = jwtAuthHelper.setAuthorisation(user, roles)
   internal fun setLegacySynchronisationAuth(
     user: String = "Test User",
