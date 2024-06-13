@@ -16,7 +16,7 @@ class AdaAdjudicationControllerIntTest : SqsIntegrationTestBase() {
     var adjudicationDetails = webTestClient
       .get()
       .uri("/adjustments/additional-days/${PrisonApiExtension.PRISONER_ID}/adjudication-details")
-      .headers(setAdjustmentsMaintainerAuth())
+      .headers(setAdjustmentsRWAuth())
       .header("Active-Caseload", "KMI")
       .exchange()
       .expectStatus().isOk
@@ -29,7 +29,7 @@ class AdaAdjudicationControllerIntTest : SqsIntegrationTestBase() {
       webTestClient
         .post()
         .uri("/adjustments/additional-days/${PrisonApiExtension.PRISONER_ID}/reject-prospective-ada")
-        .headers(setAdjustmentsMaintainerAuth())
+        .headers(setAdjustmentsRWAuth())
         .contentType(MediaType.APPLICATION_JSON)
         .bodyValue(ProspectiveAdaRejectionDto(person = PrisonApiExtension.PRISONER_ID, days = it.total!!, dateChargeProved = it.dateChargeProved))
         .exchange()
@@ -39,7 +39,7 @@ class AdaAdjudicationControllerIntTest : SqsIntegrationTestBase() {
     adjudicationDetails = webTestClient
       .get()
       .uri("/adjustments/additional-days/${PrisonApiExtension.PRISONER_ID}/adjudication-details")
-      .headers(setAdjustmentsMaintainerAuth())
+      .headers(setAdjustmentsRWAuth())
       .header("Active-Caseload", "KMI")
       .exchange()
       .expectStatus().isOk

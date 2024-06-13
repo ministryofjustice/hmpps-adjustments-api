@@ -98,7 +98,7 @@ class LegacyControllerIntTest : SqsIntegrationTestBase() {
       .get()
       .uri("/legacy/adjustments/$createdId")
       .headers(
-        setViewAdjustmentsAuth(),
+        setAdjustmentsROAuth(),
       )
       .header("Content-Type", LegacyController.LEGACY_CONTENT_TYPE)
       .exchange()

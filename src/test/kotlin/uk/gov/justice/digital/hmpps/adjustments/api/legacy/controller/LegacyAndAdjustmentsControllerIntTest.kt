@@ -59,7 +59,7 @@ class LegacyAndAdjustmentsControllerIntTest : SqsIntegrationTestBase() {
       .put()
       .uri("/adjustments/$id")
       .headers(
-        setAdjustmentsMaintainerAuth(),
+        setAdjustmentsRWAuth(),
       )
       .bodyValue(ADJUSTMENT)
       .exchange()
@@ -109,7 +109,7 @@ class LegacyAndAdjustmentsControllerIntTest : SqsIntegrationTestBase() {
       .put()
       .uri("/adjustments/$id")
       .headers(
-        setAdjustmentsMaintainerAuth(),
+        setAdjustmentsRWAuth(),
       )
       .bodyValue(ADJUSTMENT)
       .exchange()
@@ -151,7 +151,7 @@ class LegacyAndAdjustmentsControllerIntTest : SqsIntegrationTestBase() {
       .delete()
       .uri("/adjustments/$id")
       .headers(
-        setAdjustmentsMaintainerAuth(),
+        setAdjustmentsRWAuth(),
       )
       .exchange()
       .expectStatus().isOk
@@ -287,7 +287,7 @@ class LegacyAndAdjustmentsControllerIntTest : SqsIntegrationTestBase() {
   private fun getAdjustmentById(adjustmentId: UUID) = webTestClient
     .get()
     .uri("/adjustments/$adjustmentId")
-    .headers(setAdjustmentsMaintainerAuth())
+    .headers(setAdjustmentsRWAuth())
     .exchange()
     .expectStatus().isOk
     .returnResult(AdjustmentDto::class.java)
@@ -301,7 +301,7 @@ class LegacyAndAdjustmentsControllerIntTest : SqsIntegrationTestBase() {
       .post()
       .uri("/adjustments/$adjustmentId/effective-days")
       .headers(
-        setAdjustmentsMaintainerAuth(),
+        setAdjustmentsRWAuth(),
       )
       .bodyValue(
         updateDto,
@@ -313,7 +313,7 @@ class LegacyAndAdjustmentsControllerIntTest : SqsIntegrationTestBase() {
   private fun postRestoreAdjustment(restoreDto: RestoreAdjustmentsDto) = webTestClient
     .post()
     .uri("/adjustments/restore")
-    .headers(setAdjustmentsMaintainerAuth())
+    .headers(setAdjustmentsRWAuth())
     .contentType(MediaType.APPLICATION_JSON)
     .bodyValue(restoreDto)
     .exchange()
@@ -323,7 +323,7 @@ class LegacyAndAdjustmentsControllerIntTest : SqsIntegrationTestBase() {
     webTestClient
       .get()
       .uri("/adjustments?person=$person${if (status != null) "&status=$status" else ""}${if (startOfSentenceEnvelope != null) "&sentenceEnvelopeDate=$startOfSentenceEnvelope" else ""}")
-      .headers(setAdjustmentsMaintainerAuth())
+      .headers(setAdjustmentsRWAuth())
       .exchange()
       .expectStatus().isOk
       .expectBodyList<AdjustmentDto>()
@@ -343,7 +343,7 @@ class LegacyAndAdjustmentsControllerIntTest : SqsIntegrationTestBase() {
   private fun postCreateAdjustments(adjustmentDtos: List<AdjustmentDto>) = webTestClient
     .post()
     .uri("/adjustments")
-    .headers(setAdjustmentsMaintainerAuth())
+    .headers(setAdjustmentsRWAuth())
     .contentType(MediaType.APPLICATION_JSON)
     .bodyValue(adjustmentDtos)
     .exchange()
@@ -369,7 +369,7 @@ class LegacyAndAdjustmentsControllerIntTest : SqsIntegrationTestBase() {
     .get()
     .uri("/legacy/adjustments/$id")
     .headers(
-      setViewAdjustmentsAuth(),
+      setAdjustmentsROAuth(),
     )
     .header("Content-Type", LegacyController.LEGACY_CONTENT_TYPE)
     .exchange()
