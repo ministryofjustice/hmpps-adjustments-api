@@ -35,7 +35,7 @@ class LegacyService(
   @Transactional
   fun create(resource: LegacyAdjustment, migration: Boolean): LegacyAdjustmentCreatedResponse {
     val prisonId = if (migration) null else getAgencyId(resource)
-    val adjustment = Adjustment(
+    var adjustment = Adjustment(
       person = resource.offenderNo,
       effectiveDays = resource.adjustmentDays,
       fromDate = resource.adjustmentFromDate,
@@ -54,7 +54,13 @@ class LegacyService(
       ),
     )
 
-    return LegacyAdjustmentCreatedResponse(adjustmentRepository.save(adjustment).id)
+    adjustment = adjustmentRepository.save(adjustment)
+
+    if (!migration) {
+      updateAllAdjustmentsToHaveEffectiveDaysAsDpsDays(adjustment.person, prisonId)
+    }
+
+    return LegacyAdjustmentCreatedResponse(adjustment.id)
   }
 
   private fun getAgencyId(resource: LegacyAdjustment): String {
@@ -173,6 +179,8 @@ class LegacyService(
         prisonId = prisonId,
       )
     }
+
+    updateAllAdjustmentsToHaveEffectiveDaysAsDpsDays(adjustment.person, prisonId)
   }
 
   fun objectToJson(subject: Any): JsonNode {

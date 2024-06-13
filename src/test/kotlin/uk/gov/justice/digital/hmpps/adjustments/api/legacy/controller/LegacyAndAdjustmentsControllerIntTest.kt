@@ -226,6 +226,46 @@ class LegacyAndAdjustmentsControllerIntTest : SqsIntegrationTestBase() {
   }
 
   @Test
+  fun `Create an adjustment in NOMIS when DPS unused days exists`() {
+    // Create an DPS adjustment with used and unused part.
+    var adjustment = ADJUSTMENT.copy()
+    val id = postCreateAdjustments(listOf(adjustment))[0]
+    val totalDays = (ChronoUnit.DAYS.between(adjustment.fromDate, adjustment.toDate) + 1).toInt()
+    val effectiveDays = 1
+    postAdjustmentEffectiveDaysUpdate(id, AdjustmentEffectiveDaysDto(id, effectiveDays, adjustment.person))
+
+    // Create new NOMIS adjustment
+    postCreateLegacyAdjustment(LEGACY_ADJUSTMENT)
+
+    // DPS adjustment should be reset to effective days.
+    adjustment = getAdjustmentById(id)
+    val daysBetweenResult = (ChronoUnit.DAYS.between(adjustment.fromDate, adjustment.toDate) + 1).toInt()
+    assertThat(daysBetweenResult).isEqualTo(effectiveDays)
+  }
+
+  @Test
+  fun `Delete an adjustment in NOMIS when DPS unused days exists`() {
+    // Create two adjustments with a used and unused part.
+    var adjustmentOne = ADJUSTMENT.copy()
+    var adjustmentTwo = ADJUSTMENT.copy()
+    val (idOne, idTwo) = postCreateAdjustments(listOf(adjustmentOne, adjustmentTwo))
+    postAdjustmentEffectiveDaysUpdate(idOne, AdjustmentEffectiveDaysDto(idOne, 5, adjustmentOne.person))
+    postAdjustmentEffectiveDaysUpdate(idTwo, AdjustmentEffectiveDaysDto(idTwo, 2, adjustmentTwo.person))
+
+    // Delete one of the adjustments
+    deleteLegacyAdjustment(idOne)
+
+    // Adjustment should have new days.
+    val dbAdjustmentOne = adjustmentRepository.findById(idOne)
+    assertThat(dbAdjustmentOne.get().status).isEqualTo(AdjustmentStatus.DELETED)
+    adjustmentTwo = getAdjustmentById(idTwo)
+    assertThat(adjustmentTwo.status).isEqualTo(AdjustmentStatus.ACTIVE)
+    val daysBetweenResult = (ChronoUnit.DAYS.between(adjustmentTwo.fromDate, adjustmentTwo.toDate) + 1).toInt()
+    assertThat(daysBetweenResult).isEqualTo(2)
+    assertThat(adjustmentTwo.days).isEqualTo(2)
+  }
+
+  @Test
   fun `legacy get where the effective days are zero but there were days entered in DPS`() {
     val adjustment = ADJUSTMENT.copy()
     val id = postCreateAdjustments(listOf(adjustment))[0]
@@ -311,6 +351,20 @@ class LegacyAndAdjustmentsControllerIntTest : SqsIntegrationTestBase() {
     .returnResult(CreateResponseDto::class.java)
     .responseBody.blockFirst()!!.adjustmentIds
 
+  private fun postCreateLegacyAdjustment(legacyAdjustment: LegacyAdjustment): LegacyAdjustmentCreatedResponse {
+    return webTestClient
+      .post()
+      .uri("/legacy/adjustments")
+      .headers(
+        setLegacySynchronisationAuth(),
+      )
+      .header("Content-Type", LegacyController.LEGACY_CONTENT_TYPE)
+      .bodyValue(legacyAdjustment)
+      .exchange()
+      .expectStatus().isCreated
+      .returnResult(LegacyAdjustmentCreatedResponse::class.java)
+      .responseBody.blockFirst()!!
+  }
   private fun getLegacyAdjustment(id: UUID) = webTestClient
     .get()
     .uri("/legacy/adjustments/$id")
