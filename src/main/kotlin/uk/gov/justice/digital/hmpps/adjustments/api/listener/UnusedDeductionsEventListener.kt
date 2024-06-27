@@ -22,7 +22,7 @@ class UnusedDeductionsEventListener(
   fun onDomainEvent(
     rawMessage: String,
   ) {
-    log.debug("Received message {}", rawMessage)
+    log.trace("Received message {}", rawMessage)
     val sqsMessage: SQSMessage = objectMapper.readValue(rawMessage)
     return when (sqsMessage.Type) {
       "Notification" -> {
