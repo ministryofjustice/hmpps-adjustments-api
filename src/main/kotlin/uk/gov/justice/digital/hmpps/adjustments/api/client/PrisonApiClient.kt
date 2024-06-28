@@ -6,6 +6,7 @@ import org.springframework.core.ParameterizedTypeReference
 import org.springframework.stereotype.Service
 import org.springframework.web.reactive.function.client.WebClient
 import uk.gov.justice.digital.hmpps.adjustments.api.model.prisonapi.Prison
+import uk.gov.justice.digital.hmpps.adjustments.api.model.prisonapi.PrisonApiCourtDateResult
 import uk.gov.justice.digital.hmpps.adjustments.api.model.prisonapi.PrisonerDetails
 import uk.gov.justice.digital.hmpps.adjustments.api.model.prisonapi.SentenceAndOffences
 
@@ -13,6 +14,15 @@ import uk.gov.justice.digital.hmpps.adjustments.api.model.prisonapi.SentenceAndO
 class PrisonApiClient(@Qualifier("prisonApiWebClient") private val webClient: WebClient) {
   private inline fun <reified T> typeReference() = object : ParameterizedTypeReference<T>() {}
   private val log = LoggerFactory.getLogger(this::class.java)
+
+  fun getCourtDateResults(prisonerId: String): List<PrisonApiCourtDateResult> {
+    log.info("Requesting court case results for prisoner $prisonerId")
+    return webClient.get()
+      .uri("/api/court-date-results/$prisonerId")
+      .retrieve()
+      .bodyToMono(typeReference<List<PrisonApiCourtDateResult>>())
+      .block()!!
+  }
 
   fun getSentencesAndOffences(bookingId: Long): List<SentenceAndOffences> {
     log.info("Requesting sentence terms for bookingId $bookingId")

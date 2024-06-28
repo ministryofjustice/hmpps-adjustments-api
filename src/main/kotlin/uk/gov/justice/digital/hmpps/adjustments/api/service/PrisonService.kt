@@ -4,6 +4,7 @@ import org.springframework.stereotype.Service
 import uk.gov.justice.digital.hmpps.adjustments.api.client.PrisonApiClient
 import uk.gov.justice.digital.hmpps.adjustments.api.error.NoActiveSentencesException
 import uk.gov.justice.digital.hmpps.adjustments.api.model.SentenceInfo.Companion.isRecall
+import uk.gov.justice.digital.hmpps.adjustments.api.model.prisonapi.RECALL_COURT_EVENT
 import uk.gov.justice.digital.hmpps.adjustments.api.model.prisonapi.SentenceAndOffences
 import java.time.LocalDate
 
@@ -25,17 +26,35 @@ class PrisonService(
       .filter { !filterActive || it.sentenceStatus == "A" }
   }
 
-  fun getActiveSentencesExcludingRecalls(bookingId: Long): List<SentenceAndOffences> =
-    prisonApiClient.getSentencesAndOffences(bookingId).filter { it.sentenceStatus == "A" && !isRecall(it) }
-
-  fun getActiveSentencesExcludingRecalls(personId: String): List<SentenceAndOffences> =
-    getActiveSentencesExcludingRecalls(prisonApiClient.getPrisonerDetail(personId).bookingId)
-
-  fun getStartOfSentenceEnvelope(person: String): LocalDate =
-    getStartOfSentenceEnvelope(prisonApiClient.getPrisonerDetail(person).bookingId)
-
-  fun getStartOfSentenceEnvelopeExcludingRecalls(personId: String): LocalDate? {
-    val sentences = getActiveSentencesExcludingRecalls(prisonApiClient.getPrisonerDetail(personId).bookingId)
-    return if (sentences.isEmpty()) null else sentences.minOf { it.sentenceDate }
+  fun getSentencesAndStartDateDetails(personId: String): SentenceAndStartDateDetails {
+    val bookingId = prisonApiClient.getPrisonerDetail(personId).bookingId
+    val sentences = getSentencesAndOffences(bookingId)
+    val hasRecall = sentences.any { isRecall(it) }
+    val earliestRecallDate = if (hasRecall) {
+      val recallChargeIds = sentences.filter { isRecall(it) }.flatMap { it.offences.map { off -> off.offenderChargeId } }
+      val courtOutcomes = prisonApiClient.getCourtDateResults(personId)
+      val recallOutcomes = courtOutcomes.filter { it.resultCode === RECALL_COURT_EVENT }
+      val matchingOutcomes = recallOutcomes.filter { recallChargeIds.contains(it.charge.chargeId) }
+      matchingOutcomes.minOfOrNull { it.date }
+    } else {
+      null
+    }
+    val latestSentenceDate = sentences.maxOfOrNull { it.sentenceDate }
+    val earliestNonRecallSentenceDate = sentences.filter { !isRecall(it) }.minOfOrNull { it.sentenceDate }
+    return SentenceAndStartDateDetails(
+      sentences,
+      hasRecall,
+      earliestNonRecallSentenceDate,
+      latestSentenceDate,
+      earliestRecallDate,
+    )
   }
 }
+
+data class SentenceAndStartDateDetails(
+  val sentences: List<SentenceAndOffences>,
+  val hasRecall: Boolean,
+  val latestSentenceDate: LocalDate?,
+  val earliestNonRecallSentenceDate: LocalDate?,
+  val earliestRecallDate: LocalDate?,
+)
