@@ -38,7 +38,7 @@ class PrisonerEventService(
 }
 
 const val RELEASE_REASON = "RELEASED"
-val ADMISSION_REASONS = listOf("NEW_ADMISSION", "READMISSION")
+val ADMISSION_REASONS = listOf("NEW_ADMISSION", "READMISSION", "READMISSION_SWITCH_BOOKING")
 
 data class PrisonerEvent(
   val additionalInformation: PrisonerAdditionalInformation,
