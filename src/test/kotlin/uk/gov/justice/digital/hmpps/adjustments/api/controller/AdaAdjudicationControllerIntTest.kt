@@ -8,6 +8,7 @@ import uk.gov.justice.digital.hmpps.adjustments.api.integration.SqsIntegrationTe
 import uk.gov.justice.digital.hmpps.adjustments.api.model.ProspectiveAdaRejectionDto
 import uk.gov.justice.digital.hmpps.adjustments.api.model.additionaldays.AdaAdjudicationDetails
 import uk.gov.justice.digital.hmpps.adjustments.api.wiremock.PrisonApiExtension
+import java.time.LocalDate
 
 class AdaAdjudicationControllerIntTest : SqsIntegrationTestBase() {
 
@@ -47,5 +48,24 @@ class AdaAdjudicationControllerIntTest : SqsIntegrationTestBase() {
       .responseBody.blockFirst()!!
 
     assertThat(adjudicationDetails.intercept.type).isEqualTo(InterceptType.NONE)
+  }
+
+  @Test
+  fun `Get adjudications with a recall`() {
+    var adjudicationDetails = webTestClient
+      .get()
+      .uri("/adjustments/additional-days/G4946VC/adjudication-details")
+      .headers(setAdjustmentsRWAuth())
+      .header("Active-Caseload", "KMI")
+      .exchange()
+      .expectStatus().isOk
+      .returnResult(AdaAdjudicationDetails::class.java)
+      .responseBody.blockFirst()!!
+
+    assertThat(adjudicationDetails.intercept.type).isEqualTo(InterceptType.UPDATE)
+    assertThat(adjudicationDetails.totalAwaitingApproval).isEqualTo(29)
+    assertThat(adjudicationDetails.recallWithMissingOutcome).isFalse
+    assertThat(adjudicationDetails.earliestNonRecallSentenceDate).isEqualTo(LocalDate.of(2014, 2, 14))
+    assertThat(adjudicationDetails.earliestRecallDate).isEqualTo(LocalDate.of(2010, 9, 15))
   }
 }
