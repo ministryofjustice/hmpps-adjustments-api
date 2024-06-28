@@ -33,14 +33,14 @@ class PrisonService(
     val earliestRecallDate = if (hasRecall) {
       val recallChargeIds = sentences.filter { isRecall(it) }.flatMap { it.offences.map { off -> off.offenderChargeId } }
       val courtOutcomes = prisonApiClient.getCourtDateResults(personId)
-      val recallOutcomes = courtOutcomes.filter { it.resultCode === RECALL_COURT_EVENT }
+      val recallOutcomes = courtOutcomes.filter { it.resultCode == RECALL_COURT_EVENT }
       val matchingOutcomes = recallOutcomes.filter { recallChargeIds.contains(it.charge.chargeId) }
       matchingOutcomes.minOfOrNull { it.date }
     } else {
       null
     }
-    val latestSentenceDate = sentences.maxOfOrNull { it.sentenceDate }
     val earliestNonRecallSentenceDate = sentences.filter { !isRecall(it) }.minOfOrNull { it.sentenceDate }
+    val latestSentenceDate = sentences.maxOfOrNull { it.sentenceDate }
     return SentenceAndStartDateDetails(
       sentences,
       hasRecall,

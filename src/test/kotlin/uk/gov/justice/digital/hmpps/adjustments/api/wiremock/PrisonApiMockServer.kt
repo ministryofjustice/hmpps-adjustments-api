@@ -37,8 +37,11 @@ class PrisonApiExtension : BeforeAllCallback, AfterAllCallback, BeforeEachCallba
     prisonApi.stubGetPrison("MRG", "Moorgate")
     prisonApi.stubGetPrison("KMI", "Kirkham (HMP)")
     prisonApi.stubGetPrison("PNI", "Preston (HMP)")
+    prisonApi.stubGetPrison("BMI", "Birmingham (HMP)")
+    prisonApi.stubGetPrison("ACI", "Arrington (HMP)")
     prisonApi.stubGetRecallPrisonerDetails()
     prisonApi.stubRecallSentenceAndOffences()
+    prisonApi.stubG4946VC()
   }
 
   override fun beforeEach(context: ExtensionContext) {
@@ -210,6 +213,42 @@ class PrisonApiMockServer : WireMockServer(WIREMOCK_PORT) {
                   }
                 ]
               """.trimIndent(),
+            )
+            .withStatus(200),
+        ),
+    )
+  }
+
+  fun stubG4946VC() {
+    stubFor(
+      get("/api/offenders/G4946VC")
+        .willReturn(
+          aResponse()
+            .withHeader("Content-Type", "application/json")
+            .withBody(
+              G4946VC_PRISONER.trimIndent(),
+            )
+            .withStatus(200),
+        ),
+    )
+    stubFor(
+      get("/api/offender-sentences/booking/777831/sentences-and-offences")
+        .willReturn(
+          aResponse()
+            .withHeader("Content-Type", "application/json")
+            .withBody(
+              G4946VC_SENTENCES_AND_OFFENCES.trimIndent(),
+            )
+            .withStatus(200),
+        ),
+    )
+    stubFor(
+      get("/api/court-date-results/G4946VC")
+        .willReturn(
+          aResponse()
+            .withHeader("Content-Type", "application/json")
+            .withBody(
+              G4946VC_COURT_DATE_RESULTS.trimIndent(),
             )
             .withStatus(200),
         ),

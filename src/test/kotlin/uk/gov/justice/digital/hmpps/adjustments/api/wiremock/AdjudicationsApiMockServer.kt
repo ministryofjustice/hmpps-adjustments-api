@@ -21,6 +21,7 @@ class AdjudicationApiExtension : BeforeAllCallback, AfterAllCallback, BeforeEach
   override fun beforeAll(context: ExtensionContext) {
     adjudicationApi.start()
     adjudicationApi.stubAdjudications()
+    adjudicationApi.stubG4946VC()
   }
 
   override fun beforeEach(context: ExtensionContext) {
@@ -174,6 +175,20 @@ class AdjudicationsApiMockServer : WireMockServer(WIREMOCK_PORT) {
                  ]
               }
               """.trimIndent(),
+            )
+            .withStatus(200),
+        ),
+    )
+  }
+
+  fun stubG4946VC() {
+    stubFor(
+      get("/reported-adjudications/bookings/prisoner/G4946VC?page=0&size=1000&ada=true&pada=true")
+        .willReturn(
+          aResponse()
+            .withHeader("Content-Type", "application/json")
+            .withBody(
+              G4946VC_ADJUDICATIONS.trimIndent(),
             )
             .withStatus(200),
         ),
