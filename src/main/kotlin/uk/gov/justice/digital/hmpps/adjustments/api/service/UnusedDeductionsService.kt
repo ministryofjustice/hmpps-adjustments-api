@@ -37,6 +37,8 @@ class UnusedDeductionsService(
         val calculatedUnusedDeductions =
           calculateReleaseDatesApiClient.calculateUnusedDeductions(adjustments, offenderNo).unusedDeductions
 
+        log.info("Calculated unused deductions of $calculatedUnusedDeductions")
+
         if (calculatedUnusedDeductions == null) {
           // Couldn't calculate.
           return
@@ -93,6 +95,7 @@ class UnusedDeductionsService(
       }
     }
   }
+
   fun setUnusedDaysManually(person: String, manualUnusedDeductionsDto: ManualUnusedDeductionsDto) {
     val adjustments = adjustmentService.findCurrentAdjustments(person, AdjustmentStatus.ACTIVE, null)
     val deductions = adjustments
