@@ -31,6 +31,7 @@ class PrisonServiceTest {
     )
     val chargeId = 1L
     val sentenceDate = LocalDate.of(2023, 1, 1)
+    val recallSentenceDate = LocalDate.of(2022, 1, 1)
     val recallDate = LocalDate.of(2024, 1, 1)
     val sentences = listOf(
       SentenceAndOffences(
@@ -41,7 +42,7 @@ class PrisonServiceTest {
         sentenceCalculationType = "ADIMP",
       ),
       SentenceAndOffences(
-        sentenceDate = sentenceDate.minusYears(1),
+        sentenceDate = recallSentenceDate,
         bookingId = 1,
         sentenceSequence = 1,
         sentenceStatus = "A",
@@ -75,6 +76,7 @@ class PrisonServiceTest {
         earliestRecallDate = recallDate,
         earliestNonRecallSentenceDate = sentenceDate,
         latestSentenceDate = sentenceDate,
+        earliestSentenceDate = recallSentenceDate,
       ),
     )
   }
