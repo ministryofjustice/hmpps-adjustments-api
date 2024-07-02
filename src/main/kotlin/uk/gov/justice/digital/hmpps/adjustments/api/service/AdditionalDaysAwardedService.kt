@@ -47,19 +47,28 @@ class AdditionalDaysAwardedService(
     if (sentenceDetail.sentences.isEmpty()) {
       return AdaAdjudicationDetails()
     }
-    if (sentenceDetail.hasRecall && sentenceDetail.earliestRecallDate == null) {
-      return AdaAdjudicationDetails(
-        recallWithMissingOutcome = true,
-      )
-    }
 
     val adaFilterDate = if (sentenceDetail.earliestRecallDate != null && sentenceDetail.earliestNonRecallSentenceDate != null) {
       listOf(sentenceDetail.earliestNonRecallSentenceDate, sentenceDetail.earliestRecallDate).min()
     } else {
-      sentenceDetail.earliestRecallDate ?: sentenceDetail.earliestNonRecallSentenceDate!!
+      sentenceDetail.earliestRecallDate ?: sentenceDetail.earliestSentenceDate!!
     }
     val adaAdjustments = adjustmentRepository.findByPersonAndAdjustmentTypeAndStatus(nomsId, ADDITIONAL_DAYS_AWARDED)
     val adas = adjudicationsLookupService.lookupAdas(nomsId, adaFilterDate)
+
+    if (sentenceDetail.hasRecall && sentenceDetail.earliestRecallDate == null) {
+      val hasAdaAfterRecallSentenceDateBeforeParallel = if (sentenceDetail.earliestNonRecallSentenceDate != null) {
+        adas.any { it.dateChargeProved.isBefore(sentenceDetail.earliestNonRecallSentenceDate) }
+      } else {
+        adas.isNotEmpty()
+      }
+
+      if (hasAdaAfterRecallSentenceDateBeforeParallel) {
+        return AdaAdjudicationDetails(
+          recallWithMissingOutcome = true,
+        )
+      }
+    }
 
     var (awarded, pendingApproval) = filterAdasByMatchingAdjustment(
       getAdasByDateCharged(adas, AWARDED_OR_PENDING),
