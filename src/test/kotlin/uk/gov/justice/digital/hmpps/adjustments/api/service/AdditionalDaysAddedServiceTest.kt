@@ -439,13 +439,7 @@ class AdditionalDaysAddedServiceTest {
     @Test
     fun `Should not intercept if no sentence date`() {
       whenever(prisonService.getSentencesAndStartDateDetails(NOMS_ID)).thenReturn(
-        SentenceAndStartDateDetails(
-          emptyList(),
-          false,
-          null,
-          null,
-          null,
-        ),
+        SentenceAndStartDateDetails(),
       )
 
       val intercept = additionalDaysAwardedService.getAdaAdjudicationDetails(NOMS_ID).intercept
@@ -454,16 +448,62 @@ class AdditionalDaysAddedServiceTest {
     }
 
     @Test
-    fun `Should not intercept if no missing recall outcome date`() {
+    fun `Should not intercept if no missing recall outcome date, only recalls`() {
       whenever(prisonService.getSentencesAndStartDateDetails(NOMS_ID)).thenReturn(
-        SentenceAndStartDateDetails(
-          recallSentences,
-          true,
-          null,
-          null,
-          null,
+        recallSentenceDetail.copy(
+          earliestRecallDate = null,
         ),
       )
+      whenever(
+        adjustmentRepository.findByPersonAndAdjustmentTypeAndStatus(
+          NOMS_ID,
+          ADDITIONAL_DAYS_AWARDED,
+        ),
+      ).thenReturn(emptyList())
+      whenever(adjudicationApiClient.getAdjudications(NOMS_ID)).thenReturn(AdjudicationResponse(listOf(adjudicationOne, adjudicationTwoConsecutiveToOne, adjudicationThreeConcurrentToOne)))
+
+      val details = additionalDaysAwardedService.getAdaAdjudicationDetails(NOMS_ID)
+
+      assertThat(details.intercept).isEqualTo(AdaIntercept(NONE, 0, false, emptyList()))
+      assertThat(details.recallWithMissingOutcome).isEqualTo(true)
+    }
+
+    @Test
+    fun `Should not intercept if no missing recall outcome date but no adjudications`() {
+      whenever(prisonService.getSentencesAndStartDateDetails(NOMS_ID)).thenReturn(
+        recallSentenceDetail.copy(
+          earliestRecallDate = null,
+        ),
+      )
+      whenever(
+        adjustmentRepository.findByPersonAndAdjustmentTypeAndStatus(
+          NOMS_ID,
+          ADDITIONAL_DAYS_AWARDED,
+        ),
+      ).thenReturn(emptyList())
+      whenever(adjudicationApiClient.getAdjudications(NOMS_ID)).thenReturn(AdjudicationResponse(emptyList()))
+
+      val details = additionalDaysAwardedService.getAdaAdjudicationDetails(NOMS_ID)
+
+      assertThat(details.intercept).isEqualTo(AdaIntercept(NONE, 0, false, emptyList()))
+      assertThat(details.recallWithMissingOutcome).isEqualTo(false)
+    }
+
+    @Test
+    fun `Should not intercept if no missing recall outcome date and ada before parallel sentence`() {
+      whenever(prisonService.getSentencesAndStartDateDetails(NOMS_ID)).thenReturn(
+        parallelSentenceDetail.copy(
+          earliestRecallDate = null,
+          earliestNonRecallSentenceDate = sentenceDate.plusYears(2),
+        ),
+      )
+      whenever(
+        adjustmentRepository.findByPersonAndAdjustmentTypeAndStatus(
+          NOMS_ID,
+          ADDITIONAL_DAYS_AWARDED,
+        ),
+      ).thenReturn(emptyList())
+      whenever(adjudicationApiClient.getAdjudications(NOMS_ID)).thenReturn(AdjudicationResponse(listOf(adjudicationOne, adjudicationTwoConsecutiveToOne, adjudicationThreeConcurrentToOne)))
 
       val details = additionalDaysAwardedService.getAdaAdjudicationDetails(NOMS_ID)
 
@@ -834,10 +874,11 @@ class AdditionalDaysAddedServiceTest {
       ),
     )
 
+    private val recallSentenceDate = LocalDate.of(2022, 1, 1)
     private val sentenceDate = LocalDate.of(2023, 1, 1)
     private val recallDate = LocalDate.of(2024, 1, 1)
     private val sentences = listOf(SentenceAndOffences(sentenceDate = sentenceDate, bookingId = 1, sentenceSequence = 1, sentenceCalculationType = "ADIMP", sentenceStatus = "A"))
-    private val recallSentences = listOf(SentenceAndOffences(sentenceDate = sentenceDate, bookingId = 1, sentenceSequence = 1, sentenceCalculationType = "LR", sentenceStatus = "A"))
+    private val recallSentences = listOf(SentenceAndOffences(sentenceDate = recallSentenceDate, bookingId = 1, sentenceSequence = 1, sentenceCalculationType = "LR", sentenceStatus = "A"))
 
     private val defaultSentenceDetail = SentenceAndStartDateDetails(
       sentences,
@@ -845,6 +886,7 @@ class AdditionalDaysAddedServiceTest {
       latestSentenceDate = sentenceDate,
       earliestNonRecallSentenceDate = sentenceDate,
       hasRecall = false,
+      earliestSentenceDate = sentenceDate,
     )
     private val recallSentenceDetail = SentenceAndStartDateDetails(
       recallSentences,
@@ -852,6 +894,7 @@ class AdditionalDaysAddedServiceTest {
       latestSentenceDate = sentenceDate,
       earliestNonRecallSentenceDate = null,
       hasRecall = true,
+      earliestSentenceDate = recallSentenceDate,
     )
     private val parallelSentenceDetail = SentenceAndStartDateDetails(
       sentences + recallSentences,
@@ -859,6 +902,7 @@ class AdditionalDaysAddedServiceTest {
       latestSentenceDate = sentenceDate,
       earliestNonRecallSentenceDate = sentenceDate,
       hasRecall = true,
+      earliestSentenceDate = recallSentenceDate,
     )
   }
 }

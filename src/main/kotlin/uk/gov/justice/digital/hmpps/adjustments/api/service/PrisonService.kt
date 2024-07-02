@@ -40,21 +40,24 @@ class PrisonService(
       null
     }
     val earliestNonRecallSentenceDate = sentences.filter { !isRecall(it) }.minOfOrNull { it.sentenceDate }
+    val earliestSentenceDate = sentences.minOfOrNull { it.sentenceDate }
     val latestSentenceDate = sentences.maxOfOrNull { it.sentenceDate }
     return SentenceAndStartDateDetails(
       sentences,
       hasRecall,
-      earliestNonRecallSentenceDate,
       latestSentenceDate,
+      earliestSentenceDate,
+      earliestNonRecallSentenceDate,
       earliestRecallDate,
     )
   }
 }
 
 data class SentenceAndStartDateDetails(
-  val sentences: List<SentenceAndOffences>,
-  val hasRecall: Boolean,
-  val latestSentenceDate: LocalDate?,
-  val earliestNonRecallSentenceDate: LocalDate?,
-  val earliestRecallDate: LocalDate?,
+  val sentences: List<SentenceAndOffences> = emptyList(),
+  val hasRecall: Boolean = false,
+  val latestSentenceDate: LocalDate? = null,
+  val earliestSentenceDate: LocalDate? = null,
+  val earliestNonRecallSentenceDate: LocalDate? = null,
+  val earliestRecallDate: LocalDate? = null,
 )
