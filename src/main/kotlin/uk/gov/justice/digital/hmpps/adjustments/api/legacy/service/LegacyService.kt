@@ -35,7 +35,7 @@ class LegacyService(
   @Transactional
   fun create(resource: LegacyAdjustment, migration: Boolean): LegacyAdjustmentCreatedResponse {
     val prisonId = if (migration) null else resource.agencyId
-    val adjustment = Adjustment(
+    var adjustment = Adjustment(
       person = resource.offenderNo,
       effectiveDays = resource.adjustmentDays,
       fromDate = resource.adjustmentFromDate,
