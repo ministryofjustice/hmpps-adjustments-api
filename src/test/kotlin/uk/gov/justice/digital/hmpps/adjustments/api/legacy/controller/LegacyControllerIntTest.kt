@@ -59,15 +59,6 @@ class LegacyControllerIntTest : SqsIntegrationTestBase() {
   }
 
   @Test
-  fun `create with API agency ID`() {
-    val result = createAdjustment(CREATED_ADJUSTMENT.copy(agencyId = "ABC"))
-    val adjustment = adjustmentRepository.findById(result.adjustmentId).get()
-
-    assertThat(adjustment.adjustmentHistory).singleElement()
-    assertThat(adjustment.adjustmentHistory[0].prisonId).isEqualTo("ABC")
-  }
-
-  @Test
   fun migration() {
     val result = webTestClient
       .post()
@@ -106,7 +97,7 @@ class LegacyControllerIntTest : SqsIntegrationTestBase() {
       .returnResult(LegacyAdjustment::class.java)
       .responseBody.blockFirst()!!
 
-    assertThat(result).isEqualTo(CREATED_ADJUSTMENT)
+    assertThat(result).isEqualTo(CREATED_ADJUSTMENT.copy(agencyId = null))
     awaitAtMost30Secs untilCallTo { getNumberOfMessagesCurrentlyOnQueue() } matches { it == 0 }
   }
 
@@ -253,7 +244,7 @@ class LegacyControllerIntTest : SqsIntegrationTestBase() {
       comment = "Created",
       active = false,
       bookingReleased = false,
-      agencyId = null,
+      agencyId = "LDS",
     )
   }
 }
