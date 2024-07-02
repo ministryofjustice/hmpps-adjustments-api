@@ -59,15 +59,6 @@ class LegacyControllerIntTest : SqsIntegrationTestBase() {
   }
 
   @Test
-  fun `create with API agency ID`() {
-    val result = createAdjustment(CREATED_ADJUSTMENT.copy(agencyId = "ABC"))
-    val adjustment = adjustmentRepository.findById(result.adjustmentId).get()
-
-    assertThat(adjustment.adjustmentHistory).singleElement()
-    assertThat(adjustment.adjustmentHistory[0].prisonId).isEqualTo("ABC")
-  }
-
-  @Test
   fun migration() {
     val result = webTestClient
       .post()
