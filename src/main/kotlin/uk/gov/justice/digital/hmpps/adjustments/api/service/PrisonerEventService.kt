@@ -24,11 +24,9 @@ class PrisonerEventService(
   }
 
   fun handleReceived(event: PrisonerEvent) {
-    if (ADMISSION_REASONS.contains(event.additionalInformation.reason)) {
-      log.info("Handling admission of ${event.additionalInformation.nomsNumber}")
-      val prisoner = prisonApiClient.getPrisonerDetail(event.additionalInformation.nomsNumber)
-      legacyService.setAdmission(prisoner)
-    }
+    log.info("Handling admission of ${event.additionalInformation.nomsNumber}")
+    val prisoner = prisonApiClient.getPrisonerDetail(event.additionalInformation.nomsNumber)
+    legacyService.setAdmission(prisoner)
   }
 
   fun handlePrisonerMerged(event: PrisonerMergedEvent) {
@@ -38,7 +36,6 @@ class PrisonerEventService(
 }
 
 const val RELEASE_REASON = "RELEASED"
-val ADMISSION_REASONS = listOf("NEW_ADMISSION", "READMISSION", "READMISSION_SWITCH_BOOKING")
 
 data class PrisonerEvent(
   val additionalInformation: PrisonerAdditionalInformation,
