@@ -24,11 +24,9 @@ class PrisonerEventService(
   }
 
   fun handleReceived(event: PrisonerEvent) {
-    if (ADMISSION_REASONS.contains(event.additionalInformation.reason)) {
-      log.info("Handling admission of ${event.additionalInformation.nomsNumber}")
-      val prisoner = prisonApiClient.getPrisonerDetail(event.additionalInformation.nomsNumber)
-      legacyService.setAdmission(prisoner)
-    }
+    log.info("Handling admission of ${event.additionalInformation.nomsNumber}")
+    val prisoner = prisonApiClient.getPrisonerDetail(event.additionalInformation.nomsNumber)
+    legacyService.setAdmission(prisoner)
   }
 
   fun handlePrisonerMerged(event: PrisonerMergedEvent) {
