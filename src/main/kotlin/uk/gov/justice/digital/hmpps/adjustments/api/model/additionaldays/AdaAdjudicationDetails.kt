@@ -1,6 +1,7 @@
 package uk.gov.justice.digital.hmpps.adjustments.api.model.additionaldays
 
 import uk.gov.justice.digital.hmpps.adjustments.api.enums.InterceptType
+import java.time.LocalDate
 
 data class AdaAdjudicationDetails(
   val awarded: List<AdasByDateCharged> = listOf(),
@@ -16,4 +17,7 @@ data class AdaAdjudicationDetails(
   val intercept: AdaIntercept = AdaIntercept(InterceptType.NONE, 0, false),
   val totalExistingAdas: Int = 0,
   val showExistingAdaMessage: Boolean = false,
+  val recallWithMissingOutcome: Boolean = false,
+  val earliestNonRecallSentenceDate: LocalDate? = null,
+  val earliestRecallDate: LocalDate? = null,
 )

@@ -26,10 +26,14 @@ import uk.gov.justice.digital.hmpps.adjustments.api.enums.UnlawfullyAtLargeType.
 import uk.gov.justice.digital.hmpps.adjustments.api.enums.UnlawfullyAtLargeType.RECALL
 import uk.gov.justice.digital.hmpps.adjustments.api.integration.SqsIntegrationTestBase
 import uk.gov.justice.digital.hmpps.adjustments.api.legacy.model.LegacyData
+import uk.gov.justice.digital.hmpps.adjustments.api.listener.REMAND_ID
+import uk.gov.justice.digital.hmpps.adjustments.api.listener.TAGGED_BAIL_ID
+import uk.gov.justice.digital.hmpps.adjustments.api.listener.UNUSED_DEDUCTIONS_PRISONER_ID
 import uk.gov.justice.digital.hmpps.adjustments.api.model.AdditionalDaysAwardedDto
 import uk.gov.justice.digital.hmpps.adjustments.api.model.AdjustmentDto
 import uk.gov.justice.digital.hmpps.adjustments.api.model.AdjustmentEffectiveDaysDto
 import uk.gov.justice.digital.hmpps.adjustments.api.model.CreateResponseDto
+import uk.gov.justice.digital.hmpps.adjustments.api.model.ManualUnusedDeductionsDto
 import uk.gov.justice.digital.hmpps.adjustments.api.model.RemandDto
 import uk.gov.justice.digital.hmpps.adjustments.api.model.TaggedBailDto
 import uk.gov.justice.digital.hmpps.adjustments.api.model.UnlawfullyAtLargeDto
@@ -38,6 +42,7 @@ import uk.gov.justice.digital.hmpps.adjustments.api.model.ValidationMessage
 import uk.gov.justice.digital.hmpps.adjustments.api.respository.AdjustmentRepository
 import uk.gov.justice.digital.hmpps.adjustments.api.service.AdjustmentsTransactionalService
 import uk.gov.justice.digital.hmpps.adjustments.api.service.EventType
+import uk.gov.justice.digital.hmpps.adjustments.api.wiremock.CalculateReleaseDatesApiExtension
 import uk.gov.justice.digital.hmpps.adjustments.api.wiremock.PrisonApiExtension
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
@@ -121,7 +126,7 @@ class AdjustmentControllerIntTest : SqsIntegrationTestBase() {
         .get()
         .uri("/adjustments/$id")
         .headers(
-          setViewAdjustmentsAuth(),
+          setAdjustmentsROAuth(),
         )
         .exchange()
         .expectStatus().isOk
@@ -230,6 +235,37 @@ class AdjustmentControllerIntTest : SqsIntegrationTestBase() {
     }
 
     @Test
+    @Sql(
+      "classpath:test_data/reset-data.sql",
+      "classpath:test_data/insert-unused-deduction-adjustments.sql",
+    )
+    fun setManualUnusedDeductions() {
+      CalculateReleaseDatesApiExtension.calculateReleaseDatesApi.stubCalculateUnusedDeductionsCouldNotCalculate()
+      postSetManualUnusedDeductions(
+        UNUSED_DEDUCTIONS_PRISONER_ID,
+        ManualUnusedDeductionsDto(
+          50,
+        ),
+      )
+
+      val adjustments = adjustmentRepository.findByPerson(UNUSED_DEDUCTIONS_PRISONER_ID)
+      val remand = adjustments.find { it.id.toString() == REMAND_ID }!!
+      val taggedBail = adjustments.find { it.id.toString() == TAGGED_BAIL_ID }!!
+      val unusedDeductions = adjustments.find { it.adjustmentType == AdjustmentType.UNUSED_DEDUCTIONS }
+
+      assertThat(remand.daysCalculated).isEqualTo(100)
+      assertThat(remand.effectiveDays).isEqualTo(50)
+
+      assertThat(taggedBail.days).isEqualTo(100)
+      assertThat(taggedBail.effectiveDays).isEqualTo(100)
+
+      assertThat(unusedDeductions).isNotNull
+      assertThat(unusedDeductions!!.days).isEqualTo(50)
+
+      awaitAtMost30Secs untilCallTo { getNumberOfMessagesCurrentlyOnQueue() } matches { it == 2 }
+    }
+
+    @Test
     fun `update with different adjustment type`() {
       val id = createAnAdjustment().also {
         cleanQueue()
@@ -239,7 +275,7 @@ class AdjustmentControllerIntTest : SqsIntegrationTestBase() {
         .put()
         .uri("/adjustments/$id")
         .headers(
-          setAdjustmentsMaintainerAuth(),
+          setAdjustmentsRWAuth(),
         )
         .bodyValue(
           CREATED_ADJUSTMENT.copy(
@@ -264,7 +300,7 @@ class AdjustmentControllerIntTest : SqsIntegrationTestBase() {
         .delete()
         .uri("/adjustments/$id")
         .headers(
-          setAdjustmentsMaintainerAuth(),
+          setAdjustmentsRWAuth(),
         )
         .exchange()
         .expectStatus().isOk
@@ -279,7 +315,7 @@ class AdjustmentControllerIntTest : SqsIntegrationTestBase() {
         .get()
         .uri("/adjustments/$id")
         .headers(
-          setAdjustmentsMaintainerAuth(),
+          setAdjustmentsRWAuth(),
         )
         .exchange()
         .expectStatus().isNotFound
@@ -300,7 +336,7 @@ class AdjustmentControllerIntTest : SqsIntegrationTestBase() {
       webTestClient
         .post()
         .uri("/adjustments")
-        .headers(setAdjustmentsMaintainerAuth())
+        .headers(setAdjustmentsRWAuth())
         .contentType(MediaType.APPLICATION_JSON)
         .bodyValue(listOf(CREATED_ADJUSTMENT.copy(remand = RemandDto(listOf(98765432)))))
         .exchange()
@@ -322,7 +358,7 @@ class AdjustmentControllerIntTest : SqsIntegrationTestBase() {
         .get()
         .uri("/adjustments?person=${PrisonApiExtension.PRISONER_ID}")
         .headers(
-          setAdjustmentsMaintainerAuth(),
+          setAdjustmentsRWAuth(),
         )
         .exchange()
         .expectStatus().isOk
@@ -429,7 +465,7 @@ class AdjustmentControllerIntTest : SqsIntegrationTestBase() {
       webTestClient
         .post()
         .uri("/adjustments")
-        .headers(setAdjustmentsMaintainerAuth())
+        .headers(setAdjustmentsRWAuth())
         .contentType(MediaType.APPLICATION_JSON)
         .bodyValue(
           listOf(
@@ -695,7 +731,7 @@ class AdjustmentControllerIntTest : SqsIntegrationTestBase() {
     webTestClient
       .get()
       .uri("/adjustments?person=$person${if (status != null) "&status=$status" else ""}${if (startOfSentenceEnvelope != null) "&sentenceEnvelopeDate=$startOfSentenceEnvelope" else ""}")
-      .headers(setAdjustmentsMaintainerAuth())
+      .headers(setAdjustmentsRWAuth())
       .exchange()
       .expectStatus().isOk
       .expectBodyList<AdjustmentDto>()
@@ -705,7 +741,7 @@ class AdjustmentControllerIntTest : SqsIntegrationTestBase() {
   private fun postCreateAdjustments(adjustmentDtos: List<AdjustmentDto>) = webTestClient
     .post()
     .uri("/adjustments")
-    .headers(setAdjustmentsMaintainerAuth())
+    .headers(setAdjustmentsRWAuth())
     .contentType(MediaType.APPLICATION_JSON)
     .bodyValue(adjustmentDtos)
     .exchange()
@@ -716,7 +752,7 @@ class AdjustmentControllerIntTest : SqsIntegrationTestBase() {
   private fun getAdjustmentById(adjustmentId: UUID) = webTestClient
     .get()
     .uri("/adjustments/$adjustmentId")
-    .headers(setAdjustmentsMaintainerAuth())
+    .headers(setAdjustmentsRWAuth())
     .exchange()
     .expectStatus().isOk
     .returnResult(AdjustmentDto::class.java)
@@ -727,7 +763,7 @@ class AdjustmentControllerIntTest : SqsIntegrationTestBase() {
       .post()
       .uri("/adjustments")
       .headers(
-        setAdjustmentsMaintainerAuth(),
+        setAdjustmentsRWAuth(),
       )
       .contentType(MediaType.APPLICATION_JSON)
       .bodyValue(listOf(CREATED_ADJUSTMENT.copy()))
@@ -743,7 +779,7 @@ class AdjustmentControllerIntTest : SqsIntegrationTestBase() {
       .post()
       .uri("/adjustments/validate")
       .headers(
-        setAdjustmentsMaintainerAuth(),
+        setAdjustmentsRWAuth(),
       )
       .bodyValue(
         CREATED_ADJUSTMENT.copy(
@@ -773,7 +809,7 @@ class AdjustmentControllerIntTest : SqsIntegrationTestBase() {
       .put()
       .uri("/adjustments/$adjustmentId")
       .headers(
-        setAdjustmentsMaintainerAuth(),
+        setAdjustmentsRWAuth(),
       )
       .bodyValue(
         updateDto,
@@ -790,7 +826,7 @@ class AdjustmentControllerIntTest : SqsIntegrationTestBase() {
       .post()
       .uri("/adjustments/$adjustmentId/effective-days")
       .headers(
-        setAdjustmentsMaintainerAuth(),
+        setAdjustmentsRWAuth(),
       )
       .bodyValue(
         updateDto,
@@ -798,9 +834,24 @@ class AdjustmentControllerIntTest : SqsIntegrationTestBase() {
       .exchange()
       .expectStatus().isOk
   }
+  private fun postSetManualUnusedDeductions(
+    person: String,
+    days: ManualUnusedDeductionsDto,
+  ) {
+    webTestClient
+      .post()
+      .uri("/adjustments/person/$person/manual-unused-deductions")
+      .headers(
+        setAdjustmentsRWAuth(),
+      )
+      .bodyValue(
+        days,
+      )
+      .exchange()
+      .expectStatus().isOk
+  }
 
   companion object {
-
     private val CREATED_ADJUSTMENT = AdjustmentDto(
       id = null,
       bookingId = PrisonApiExtension.BOOKING_ID,

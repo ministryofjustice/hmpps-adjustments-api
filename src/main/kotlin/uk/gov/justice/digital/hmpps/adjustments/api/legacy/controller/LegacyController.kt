@@ -81,7 +81,7 @@ class LegacyController(
       ApiResponse(responseCode = "404", description = "Adjustment not found"),
     ],
   )
-  @PreAuthorize("hasAnyRole('SENTENCE_ADJUSTMENTS_SYNCHRONISATION', 'VIEW_SENTENCE_ADJUSTMENTS')")
+  @PreAuthorize("hasAnyRole('SENTENCE_ADJUSTMENTS_SYNCHRONISATION', 'ADJUSTMENTS__ADJUSTMENTS_RO')")
   fun get(
     @Parameter(required = true, description = "The adjustment UUID")
     @PathVariable("adjustmentId")

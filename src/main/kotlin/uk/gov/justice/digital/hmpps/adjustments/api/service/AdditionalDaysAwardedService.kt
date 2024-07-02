@@ -43,14 +43,23 @@ class AdditionalDaysAwardedService(
   }
 
   fun getAdaAdjudicationDetails(nomsId: String, selectedProspectiveAdaDates: List<String> = listOf()): AdaAdjudicationDetails {
-    val sentences = prisonService.getActiveSentencesExcludingRecalls(nomsId)
-    if (sentences.isEmpty()) {
+    val sentenceDetail = prisonService.getSentencesAndStartDateDetails(nomsId)
+    if (sentenceDetail.sentences.isEmpty()) {
       return AdaAdjudicationDetails()
     }
-    val latestSentenceDate = sentences.maxOf { it.sentenceDate }
-    val startOfSentenceEnvelope = sentences.minOf { it.sentenceDate }
+    if (sentenceDetail.hasRecall && sentenceDetail.earliestRecallDate == null) {
+      return AdaAdjudicationDetails(
+        recallWithMissingOutcome = true,
+      )
+    }
+
+    val adaFilterDate = if (sentenceDetail.earliestRecallDate != null && sentenceDetail.earliestNonRecallSentenceDate != null) {
+      listOf(sentenceDetail.earliestNonRecallSentenceDate, sentenceDetail.earliestRecallDate).min()
+    } else {
+      sentenceDetail.earliestRecallDate ?: sentenceDetail.earliestNonRecallSentenceDate!!
+    }
     val adaAdjustments = adjustmentRepository.findByPersonAndAdjustmentTypeAndStatus(nomsId, ADDITIONAL_DAYS_AWARDED)
-    val adas = adjudicationsLookupService.lookupAdas(nomsId, startOfSentenceEnvelope)
+    val adas = adjudicationsLookupService.lookupAdas(nomsId, adaFilterDate)
 
     var (awarded, pendingApproval) = filterAdasByMatchingAdjustment(
       getAdasByDateCharged(adas, AWARDED_OR_PENDING),
@@ -101,11 +110,14 @@ class AdditionalDaysAwardedService(
         quashed,
         adaAdjustments,
         awarded,
-        latestSentenceDate,
+        sentenceDetail.latestSentenceDate!!,
         padaRejections,
       ),
       totalExistingAdas,
       pendingApproval.isEmpty() && quashed.isEmpty() && awarded.isEmpty() && prospective.isEmpty(),
+      earliestNonRecallSentenceDate = sentenceDetail.earliestNonRecallSentenceDate,
+      earliestRecallDate = sentenceDetail.earliestRecallDate,
+
     )
   }
 

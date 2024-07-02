@@ -59,7 +59,7 @@ class LegacyAndAdjustmentsControllerIntTest : SqsIntegrationTestBase() {
       .put()
       .uri("/adjustments/$id")
       .headers(
-        setAdjustmentsMaintainerAuth(),
+        setAdjustmentsRWAuth(),
       )
       .bodyValue(ADJUSTMENT)
       .exchange()
@@ -109,7 +109,7 @@ class LegacyAndAdjustmentsControllerIntTest : SqsIntegrationTestBase() {
       .put()
       .uri("/adjustments/$id")
       .headers(
-        setAdjustmentsMaintainerAuth(),
+        setAdjustmentsRWAuth(),
       )
       .bodyValue(ADJUSTMENT)
       .exchange()
@@ -151,7 +151,7 @@ class LegacyAndAdjustmentsControllerIntTest : SqsIntegrationTestBase() {
       .delete()
       .uri("/adjustments/$id")
       .headers(
-        setAdjustmentsMaintainerAuth(),
+        setAdjustmentsRWAuth(),
       )
       .exchange()
       .expectStatus().isOk
@@ -185,7 +185,7 @@ class LegacyAndAdjustmentsControllerIntTest : SqsIntegrationTestBase() {
   }
 
   @Test
-  fun `Update an adjustment in NOMIS with effective days different to calculated - unused portion`() {
+  fun `Update an adjustment in NOMIS without changing number of days`() {
     // Create an adjustment int DPS with different calculated + effective days.
     var adjustment = ADJUSTMENT.copy()
     val id = postCreateAdjustments(listOf(adjustment))[0]
@@ -201,6 +201,68 @@ class LegacyAndAdjustmentsControllerIntTest : SqsIntegrationTestBase() {
     val daysBetweenResult = (ChronoUnit.DAYS.between(adjustment.fromDate, adjustment.toDate) + 1).toInt()
     assertThat(daysBetweenResult).isEqualTo(totalDays)
     assertThat(adjustment.status).isEqualTo(AdjustmentStatus.INACTIVE)
+  }
+
+  @Test
+  fun `Update a DPS adjustment in NOMIS when DPS unused days is shared over multiple adjustments`() {
+    // Create two adjustments with a used and unused part.
+    var adjustmentOne = ADJUSTMENT.copy()
+    var adjustmentTwo = ADJUSTMENT.copy()
+    val (idOne, idTwo) = postCreateAdjustments(listOf(adjustmentOne, adjustmentTwo))
+    postAdjustmentEffectiveDaysUpdate(idOne, AdjustmentEffectiveDaysDto(idOne, 5, adjustmentOne.person))
+    postAdjustmentEffectiveDaysUpdate(idTwo, AdjustmentEffectiveDaysDto(idTwo, 0, adjustmentTwo.person))
+
+    // Update the adjustment from NOMIS and change days
+    val legacyAdjustment = getLegacyAdjustment(idOne)
+    updateLegacyAdjustment(idOne, legacyAdjustment.copy(adjustmentDays = 4))
+
+    // Adjustment should have new days.
+    adjustmentOne = getAdjustmentById(idOne)
+    adjustmentTwo = getAdjustmentById(idTwo)
+    assertThat(adjustmentOne.days).isEqualTo(4)
+    assertThat(adjustmentTwo.status).isEqualTo(AdjustmentStatus.INACTIVE)
+    assertThat(adjustmentOne.source).isEqualTo(AdjustmentSource.NOMIS)
+    assertThat(adjustmentTwo.source).isEqualTo(AdjustmentSource.NOMIS)
+  }
+
+  @Test
+  fun `Create an adjustment in NOMIS when DPS unused days exists`() {
+    // Create an DPS adjustment with used and unused part.
+    var adjustment = ADJUSTMENT.copy()
+    val id = postCreateAdjustments(listOf(adjustment))[0]
+    val totalDays = (ChronoUnit.DAYS.between(adjustment.fromDate, adjustment.toDate) + 1).toInt()
+    val effectiveDays = 1
+    postAdjustmentEffectiveDaysUpdate(id, AdjustmentEffectiveDaysDto(id, effectiveDays, adjustment.person))
+
+    // Create new NOMIS adjustment
+    postCreateLegacyAdjustment(LEGACY_ADJUSTMENT)
+
+    // DPS adjustment should be reset to effective days.
+    adjustment = getAdjustmentById(id)
+    val daysBetweenResult = (ChronoUnit.DAYS.between(adjustment.fromDate, adjustment.toDate) + 1).toInt()
+    assertThat(daysBetweenResult).isEqualTo(effectiveDays)
+  }
+
+  @Test
+  fun `Delete an adjustment in NOMIS when DPS unused days exists`() {
+    // Create two adjustments with a used and unused part.
+    var adjustmentOne = ADJUSTMENT.copy()
+    var adjustmentTwo = ADJUSTMENT.copy()
+    val (idOne, idTwo) = postCreateAdjustments(listOf(adjustmentOne, adjustmentTwo))
+    postAdjustmentEffectiveDaysUpdate(idOne, AdjustmentEffectiveDaysDto(idOne, 5, adjustmentOne.person))
+    postAdjustmentEffectiveDaysUpdate(idTwo, AdjustmentEffectiveDaysDto(idTwo, 2, adjustmentTwo.person))
+
+    // Delete one of the adjustments
+    deleteLegacyAdjustment(idOne)
+
+    // Adjustment should have new days.
+    val dbAdjustmentOne = adjustmentRepository.findById(idOne)
+    assertThat(dbAdjustmentOne.get().status).isEqualTo(AdjustmentStatus.DELETED)
+    adjustmentTwo = getAdjustmentById(idTwo)
+    assertThat(adjustmentTwo.status).isEqualTo(AdjustmentStatus.ACTIVE)
+    val daysBetweenResult = (ChronoUnit.DAYS.between(adjustmentTwo.fromDate, adjustmentTwo.toDate) + 1).toInt()
+    assertThat(daysBetweenResult).isEqualTo(2)
+    assertThat(adjustmentTwo.days).isEqualTo(2)
   }
 
   @Test
@@ -225,7 +287,7 @@ class LegacyAndAdjustmentsControllerIntTest : SqsIntegrationTestBase() {
   private fun getAdjustmentById(adjustmentId: UUID) = webTestClient
     .get()
     .uri("/adjustments/$adjustmentId")
-    .headers(setAdjustmentsMaintainerAuth())
+    .headers(setAdjustmentsRWAuth())
     .exchange()
     .expectStatus().isOk
     .returnResult(AdjustmentDto::class.java)
@@ -239,7 +301,7 @@ class LegacyAndAdjustmentsControllerIntTest : SqsIntegrationTestBase() {
       .post()
       .uri("/adjustments/$adjustmentId/effective-days")
       .headers(
-        setAdjustmentsMaintainerAuth(),
+        setAdjustmentsRWAuth(),
       )
       .bodyValue(
         updateDto,
@@ -251,7 +313,7 @@ class LegacyAndAdjustmentsControllerIntTest : SqsIntegrationTestBase() {
   private fun postRestoreAdjustment(restoreDto: RestoreAdjustmentsDto) = webTestClient
     .post()
     .uri("/adjustments/restore")
-    .headers(setAdjustmentsMaintainerAuth())
+    .headers(setAdjustmentsRWAuth())
     .contentType(MediaType.APPLICATION_JSON)
     .bodyValue(restoreDto)
     .exchange()
@@ -261,7 +323,7 @@ class LegacyAndAdjustmentsControllerIntTest : SqsIntegrationTestBase() {
     webTestClient
       .get()
       .uri("/adjustments?person=$person${if (status != null) "&status=$status" else ""}${if (startOfSentenceEnvelope != null) "&sentenceEnvelopeDate=$startOfSentenceEnvelope" else ""}")
-      .headers(setAdjustmentsMaintainerAuth())
+      .headers(setAdjustmentsRWAuth())
       .exchange()
       .expectStatus().isOk
       .expectBodyList<AdjustmentDto>()
@@ -281,7 +343,7 @@ class LegacyAndAdjustmentsControllerIntTest : SqsIntegrationTestBase() {
   private fun postCreateAdjustments(adjustmentDtos: List<AdjustmentDto>) = webTestClient
     .post()
     .uri("/adjustments")
-    .headers(setAdjustmentsMaintainerAuth())
+    .headers(setAdjustmentsRWAuth())
     .contentType(MediaType.APPLICATION_JSON)
     .bodyValue(adjustmentDtos)
     .exchange()
@@ -289,11 +351,25 @@ class LegacyAndAdjustmentsControllerIntTest : SqsIntegrationTestBase() {
     .returnResult(CreateResponseDto::class.java)
     .responseBody.blockFirst()!!.adjustmentIds
 
+  private fun postCreateLegacyAdjustment(legacyAdjustment: LegacyAdjustment): LegacyAdjustmentCreatedResponse {
+    return webTestClient
+      .post()
+      .uri("/legacy/adjustments")
+      .headers(
+        setLegacySynchronisationAuth(),
+      )
+      .header("Content-Type", LegacyController.LEGACY_CONTENT_TYPE)
+      .bodyValue(legacyAdjustment)
+      .exchange()
+      .expectStatus().isCreated
+      .returnResult(LegacyAdjustmentCreatedResponse::class.java)
+      .responseBody.blockFirst()!!
+  }
   private fun getLegacyAdjustment(id: UUID) = webTestClient
     .get()
     .uri("/legacy/adjustments/$id")
     .headers(
-      setViewAdjustmentsAuth(),
+      setAdjustmentsROAuth(),
     )
     .header("Content-Type", LegacyController.LEGACY_CONTENT_TYPE)
     .exchange()

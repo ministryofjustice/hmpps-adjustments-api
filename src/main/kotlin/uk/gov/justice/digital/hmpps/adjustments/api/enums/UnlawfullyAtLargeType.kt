@@ -5,4 +5,5 @@ enum class UnlawfullyAtLargeType {
   ESCAPE,
   SENTENCED_IN_ABSENCE,
   RELEASE_IN_ERROR,
+  IMMIGRATION_DETENTION,
 }

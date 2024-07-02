@@ -11,6 +11,7 @@ import software.amazon.awssdk.services.sns.model.PublishRequest
 import uk.gov.justice.digital.hmpps.adjustments.api.entity.AdjustmentType
 import uk.gov.justice.digital.hmpps.adjustments.api.integration.SqsIntegrationTestBase
 import uk.gov.justice.digital.hmpps.adjustments.api.respository.AdjustmentRepository
+import uk.gov.justice.digital.hmpps.adjustments.api.wiremock.CalculateReleaseDatesApiExtension
 import uk.gov.justice.hmpps.sqs.countAllMessagesOnQueue
 
 const val TAGGED_BAIL_ID = "5d2c10d0-0a31-49d1-93a9-52213bb344a5"
@@ -29,6 +30,7 @@ class UnusedDeductionsEventListenerIntTest : SqsIntegrationTestBase() {
     "classpath:test_data/insert-unused-deduction-adjustments.sql",
   )
   fun handleAdjustmentEvent() {
+    CalculateReleaseDatesApiExtension.calculateReleaseDatesApi.stubCalculateUnusedDeductions()
     val eventType = "release-date-adjustments.adjustment.inserted"
     domainEventsTopicSnsClient.publish(
       PublishRequest.builder().topicArn(domainEventsTopicArn)
@@ -55,7 +57,7 @@ class UnusedDeductionsEventListenerIntTest : SqsIntegrationTestBase() {
       assertThat(remand.effectiveDays).isEqualTo(0)
 
       assertThat(taggedBail.days).isEqualTo(100)
-      assertThat(taggedBail.effectiveDays).isEqualTo(0)
+      assertThat(taggedBail.effectiveDays).isEqualTo(50)
 
       assertThat(unusedDeductions.days).isEqualTo(150)
     }
@@ -70,6 +72,7 @@ class UnusedDeductionsEventListenerIntTest : SqsIntegrationTestBase() {
     "classpath:test_data/insert-unused-deduction-adjustments.sql",
   )
   fun handlePrisonerSearchEvent() {
+    CalculateReleaseDatesApiExtension.calculateReleaseDatesApi.stubCalculateUnusedDeductions()
     val eventType = "prisoner-offender-search.prisoner.updated"
     domainEventsTopicSnsClient.publish(
       PublishRequest.builder().topicArn(domainEventsTopicArn)
@@ -96,7 +99,7 @@ class UnusedDeductionsEventListenerIntTest : SqsIntegrationTestBase() {
       assertThat(remand.effectiveDays).isEqualTo(0)
 
       assertThat(taggedBail.days).isEqualTo(100)
-      assertThat(taggedBail.effectiveDays).isEqualTo(0)
+      assertThat(taggedBail.effectiveDays).isEqualTo(50)
 
       assertThat(unusedDeductions).isNotNull
       assertThat(unusedDeductions!!.days).isEqualTo(150)

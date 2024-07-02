@@ -4,7 +4,6 @@ import jakarta.transaction.Transactional
 import org.assertj.core.api.Assertions.assertThat
 import org.awaitility.kotlin.matches
 import org.awaitility.kotlin.untilCallTo
-import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.test.annotation.Rollback
@@ -30,16 +29,9 @@ class LegacyControllerIntTest : SqsIntegrationTestBase() {
   @Autowired
   private lateinit var adjustmentRepository: AdjustmentRepository
 
-  private lateinit var createdId: UUID
-
-  @BeforeEach
-  fun setup() {
-    createdId = createAdjustment(CREATED_ADJUSTMENT).adjustmentId
-  }
-
   @Test
   fun create() {
-    // Created in @BeforeEach.
+    val createdId = createAdjustment(CREATED_ADJUSTMENT).adjustmentId
     val adjustment = adjustmentRepository.findById(createdId).get()
 
     assertThat(adjustment.adjustmentType).isEqualTo(AdjustmentType.UNUSED_DEDUCTIONS)
@@ -77,7 +69,6 @@ class LegacyControllerIntTest : SqsIntegrationTestBase() {
 
   @Test
   fun migration() {
-    cleanQueue()
     val result = webTestClient
       .post()
       .uri("/legacy/adjustments/migration")
@@ -102,12 +93,12 @@ class LegacyControllerIntTest : SqsIntegrationTestBase() {
 
   @Test
   fun get() {
-    cleanQueue()
+    val createdId = createDefaultAdjustmentAndCleanQueue()
     val result = webTestClient
       .get()
       .uri("/legacy/adjustments/$createdId")
       .headers(
-        setViewAdjustmentsAuth(),
+        setAdjustmentsROAuth(),
       )
       .header("Content-Type", LegacyController.LEGACY_CONTENT_TYPE)
       .exchange()
@@ -121,7 +112,7 @@ class LegacyControllerIntTest : SqsIntegrationTestBase() {
 
   @Test
   fun update() {
-    cleanQueue()
+    val createdId = createDefaultAdjustmentAndCleanQueue()
     val newFromDate = CREATED_ADJUSTMENT.adjustmentFromDate!!.minusYears(1)
     webTestClient
       .put()
@@ -171,7 +162,7 @@ class LegacyControllerIntTest : SqsIntegrationTestBase() {
 
   @Test
   fun delete() {
-    cleanQueue()
+    val createdId = createDefaultAdjustmentAndCleanQueue()
     webTestClient
       .delete()
       .uri("/legacy/adjustments/$createdId")
@@ -218,7 +209,7 @@ class LegacyControllerIntTest : SqsIntegrationTestBase() {
       .expectStatus().isCreated
       .returnResult(LegacyAdjustmentCreatedResponse::class.java)
       .responseBody.blockFirst()!!
-    createdId = result.adjustmentId
+    val createdId = result.adjustmentId
     // Created in @BeforeEach.
     val adjustment = adjustmentRepository.findById(createdId).get()
 
@@ -241,6 +232,13 @@ class LegacyControllerIntTest : SqsIntegrationTestBase() {
       .expectStatus().isCreated
       .returnResult(LegacyAdjustmentCreatedResponse::class.java)
       .responseBody.blockFirst()!!
+  }
+
+  private fun createDefaultAdjustmentAndCleanQueue(): UUID {
+    val createdId = createAdjustment(CREATED_ADJUSTMENT).adjustmentId
+    awaitAtMost30Secs untilCallTo { getNumberOfMessagesCurrentlyOnQueue() } matches { it == 1 }
+    cleanQueue()
+    return createdId
   }
 
   companion object {

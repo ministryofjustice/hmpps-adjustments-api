@@ -36,7 +36,7 @@ class AdaAdjudicationController(
       ApiResponse(responseCode = "404", description = "Adjustment not found"),
     ],
   )
-  @PreAuthorize("hasAnyRole('ADJUSTMENTS_MAINTAINER', 'VIEW_SENTENCE_ADJUSTMENTS', 'ADJUSTMENTS__ADJUSTMENTS_RW')")
+  @PreAuthorize("hasAnyRole('ADJUSTMENTS__ADJUSTMENTS_RW', 'ADJUSTMENTS__ADJUSTMENTS_RO')")
   fun getAdaAdjudicationDetails(
     @Parameter(required = true, example = "AA1256A", description = "The noms ID of the person")
     @PathVariable("person")
@@ -59,7 +59,7 @@ class AdaAdjudicationController(
       ApiResponse(responseCode = "404", description = "Adjustment not found"),
     ],
   )
-  @PreAuthorize("hasAnyRole('ADJUSTMENTS_MAINTAINER', 'ADJUSTMENTS__ADJUSTMENTS_RW')")
+  @PreAuthorize("hasAnyRole('ADJUSTMENTS__ADJUSTMENTS_RW')")
   fun rejectProspectiveAda(
     @Parameter(required = true, example = "AA1256A", description = "The noms ID of the person")
     @PathVariable("person")

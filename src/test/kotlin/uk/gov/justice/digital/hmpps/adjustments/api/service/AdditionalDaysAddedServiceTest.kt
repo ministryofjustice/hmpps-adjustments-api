@@ -77,7 +77,7 @@ class AdditionalDaysAddedServiceTest {
 
       whenever(adjudicationApiClient.getAdjudications(NOMS_ID)).thenReturn(AdjudicationResponse(listOf(adjudicationOne, adjudicationTwoConsecutiveToOne, adjudicationThreeConcurrentToOne)))
       whenever(prospectiveAdaRejectionRepository.findByPerson(NOMS_ID)).thenReturn(emptyList())
-      whenever(prisonService.getActiveSentencesExcludingRecalls(NOMS_ID)).thenReturn(sentences)
+      whenever(prisonService.getSentencesAndStartDateDetails(NOMS_ID)).thenReturn(defaultSentenceDetail)
 
       val adaAdjudicationDetails = additionalDaysAwardedService.getAdaAdjudicationDetails(NOMS_ID)
 
@@ -124,6 +124,7 @@ class AdditionalDaysAddedServiceTest {
           ),
           totalAwaitingApproval = 10,
           intercept = AdaIntercept(type = UPDATE, number = 1, anyProspective = false, messageArguments = listOf("Prisoner, Default")),
+          earliestNonRecallSentenceDate = sentenceDate,
         ),
       )
     }
@@ -138,7 +139,7 @@ class AdditionalDaysAddedServiceTest {
       ).thenReturn(listOf(BASE_10_DAY_ADJUSTMENT))
       whenever(adjudicationApiClient.getAdjudications(NOMS_ID)).thenReturn(AdjudicationResponse(listOf(adjudicationOne, adjudicationTwoConsecutiveToOne, adjudicationThreeConcurrentToOne)))
       whenever(prospectiveAdaRejectionRepository.findByPerson(NOMS_ID)).thenReturn(emptyList())
-      whenever(prisonService.getActiveSentencesExcludingRecalls(NOMS_ID)).thenReturn(sentences)
+      whenever(prisonService.getSentencesAndStartDateDetails(NOMS_ID)).thenReturn(defaultSentenceDetail)
 
       val adaAdjudicationDetails = additionalDaysAwardedService.getAdaAdjudicationDetails(NOMS_ID)
 
@@ -185,6 +186,7 @@ class AdditionalDaysAddedServiceTest {
           ),
           totalAwarded = 10,
           intercept = AdaIntercept(type = NONE, number = 0, anyProspective = false, messageArguments = listOf()),
+          earliestNonRecallSentenceDate = sentenceDate,
           totalExistingAdas = 10,
           showExistingAdaMessage = false,
         ),
@@ -204,7 +206,7 @@ class AdditionalDaysAddedServiceTest {
 
       whenever(adjudicationApiClient.getAdjudications(NOMS_ID)).thenReturn(AdjudicationResponse(listOf(adjudicationOneProspective)))
       whenever(prospectiveAdaRejectionRepository.findByPerson(NOMS_ID)).thenReturn(emptyList())
-      whenever(prisonService.getActiveSentencesExcludingRecalls(NOMS_ID)).thenReturn(sentences)
+      whenever(prisonService.getSentencesAndStartDateDetails(NOMS_ID)).thenReturn(defaultSentenceDetail)
 
       val adaAdjudicationDetails = additionalDaysAwardedService.getAdaAdjudicationDetails(NOMS_ID, selectedProspectiveAdaDates = listOf("2023-08-03"))
 
@@ -253,6 +255,7 @@ class AdditionalDaysAddedServiceTest {
           ),
           totalAwaitingApproval = 10,
           intercept = AdaIntercept(type = UPDATE, number = 1, anyProspective = true, messageArguments = listOf("Prisoner, Default")),
+          earliestNonRecallSentenceDate = sentenceDate,
         ),
       )
     }
@@ -277,7 +280,7 @@ class AdditionalDaysAddedServiceTest {
       )
       whenever(adjudicationApiClient.getAdjudications(NOMS_ID)).thenReturn(AdjudicationResponse(listOf(adjudicationOneProspective)))
       whenever(prospectiveAdaRejectionRepository.findByPerson(NOMS_ID)).thenReturn(emptyList())
-      whenever(prisonService.getActiveSentencesExcludingRecalls(NOMS_ID)).thenReturn(sentences)
+      whenever(prisonService.getSentencesAndStartDateDetails(NOMS_ID)).thenReturn(defaultSentenceDetail)
 
       val adaAdjudicationDetails = additionalDaysAwardedService.getAdaAdjudicationDetails(NOMS_ID, selectedProspectiveAdaDates = listOf("2023-08-03"))
 
@@ -307,6 +310,98 @@ class AdditionalDaysAddedServiceTest {
           totalAwarded = 10,
           totalExistingAdas = 10,
           intercept = AdaIntercept(type = NONE, number = 0, anyProspective = false, messageArguments = listOf()),
+          earliestNonRecallSentenceDate = sentenceDate,
+        ),
+      )
+    }
+
+    @Test
+    fun `Ada adjudication details ADAs fall in determinate period`() {
+      whenever(
+        adjustmentRepository.findByPersonAndAdjustmentTypeAndStatus(
+          NOMS_ID,
+          ADDITIONAL_DAYS_AWARDED,
+        ),
+      ).thenReturn(emptyList())
+
+      whenever(adjudicationApiClient.getAdjudications(NOMS_ID)).thenReturn(AdjudicationResponse(listOf(adjudicationOne, adjudicationTwoConsecutiveToOne, adjudicationThreeConcurrentToOne)))
+      whenever(prospectiveAdaRejectionRepository.findByPerson(NOMS_ID)).thenReturn(emptyList())
+      whenever(prisonService.getSentencesAndStartDateDetails(NOMS_ID)).thenReturn(recallSentenceDetail)
+
+      val adaAdjudicationDetails = additionalDaysAwardedService.getAdaAdjudicationDetails(NOMS_ID)
+
+      assertThat(
+        adaAdjudicationDetails,
+      ).isEqualTo(
+        AdaAdjudicationDetails(
+          intercept = AdaIntercept(NONE, 0, false, emptyList()),
+          earliestNonRecallSentenceDate = null,
+          showExistingAdaMessage = true,
+          earliestRecallDate = recallDate,
+        ),
+      )
+    }
+
+    @Test
+    fun `Ada adjudication details ADAs fall in determinate period of parallel sentences`() {
+      whenever(
+        adjustmentRepository.findByPersonAndAdjustmentTypeAndStatus(
+          NOMS_ID,
+          ADDITIONAL_DAYS_AWARDED,
+        ),
+      ).thenReturn(emptyList())
+
+      whenever(adjudicationApiClient.getAdjudications(NOMS_ID)).thenReturn(AdjudicationResponse(listOf(adjudicationOne, adjudicationTwoConsecutiveToOne, adjudicationThreeConcurrentToOne)))
+      whenever(prospectiveAdaRejectionRepository.findByPerson(NOMS_ID)).thenReturn(emptyList())
+      whenever(prisonService.getSentencesAndStartDateDetails(NOMS_ID)).thenReturn(parallelSentenceDetail)
+
+      val adaAdjudicationDetails = additionalDaysAwardedService.getAdaAdjudicationDetails(NOMS_ID)
+
+      assertThat(
+        adaAdjudicationDetails,
+      ).isEqualTo(
+        AdaAdjudicationDetails(
+          awaitingApproval = listOf(
+            AdasByDateCharged(
+              dateChargeProved = LocalDate.of(2023, 8, 3),
+              charges = mutableListOf(
+                Ada(
+                  dateChargeProved = LocalDate.of(2023, 8, 3),
+                  chargeNumber = "MOR-1525916",
+                  toBeServed = "Forthwith",
+                  heardAt = "Moorland (HMP & YOI)",
+                  status = ChargeStatus.AWARDED_OR_PENDING,
+                  days = 5,
+                  consecutiveToChargeNumber = null,
+                ),
+                Ada(
+                  dateChargeProved = LocalDate.of(2023, 8, 3),
+                  chargeNumber = "MOR-1525917",
+                  toBeServed = "Consecutive to MOR-1525916",
+                  heardAt = "Moorland (HMP & YOI)",
+                  status = ChargeStatus.AWARDED_OR_PENDING,
+                  days = 5,
+                  consecutiveToChargeNumber = "MOR-1525916",
+                ),
+                Ada(
+                  dateChargeProved = LocalDate.of(2023, 8, 3),
+                  chargeNumber = "MOR-1525918",
+                  toBeServed = "Concurrent",
+                  heardAt = "Moorland (HMP & YOI)",
+                  status = ChargeStatus.AWARDED_OR_PENDING,
+                  days = 5,
+                  consecutiveToChargeNumber = null,
+                ),
+              ),
+              total = 10,
+              status = AdaStatus.PENDING_APPROVAL,
+              adjustmentId = null,
+            ),
+          ),
+          totalAwaitingApproval = 10,
+          intercept = AdaIntercept(type = UPDATE, number = 1, anyProspective = false, messageArguments = listOf("Prisoner, Default")),
+          earliestNonRecallSentenceDate = sentenceDate,
+          earliestRecallDate = recallDate,
         ),
       )
     }
@@ -321,7 +416,7 @@ class AdditionalDaysAddedServiceTest {
       ).thenReturn(listOf(BASE_10_DAY_ADJUSTMENT.copy(additionalDaysAwarded = null)))
       whenever(adjudicationApiClient.getAdjudications(NOMS_ID)).thenReturn(AdjudicationResponse(listOf()))
       whenever(prospectiveAdaRejectionRepository.findByPerson(NOMS_ID)).thenReturn(emptyList())
-      whenever(prisonService.getActiveSentencesExcludingRecalls(NOMS_ID)).thenReturn(sentences)
+      whenever(prisonService.getSentencesAndStartDateDetails(NOMS_ID)).thenReturn(defaultSentenceDetail)
 
       val adaAdjudicationDetails = additionalDaysAwardedService.getAdaAdjudicationDetails(NOMS_ID)
 
@@ -332,6 +427,7 @@ class AdditionalDaysAddedServiceTest {
           intercept = AdaIntercept(type = FIRST_TIME, number = 0, anyProspective = false, messageArguments = listOf()),
           totalExistingAdas = 10,
           showExistingAdaMessage = true,
+          earliestNonRecallSentenceDate = sentenceDate,
         ),
       )
     }
@@ -342,11 +438,37 @@ class AdditionalDaysAddedServiceTest {
 
     @Test
     fun `Should not intercept if no sentence date`() {
-      whenever(prisonService.getStartOfSentenceEnvelopeExcludingRecalls(NOMS_ID)).thenReturn(null)
+      whenever(prisonService.getSentencesAndStartDateDetails(NOMS_ID)).thenReturn(
+        SentenceAndStartDateDetails(
+          emptyList(),
+          false,
+          null,
+          null,
+          null,
+        ),
+      )
 
       val intercept = additionalDaysAwardedService.getAdaAdjudicationDetails(NOMS_ID).intercept
 
       assertThat(intercept).isEqualTo(AdaIntercept(NONE, 0, false, emptyList()))
+    }
+
+    @Test
+    fun `Should not intercept if no missing recall outcome date`() {
+      whenever(prisonService.getSentencesAndStartDateDetails(NOMS_ID)).thenReturn(
+        SentenceAndStartDateDetails(
+          recallSentences,
+          true,
+          null,
+          null,
+          null,
+        ),
+      )
+
+      val details = additionalDaysAwardedService.getAdaAdjudicationDetails(NOMS_ID)
+
+      assertThat(details.intercept).isEqualTo(AdaIntercept(NONE, 0, false, emptyList()))
+      assertThat(details.recallWithMissingOutcome).isEqualTo(true)
     }
 
     @Test
@@ -366,7 +488,7 @@ class AdditionalDaysAddedServiceTest {
       )
       whenever(adjudicationApiClient.getAdjudications(NOMS_ID)).thenReturn(AdjudicationResponse(listOf(adjudicationOne, adjudicationTwoConsecutiveToOne, adjudicationThreeConcurrentToOne)))
       whenever(prospectiveAdaRejectionRepository.findByPerson(NOMS_ID)).thenReturn(emptyList())
-      whenever(prisonService.getActiveSentencesExcludingRecalls(NOMS_ID)).thenReturn(sentences)
+      whenever(prisonService.getSentencesAndStartDateDetails(NOMS_ID)).thenReturn(defaultSentenceDetail)
 
       val intercept = additionalDaysAwardedService.getAdaAdjudicationDetails(NOMS_ID).intercept
 
@@ -391,7 +513,7 @@ class AdditionalDaysAddedServiceTest {
       )
       whenever(adjudicationApiClient.getAdjudications(NOMS_ID)).thenReturn(AdjudicationResponse(listOf(adjudicationOne, adjudicationTwoConsecutiveToOne, adjudicationThreeConcurrentToOne)))
       whenever(prospectiveAdaRejectionRepository.findByPerson(NOMS_ID)).thenReturn(emptyList())
-      whenever(prisonService.getActiveSentencesExcludingRecalls(NOMS_ID)).thenReturn(sentences)
+      whenever(prisonService.getSentencesAndStartDateDetails(NOMS_ID)).thenReturn(defaultSentenceDetail)
 
       val intercept = additionalDaysAwardedService.getAdaAdjudicationDetails(NOMS_ID).intercept
 
@@ -411,7 +533,7 @@ class AdditionalDaysAddedServiceTest {
       )
       whenever(adjudicationApiClient.getAdjudications(NOMS_ID)).thenReturn(AdjudicationResponse(listOf(adjudicationOne, adjudicationTwoConsecutiveToOne, adjudicationThreeConcurrentToOne)))
       whenever(prospectiveAdaRejectionRepository.findByPerson(NOMS_ID)).thenReturn(emptyList())
-      whenever(prisonService.getActiveSentencesExcludingRecalls(NOMS_ID)).thenReturn(sentences)
+      whenever(prisonService.getSentencesAndStartDateDetails(NOMS_ID)).thenReturn(defaultSentenceDetail)
 
       val intercept = additionalDaysAwardedService.getAdaAdjudicationDetails(NOMS_ID).intercept
 
@@ -428,7 +550,7 @@ class AdditionalDaysAddedServiceTest {
       ).thenReturn(emptyList())
       whenever(adjudicationApiClient.getAdjudications(NOMS_ID)).thenReturn(AdjudicationResponse(listOf(adjudicationOne, adjudicationTwoConsecutiveToOne, adjudicationThreeConcurrentToOne)))
       whenever(prospectiveAdaRejectionRepository.findByPerson(NOMS_ID)).thenReturn(emptyList())
-      whenever(prisonService.getActiveSentencesExcludingRecalls(NOMS_ID)).thenReturn(sentences)
+      whenever(prisonService.getSentencesAndStartDateDetails(NOMS_ID)).thenReturn(defaultSentenceDetail)
 
       val intercept = additionalDaysAwardedService.getAdaAdjudicationDetails(NOMS_ID).intercept
 
@@ -446,7 +568,7 @@ class AdditionalDaysAddedServiceTest {
         listOf(BASE_10_DAY_ADJUSTMENT),
       )
       whenever(adjudicationApiClient.getAdjudications(NOMS_ID)).thenReturn(AdjudicationResponse(listOf(adjudicationOne, adjudicationTwoConsecutiveToOne, adjudicationThreeConcurrentToOne)))
-      whenever(prisonService.getActiveSentencesExcludingRecalls(NOMS_ID)).thenReturn(sentences)
+      whenever(prisonService.getSentencesAndStartDateDetails(NOMS_ID)).thenReturn(defaultSentenceDetail)
 
       val intercept = additionalDaysAwardedService.getAdaAdjudicationDetails(NOMS_ID).intercept
 
@@ -465,7 +587,7 @@ class AdditionalDaysAddedServiceTest {
       )
       whenever(adjudicationApiClient.getAdjudications(NOMS_ID)).thenReturn(AdjudicationResponse(listOf(adjudicationOne, adjudicationTwoConsecutiveToOne, adjudicationThreeConcurrentToOne)))
       whenever(prospectiveAdaRejectionRepository.findByPerson(NOMS_ID)).thenReturn(emptyList())
-      whenever(prisonService.getActiveSentencesExcludingRecalls(NOMS_ID)).thenReturn(sentences)
+      whenever(prisonService.getSentencesAndStartDateDetails(NOMS_ID)).thenReturn(defaultSentenceDetail)
 
       val intercept = additionalDaysAwardedService.getAdaAdjudicationDetails(NOMS_ID).intercept
 
@@ -493,7 +615,7 @@ class AdditionalDaysAddedServiceTest {
       )
       whenever(prospectiveAdaRejectionRepository.findByPerson(NOMS_ID)).thenReturn(emptyList())
 
-      whenever(prisonService.getActiveSentencesExcludingRecalls(NOMS_ID)).thenReturn(sentences)
+      whenever(prisonService.getSentencesAndStartDateDetails(NOMS_ID)).thenReturn(defaultSentenceDetail)
 
       val intercept = additionalDaysAwardedService.getAdaAdjudicationDetails(NOMS_ID).intercept
 
@@ -512,7 +634,7 @@ class AdditionalDaysAddedServiceTest {
       )
       whenever(adjudicationApiClient.getAdjudications(NOMS_ID)).thenReturn(AdjudicationResponse(listOf(adjudicationOneProspective)))
       whenever(prospectiveAdaRejectionRepository.findByPerson(NOMS_ID)).thenReturn(emptyList())
-      whenever(prisonService.getActiveSentencesExcludingRecalls(NOMS_ID)).thenReturn(sentences)
+      whenever(prisonService.getSentencesAndStartDateDetails(NOMS_ID)).thenReturn(defaultSentenceDetail)
 
       val intercept = additionalDaysAwardedService.getAdaAdjudicationDetails(NOMS_ID).intercept
 
@@ -531,7 +653,7 @@ class AdditionalDaysAddedServiceTest {
       )
       whenever(adjudicationApiClient.getAdjudications(NOMS_ID)).thenReturn(AdjudicationResponse(listOf(adjudicationOneProspective)))
       whenever(prospectiveAdaRejectionRepository.findByPerson(NOMS_ID)).thenReturn(listOf(ProspectiveAdaRejection(rejectionAt = sentenceDate.plusDays(5).atStartOfDay(), days = 10, dateChargeProved = LocalDate.of(2023, 8, 3))))
-      whenever(prisonService.getActiveSentencesExcludingRecalls(NOMS_ID)).thenReturn(sentences)
+      whenever(prisonService.getSentencesAndStartDateDetails(NOMS_ID)).thenReturn(defaultSentenceDetail)
 
       val intercept = additionalDaysAwardedService.getAdaAdjudicationDetails(NOMS_ID).intercept
 
@@ -551,7 +673,7 @@ class AdditionalDaysAddedServiceTest {
       whenever(adjudicationApiClient.getAdjudications(NOMS_ID)).thenReturn(AdjudicationResponse(listOf(adjudicationOneProspective)))
       whenever(prospectiveAdaRejectionRepository.findByPerson(NOMS_ID)).thenReturn(listOf(ProspectiveAdaRejection(rejectionAt = sentenceDate.minusDays(5).atStartOfDay(), days = 10, dateChargeProved = LocalDate.of(2023, 8, 3))))
       whenever(prospectiveAdaRejectionRepository.findByPerson(NOMS_ID)).thenReturn(listOf(ProspectiveAdaRejection(rejectionAt = sentenceDate.plusDays(5).atStartOfDay(), days = 10, dateChargeProved = LocalDate.of(2023, 8, 3))))
-      whenever(prisonService.getActiveSentencesExcludingRecalls(NOMS_ID)).thenReturn(sentences)
+      whenever(prisonService.getSentencesAndStartDateDetails(NOMS_ID)).thenReturn(defaultSentenceDetail)
 
       val intercept = additionalDaysAwardedService.getAdaAdjudicationDetails(NOMS_ID).intercept
 
@@ -570,7 +692,7 @@ class AdditionalDaysAddedServiceTest {
       )
       whenever(adjudicationApiClient.getAdjudications(NOMS_ID)).thenReturn(AdjudicationResponse(listOf(adjudicationOneProspective)))
       whenever(prospectiveAdaRejectionRepository.findByPerson(NOMS_ID)).thenReturn(listOf(ProspectiveAdaRejection(rejectionAt = sentenceDate.minusDays(5).atStartOfDay(), days = 10, dateChargeProved = LocalDate.of(2023, 8, 3))))
-      whenever(prisonService.getActiveSentencesExcludingRecalls(NOMS_ID)).thenReturn(sentences)
+      whenever(prisonService.getSentencesAndStartDateDetails(NOMS_ID)).thenReturn(defaultSentenceDetail)
 
       val intercept = additionalDaysAwardedService.getAdaAdjudicationDetails(NOMS_ID).intercept
 
@@ -589,7 +711,7 @@ class AdditionalDaysAddedServiceTest {
       )
       whenever(adjudicationApiClient.getAdjudications(NOMS_ID)).thenReturn(AdjudicationResponse(listOf(adjudicationOneProspective)))
       whenever(prospectiveAdaRejectionRepository.findByPerson(NOMS_ID)).thenReturn(listOf(ProspectiveAdaRejection(rejectionAt = LocalDate.of(2024, 1, 1).atStartOfDay(), days = 99, dateChargeProved = LocalDate.of(2023, 8, 3))))
-      whenever(prisonService.getActiveSentencesExcludingRecalls(NOMS_ID)).thenReturn(sentences)
+      whenever(prisonService.getSentencesAndStartDateDetails(NOMS_ID)).thenReturn(defaultSentenceDetail)
 
       val intercept = additionalDaysAwardedService.getAdaAdjudicationDetails(NOMS_ID).intercept
 
@@ -713,6 +835,30 @@ class AdditionalDaysAddedServiceTest {
     )
 
     private val sentenceDate = LocalDate.of(2023, 1, 1)
-    private val sentences = listOf(SentenceAndOffences(sentenceDate = sentenceDate, bookingId = 1, sentenceSequence = 1, sentenceCalculationType = "", sentenceCategory = "", consecutiveToSequence = 1, caseSequence = 1, lineSequence = 1, sentenceStatus = "A", sentenceTypeDescription = ""))
+    private val recallDate = LocalDate.of(2024, 1, 1)
+    private val sentences = listOf(SentenceAndOffences(sentenceDate = sentenceDate, bookingId = 1, sentenceSequence = 1, sentenceCalculationType = "ADIMP", sentenceStatus = "A"))
+    private val recallSentences = listOf(SentenceAndOffences(sentenceDate = sentenceDate, bookingId = 1, sentenceSequence = 1, sentenceCalculationType = "LR", sentenceStatus = "A"))
+
+    private val defaultSentenceDetail = SentenceAndStartDateDetails(
+      sentences,
+      earliestRecallDate = null,
+      latestSentenceDate = sentenceDate,
+      earliestNonRecallSentenceDate = sentenceDate,
+      hasRecall = false,
+    )
+    private val recallSentenceDetail = SentenceAndStartDateDetails(
+      recallSentences,
+      earliestRecallDate = recallDate,
+      latestSentenceDate = sentenceDate,
+      earliestNonRecallSentenceDate = null,
+      hasRecall = true,
+    )
+    private val parallelSentenceDetail = SentenceAndStartDateDetails(
+      sentences + recallSentences,
+      earliestRecallDate = recallDate,
+      latestSentenceDate = sentenceDate,
+      earliestNonRecallSentenceDate = sentenceDate,
+      hasRecall = true,
+    )
   }
 }
