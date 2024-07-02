@@ -106,7 +106,7 @@ class LegacyControllerIntTest : SqsIntegrationTestBase() {
       .returnResult(LegacyAdjustment::class.java)
       .responseBody.blockFirst()!!
 
-    assertThat(result).isEqualTo(CREATED_ADJUSTMENT)
+    assertThat(result).isEqualTo(CREATED_ADJUSTMENT.copy(agencyId = null))
     awaitAtMost30Secs untilCallTo { getNumberOfMessagesCurrentlyOnQueue() } matches { it == 0 }
   }
 
