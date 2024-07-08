@@ -99,12 +99,13 @@ class LegacyService(
   @Transactional
   fun update(adjustmentId: UUID, resource: LegacyAdjustment) {
     val adjustment = adjustmentRepository.findById(adjustmentId)
+      .map { if (it.status.isDeleted()) null else it }
       .orElseThrow {
         EntityNotFoundException("No adjustment found with id $adjustmentId")
-      }
+      }!!
     val prisonId = resource.agencyId
     val change = objectToJson(adjustment)
-    val isChangeToDays = adjustment.effectiveDays != resource.adjustmentDays
+    val isChangeToDays = adjustment.effectiveDays != resource.adjustmentDays || adjustment.fromDate != resource.adjustmentFromDate
 
     adjustment.apply {
       effectiveDays = resource.adjustmentDays
@@ -159,9 +160,10 @@ class LegacyService(
   @Transactional
   fun delete(adjustmentId: UUID) {
     val adjustment = adjustmentRepository.findById(adjustmentId)
+      .map { if (it.status.isDeleted()) null else it }
       .orElseThrow {
         EntityNotFoundException("No adjustment found with id $adjustmentId")
-      }
+      }!!
     val prisonId = prisonApiClient.getPrisonerDetail(adjustment.person).agencyId
     val change = objectToJson(adjustment)
     adjustment.apply {

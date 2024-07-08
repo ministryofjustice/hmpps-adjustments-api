@@ -181,9 +181,13 @@ class AdjustmentsTransactionalService(
   @Transactional
   fun update(adjustmentId: UUID, resource: AdjustmentDto) {
     val adjustment = adjustmentRepository.findById(adjustmentId)
+      .map { if (it.status.isDeleted()) null else it }
       .orElseThrow {
         EntityNotFoundException("No adjustment found with id $adjustmentId")
-      }
+      }!!
+    return update(adjustment, resource)
+  }
+  private fun update(adjustment: Adjustment, resource: AdjustmentDto) {
     if (adjustment.adjustmentType != resource.adjustmentType) {
       throw ApiValidationException("The provided adjustment type ${resource.adjustmentType} doesn't match the persisted type ${adjustment.adjustmentType}")
     }
@@ -356,9 +360,9 @@ class AdjustmentsTransactionalService(
 
   @Transactional
   fun restore(resource: RestoreAdjustmentsDto): List<AdjustmentDto> {
-    val adjustments = adjustmentRepository.findAllById(resource.ids).map { mapToDto(it) }
-    adjustments.forEach { update(it.id!!, it) }
-    return adjustments
+    val adjustments = adjustmentRepository.findAllById(resource.ids).map { it to mapToDto(it) }
+    adjustments.forEach { (adjustment, dto) -> update(adjustment, dto) }
+    return adjustments.map { (_, dto) -> dto }
   }
 
   companion object {
