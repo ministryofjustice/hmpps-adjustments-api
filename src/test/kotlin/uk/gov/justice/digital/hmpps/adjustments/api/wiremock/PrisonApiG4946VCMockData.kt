@@ -712,137 +712,126 @@ const val G4946VC_PRISONER = """
 """
 
 const val G4946VC_SENTENCES_AND_OFFENCES = """
- [
-   {
-     "bookingId": 777831,
-     "sentenceSequence": 1,
-     "lineSequence": 1,
-     "caseSequence": 2,
-     "caseReference": "L/R -22/08/13",
-     "courtDescription": "Liverpool Crown Court",
-     "sentenceStatus": "A",
-     "sentenceCategory": "2003",
-     "sentenceCalculationType": "LR",
-     "sentenceTypeDescription": "Licence Recall",
-     "sentenceDate": "2010-09-15",
-     "sentenceStartDate": "2010-11-06",
-     "sentenceEndDate": "2016-05-08",
-     "terms": [
-       {
-         "years": 5,
-         "months": 6,
-         "weeks": 0,
-         "days": 0,
-         "code": "IMP"
-       }
-     ],
-     "offences": [
-       {
-         "offenderChargeId": 2247352,
-         "offenceStartDate": "2010-04-14",
-         "offenceStatute": "MD71",
-         "offenceCode": "MD71231",
-         "offenceDescription": "Possess with intent to supply a controlled drug of Class A - Heroin",
-         "indicators": [
-           "D",
-           "87",
-           "S"
-         ]
-       },
-       {
-         "offenderChargeId": 2247353,
-         "offenceStartDate": "2010-04-05",
-         "offenceStatute": "MD71",
-         "offenceCode": "MD71230",
-         "offenceDescription": "Possess with intent to supply a controlled drug of Class A - Cocaine",
-         "indicators": [
-           "D",
-           "87"
-         ]
-       }
-     ]
-   },
-   {
-     "bookingId": 777831,
-     "sentenceSequence": 2,
-     "lineSequence": 2,
-     "caseSequence": 1,
-     "caseReference": "T20137110",
-     "courtDescription": "Shrewsbury Crown Court",
-     "sentenceStatus": "A",
-     "sentenceCategory": "2003",
-     "sentenceCalculationType": "ADIMP",
-     "sentenceTypeDescription": "CJA03 Standard Determinate Sentence",
-     "sentenceDate": "2014-02-14",
-     "sentenceStartDate": "2014-03-14",
-     "sentenceEndDate": "2022-08-29",
-     "terms": [
-       {
-         "years": 8,
-         "months": 6,
-         "weeks": 0,
-         "days": 0,
-         "code": "IMP"
-       }
-     ],
-     "offences": [
-       {
-         "offenderChargeId": 2228470,
-         "offenceStatute": "TH68",
-         "offenceCode": "TH68023",
-         "offenceDescription": "Robbery",
-         "indicators": [
-           "ERS",
-           "D",
-           "V",
-           "48",
-           "SCH17A2",
-           "PCSC/SDS+",
-           "S15/CJIB",
-           "SCH15/CJIB/L"
-         ]
-       }
-     ]
-   },
-   {
-     "bookingId": 777831,
-     "sentenceSequence": 3,
-     "consecutiveToSequence": 2,
-     "lineSequence": 3,
-     "caseSequence": 1,
-     "caseReference": "T20137110",
-     "courtDescription": "Shrewsbury Crown Court",
-     "sentenceStatus": "A",
-     "sentenceCategory": "2003",
-     "sentenceCalculationType": "ADIMP",
-     "sentenceTypeDescription": "CJA03 Standard Determinate Sentence",
-     "sentenceDate": "2014-02-14",
-     "sentenceStartDate": "2022-09-18",
-     "sentenceEndDate": "2023-03-18",
-     "terms": [
-       {
-         "years": 0,
-         "months": 6,
-         "weeks": 0,
-         "days": 0,
-         "code": "IMP"
-       }
-     ],
-     "offences": [
-       {
-         "offenderChargeId": 2228471,
-         "offenceStatute": "TH68",
-         "offenceCode": "TH68147",
-         "offenceDescription": "Aggravated vehicle taking - ( driver did not take ) and dangerous driving",
-         "indicators": [
-           "D",
-           "18"
-         ]
-       }
-     ]
-   }
- ]
+  [
+    {
+        "bookingId": 777831,
+        "sentenceSequence": 2,
+        "lineSequence": 2,
+        "caseSequence": 1,
+        "caseReference": "T20137110",
+        "courtDescription": "Shrewsbury Crown Court",
+        "sentenceStatus": "A",
+        "sentenceCategory": "2003",
+        "sentenceCalculationType": "ADIMP",
+        "sentenceTypeDescription": "CJA03 Standard Determinate Sentence",
+        "sentenceDate": "2014-02-14",
+        "sentenceStartDate": "2014-03-14",
+        "sentenceEndDate": "2022-09-13",
+        "terms": [
+            {
+                "years": 8,
+                "months": 6,
+                "weeks": 0,
+                "days": 0,
+                "code": "IMP"
+            }
+        ],
+        "offences": [
+            {
+                "offenderChargeId": 2228470,
+                "offenceStartDate": "2007-01-01",
+                "offenceStatute": "TH68",
+                "offenceCode": "TH68023",
+                "offenceDescription": "Robbery",
+                "indicators": [
+                    "ERS",
+                    "D",
+                    "V",
+                    "48",
+                    "SCH17A2",
+                    "PCSC/SDS+",
+                    "S15/CJIB",
+                    "SCH15/CJIB/L"
+                ]
+            }
+        ]
+    },
+    {
+        "bookingId": 777831,
+        "sentenceSequence": 3,
+        "consecutiveToSequence": 2,
+        "lineSequence": 3,
+        "caseSequence": 1,
+        "caseReference": "T20137110",
+        "courtDescription": "Shrewsbury Crown Court",
+        "sentenceStatus": "A",
+        "sentenceCategory": "2003",
+        "sentenceCalculationType": "ADIMP",
+        "sentenceTypeDescription": "CJA03 Standard Determinate Sentence",
+        "sentenceDate": "2014-02-14",
+        "sentenceStartDate": "2022-09-14",
+        "sentenceEndDate": "2023-03-13",
+        "terms": [
+            {
+                "years": 0,
+                "months": 6,
+                "weeks": 0,
+                "days": 0,
+                "code": "IMP"
+            }
+        ],
+        "offences": [
+            {
+                "offenderChargeId": 2228471,
+                "offenceStartDate": "2007-01-01",
+                "offenceStatute": "TH68",
+                "offenceCode": "TH68147",
+                "offenceDescription": "Aggravated vehicle taking - ( driver did not take ) and dangerous driving",
+                "indicators": [
+                    "D",
+                    "18"
+                ]
+            }
+        ]
+    },
+    {
+        "bookingId": 777831,
+        "sentenceSequence": 17,
+        "lineSequence": 5,
+        "caseSequence": 3,
+        "caseReference": "12345",
+        "courtDescription": "Derby Crown Court",
+        "sentenceStatus": "A",
+        "sentenceCategory": "2003",
+        "sentenceCalculationType": "LR",
+        "sentenceTypeDescription": "Licence Recall",
+        "sentenceDate": "2009-08-14",
+        "sentenceStartDate": "2010-09-12",
+        "sentenceEndDate": "2010-11-11",
+        "terms": [
+            {
+                "years": 0,
+                "months": 2,
+                "weeks": 0,
+                "days": 0,
+                "code": "IMP"
+            }
+        ],
+        "offences": [
+            {
+                "offenderChargeId": 3935029,
+                "offenceStartDate": "2009-07-01",
+                "offenceStatute": "FG06",
+                "offenceCode": "FG06019",
+                "offenceDescription": "Sell raw cows' milk for direct human consumption in contravention of para 4 of Sch 6 - distributor",
+                "indicators": []
+            }
+        ]
+    }
+]
 """
+
+
 const val G4946VC_COURT_DATE_RESULTS = """
   [
     {
@@ -1078,8 +1067,8 @@ const val G4946VC_COURT_DATE_RESULTS = """
 
 const val G4946VC_ADJUDICATIONS = """
   {
-    "totalPages": 1,
     "totalElements": 2,
+    "totalPages": 1,
     "pageable": {
         "pageNumber": 0,
         "pageSize": 1000,
@@ -1345,4 +1334,5 @@ const val G4946VC_ADJUDICATIONS = """
         "empty": false
     },
     "empty": false
-}"""
+}
+"""

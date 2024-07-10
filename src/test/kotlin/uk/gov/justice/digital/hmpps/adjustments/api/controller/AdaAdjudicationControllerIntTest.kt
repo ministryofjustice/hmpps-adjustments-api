@@ -66,6 +66,6 @@ class AdaAdjudicationControllerIntTest : SqsIntegrationTestBase() {
     assertThat(adjudicationDetails.totalAwaitingApproval).isEqualTo(29)
     assertThat(adjudicationDetails.recallWithMissingOutcome).isFalse
     assertThat(adjudicationDetails.earliestNonRecallSentenceDate).isEqualTo(LocalDate.of(2014, 2, 14))
-    assertThat(adjudicationDetails.earliestRecallDate).isEqualTo(LocalDate.of(2010, 9, 15))
+    assertThat(adjudicationDetails.earliestRecallDate).isEqualTo(LocalDate.of(2010, 9, 12))
   }
 }
