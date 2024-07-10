@@ -846,446 +846,232 @@ const val G4946VC_SENTENCES_AND_OFFENCES = """
 const val G4946VC_COURT_DATE_RESULTS = """
   [
     {
-        "id": 107376770,
-        "date": "2010-03-01",
-        "resultCode": "1002",
+        "chargeId": 1525217,
+        "offenceCode": "MD71230-245N",
+        "offenceStatue": "ZZ",
+        "offenceDescription": "POSSESSION DRUGS WITH INTENT TO SUPPLY",
+        "offenceDate": "2010-03-13",
+        "guilty": false,
+        "courtCaseId": 689225,
+        "courtLocation": "Liverpool Crown Court",
+        "sentenceSequence": 1,
+        "sentenceDate": "2010-09-15",
         "resultDescription": "Imprisonment",
-        "resultDispositionCode": "F",
-        "charge": {
-            "chargeId": 1525217,
-            "offenceCode": "MD71230-245N",
-            "offenceStatue": "ZZ",
-            "offenceDescription": "POSSESSION DRUGS WITH INTENT TO SUPPLY",
-            "offenceDate": "2010-03-13",
-            "guilty": false,
-            "courtCaseId": 689225,
-            "courtLocation": "Liverpool Crown Court",
-            "sentenceSequence": 1,
-            "sentenceDate": "2010-09-15",
-            "resultDescription": "Imprisonment"
-        },
         "bookingId": 594299,
-        "bookNumber": "GX8150"
+        "bookNumber": "GX8150",
+        "outcomes": [
+            {
+                "id": 107376769,
+                "date": "2010-08-18",
+                "resultCode": "1002",
+                "resultDescription": "Imprisonment",
+                "resultDispositionCode": "F"
+            },
+            {
+                "id": 107376770,
+                "date": "2010-03-01",
+                "resultCode": "1002",
+                "resultDescription": "Imprisonment",
+                "resultDispositionCode": "F"
+            },
+            {
+                "id": 107376771,
+                "date": "2010-09-15",
+                "resultCode": "1002",
+                "resultDescription": "Imprisonment",
+                "resultDispositionCode": "F"
+            },
+            {
+                "id": 107376772,
+                "date": "2010-04-06",
+                "resultCode": "1002",
+                "resultDescription": "Imprisonment",
+                "resultDispositionCode": "F"
+            }
+        ]
     },
     {
-        "id": 107376770,
-        "date": "2010-03-01",
-        "resultCode": "1002",
+        "chargeId": 1525218,
+        "offenceCode": "MD71230-245N",
+        "offenceStatue": "ZZ",
+        "offenceDescription": "POSSESSION DRUGS WITH INTENT TO SUPPLY",
+        "offenceDate": "2010-04-05",
+        "guilty": false,
+        "courtCaseId": 689225,
+        "courtLocation": "Liverpool Crown Court",
+        "sentenceSequence": 2,
+        "sentenceDate": "2010-09-15",
         "resultDescription": "Imprisonment",
-        "resultDispositionCode": "F",
-        "charge": {
-            "chargeId": 1525218,
-            "offenceCode": "MD71230-245N",
-            "offenceStatue": "ZZ",
-            "offenceDescription": "POSSESSION DRUGS WITH INTENT TO SUPPLY",
-            "offenceDate": "2010-04-05",
-            "guilty": false,
-            "courtCaseId": 689225,
-            "courtLocation": "Liverpool Crown Court",
-            "sentenceSequence": 2,
-            "sentenceDate": "2010-09-15",
-            "resultDescription": "Imprisonment"
-        },
         "bookingId": 594299,
-        "bookNumber": "GX8150"
+        "bookNumber": "GX8150",
+        "outcomes": [
+            {
+                "id": 107376769,
+                "date": "2010-08-18",
+                "resultCode": "1002",
+                "resultDescription": "Imprisonment",
+                "resultDispositionCode": "F"
+            },
+            {
+                "id": 107376770,
+                "date": "2010-03-01",
+                "resultCode": "1002",
+                "resultDescription": "Imprisonment",
+                "resultDispositionCode": "F"
+            },
+            {
+                "id": 107376771,
+                "date": "2010-09-15",
+                "resultCode": "1002",
+                "resultDescription": "Imprisonment",
+                "resultDispositionCode": "F"
+            },
+            {
+                "id": 107376772,
+                "date": "2010-04-06",
+                "resultCode": "1002",
+                "resultDescription": "Imprisonment",
+                "resultDispositionCode": "F"
+            }
+        ]
     },
     {
-        "id": 107376772,
-        "date": "2010-04-06",
-        "resultCode": "1002",
+        "chargeId": 2228470,
+        "offenceCode": "TH68023",
+        "offenceStatue": "TH68",
+        "offenceDescription": "Robbery",
+        "offenceDate": "2007-01-01",
+        "guilty": false,
+        "courtCaseId": 957837,
+        "courtCaseRef": "T20137110",
+        "courtLocation": "Shrewsbury Crown Court",
+        "sentenceSequence": 2,
+        "sentenceDate": "2014-02-14",
         "resultDescription": "Imprisonment",
-        "resultDispositionCode": "F",
-        "charge": {
-            "chargeId": 1525217,
-            "offenceCode": "MD71230-245N",
-            "offenceStatue": "ZZ",
-            "offenceDescription": "POSSESSION DRUGS WITH INTENT TO SUPPLY",
-            "offenceDate": "2010-03-13",
-            "guilty": false,
-            "courtCaseId": 689225,
-            "courtLocation": "Liverpool Crown Court",
-            "sentenceSequence": 1,
-            "sentenceDate": "2010-09-15",
-            "resultDescription": "Imprisonment"
-        },
-        "bookingId": 594299,
-        "bookNumber": "GX8150"
+        "bookingId": 777831,
+        "bookNumber": "K63821",
+        "outcomes": [
+            {
+                "id": 175604667,
+                "date": "2013-08-10",
+                "resultCode": "4565",
+                "resultDescription": "Commit to Crown Court for Trial (Summary / Either Way Offences)",
+                "resultDispositionCode": "I"
+            },
+            {
+                "id": 176669175,
+                "date": "2013-08-19",
+                "resultCode": "4560",
+                "resultDescription": "Commit/Transfer/Send to Crown Court for Trial in Custody",
+                "resultDispositionCode": "I"
+            },
+            {
+                "id": 186814131,
+                "date": "2013-11-04",
+                "resultCode": "4560",
+                "resultDescription": "Commit/Transfer/Send to Crown Court for Trial in Custody",
+                "resultDispositionCode": "I"
+            },
+            {
+                "id": 196131170,
+                "date": "2014-01-20",
+                "resultCode": "4004",
+                "resultDescription": "Sentence Postponed",
+                "resultDispositionCode": "I"
+            },
+            {
+                "id": 199887241,
+                "date": "2014-02-14",
+                "resultCode": "1002",
+                "resultDescription": "Imprisonment",
+                "resultDispositionCode": "F"
+            }
+        ]
     },
     {
-        "id": 107376772,
-        "date": "2010-04-06",
-        "resultCode": "1002",
+        "chargeId": 2228471,
+        "offenceCode": "TH68147",
+        "offenceStatue": "TH68",
+        "offenceDescription": "Aggravated vehicle taking - ( driver did not take ) and dangerous driving",
+        "offenceDate": "2007-01-01",
+        "guilty": false,
+        "courtCaseId": 957837,
+        "courtCaseRef": "T20137110",
+        "courtLocation": "Shrewsbury Crown Court",
+        "sentenceSequence": 3,
+        "sentenceDate": "2014-02-14",
         "resultDescription": "Imprisonment",
-        "resultDispositionCode": "F",
-        "charge": {
-            "chargeId": 1525218,
-            "offenceCode": "MD71230-245N",
-            "offenceStatue": "ZZ",
-            "offenceDescription": "POSSESSION DRUGS WITH INTENT TO SUPPLY",
-            "offenceDate": "2010-04-05",
-            "guilty": false,
-            "courtCaseId": 689225,
-            "courtLocation": "Liverpool Crown Court",
-            "sentenceSequence": 2,
-            "sentenceDate": "2010-09-15",
-            "resultDescription": "Imprisonment"
-        },
-        "bookingId": 594299,
-        "bookNumber": "GX8150"
+        "bookingId": 777831,
+        "bookNumber": "K63821",
+        "outcomes": [
+            {
+                "id": 175604667,
+                "date": "2013-08-10",
+                "resultCode": "4565",
+                "resultDescription": "Commit to Crown Court for Trial (Summary / Either Way Offences)",
+                "resultDispositionCode": "I"
+            },
+            {
+                "id": 176669175,
+                "date": "2013-08-19",
+                "resultCode": "4560",
+                "resultDescription": "Commit/Transfer/Send to Crown Court for Trial in Custody",
+                "resultDispositionCode": "I"
+            },
+            {
+                "id": 186814131,
+                "date": "2013-11-04",
+                "resultCode": "4560",
+                "resultDescription": "Commit/Transfer/Send to Crown Court for Trial in Custody",
+                "resultDispositionCode": "I"
+            },
+            {
+                "id": 196131170,
+                "date": "2014-01-20",
+                "resultCode": "4004",
+                "resultDescription": "Sentence Postponed",
+                "resultDispositionCode": "I"
+            },
+            {
+                "id": 199887241,
+                "date": "2014-02-14",
+                "resultCode": "1002",
+                "resultDescription": "Imprisonment",
+                "resultDispositionCode": "F"
+            }
+        ]
     },
     {
-        "id": 107376769,
-        "date": "2010-08-18",
-        "resultCode": "1002",
-        "resultDescription": "Imprisonment",
-        "resultDispositionCode": "F",
-        "charge": {
-            "chargeId": 1525217,
-            "offenceCode": "MD71230-245N",
-            "offenceStatue": "ZZ",
-            "offenceDescription": "POSSESSION DRUGS WITH INTENT TO SUPPLY",
-            "offenceDate": "2010-03-13",
-            "guilty": false,
-            "courtCaseId": 689225,
-            "courtLocation": "Liverpool Crown Court",
-            "sentenceSequence": 1,
-            "sentenceDate": "2010-09-15",
-            "resultDescription": "Imprisonment"
-        },
-        "bookingId": 594299,
-        "bookNumber": "GX8150"
-    },
-    {
-        "id": 107376769,
-        "date": "2010-08-18",
-        "resultCode": "1002",
-        "resultDescription": "Imprisonment",
-        "resultDispositionCode": "F",
-        "charge": {
-            "chargeId": 1525218,
-            "offenceCode": "MD71230-245N",
-            "offenceStatue": "ZZ",
-            "offenceDescription": "POSSESSION DRUGS WITH INTENT TO SUPPLY",
-            "offenceDate": "2010-04-05",
-            "guilty": false,
-            "courtCaseId": 689225,
-            "courtLocation": "Liverpool Crown Court",
-            "sentenceSequence": 2,
-            "sentenceDate": "2010-09-15",
-            "resultDescription": "Imprisonment"
-        },
-        "bookingId": 594299,
-        "bookNumber": "GX8150"
-    },
-    {
-        "id": 107376771,
-        "date": "2010-09-15",
-        "resultCode": "1002",
-        "resultDescription": "Imprisonment",
-        "resultDispositionCode": "F",
-        "charge": {
-            "chargeId": 1525217,
-            "offenceCode": "MD71230-245N",
-            "offenceStatue": "ZZ",
-            "offenceDescription": "POSSESSION DRUGS WITH INTENT TO SUPPLY",
-            "offenceDate": "2010-03-13",
-            "guilty": false,
-            "courtCaseId": 689225,
-            "courtLocation": "Liverpool Crown Court",
-            "sentenceSequence": 1,
-            "sentenceDate": "2010-09-15",
-            "resultDescription": "Imprisonment"
-        },
-        "bookingId": 594299,
-        "bookNumber": "GX8150"
-    },
-    {
-        "id": 107376771,
-        "date": "2010-09-15",
-        "resultCode": "1002",
-        "resultDescription": "Imprisonment",
-        "resultDispositionCode": "F",
-        "charge": {
-            "chargeId": 1525218,
-            "offenceCode": "MD71230-245N",
-            "offenceStatue": "ZZ",
-            "offenceDescription": "POSSESSION DRUGS WITH INTENT TO SUPPLY",
-            "offenceDate": "2010-04-05",
-            "guilty": false,
-            "courtCaseId": 689225,
-            "courtLocation": "Liverpool Crown Court",
-            "sentenceSequence": 2,
-            "sentenceDate": "2010-09-15",
-            "resultDescription": "Imprisonment"
-        },
-        "bookingId": 594299,
-        "bookNumber": "GX8150"
-    },
-    {
-        "id": 177539043,
-        "date": "2010-09-15",
-        "resultCode": "1501",
+        "chargeId": 3935029,
+        "offenceCode": "FG06019",
+        "offenceStatue": "FG06",
+        "offenceDescription": "Sell raw cows' milk for direct human consumption in contravention of para 4 of Sch 6 - distributor",
+        "offenceDate": "2009-07-01",
+        "guilty": false,
+        "courtCaseId": 1565533,
+        "courtCaseRef": "12345",
+        "courtLocation": "Derby Crown Court",
+        "sentenceSequence": 17,
+        "sentenceDate": "2009-08-14",
         "resultDescription": "Recall to Prison",
-        "resultDispositionCode": "F",
-        "charge": {
-            "chargeId": 2247352,
-            "offenceCode": "MD71231",
-            "offenceStatue": "MD71",
-            "offenceDescription": "Possess with intent to supply a controlled drug of Class A - Heroin",
-            "offenceDate": "2010-04-14",
-            "guilty": false,
-            "courtCaseId": 964792,
-            "courtCaseRef": "L/R -22/08/13",
-            "courtLocation": "Liverpool Crown Court",
-            "sentenceSequence": 1,
-            "sentenceDate": "2010-09-15",
-            "resultDescription": "Recall to Prison"
-        },
         "bookingId": 777831,
-        "bookNumber": "K63821"
-    },
-    {
-        "id": 177539043,
-        "date": "2010-09-15",
-        "resultCode": "1501",
-        "resultDescription": "Recall to Prison",
-        "resultDispositionCode": "F",
-        "charge": {
-            "chargeId": 2247353,
-            "offenceCode": "MD71230",
-            "offenceStatue": "MD71",
-            "offenceDescription": "Possess with intent to supply a controlled drug of Class A - Cocaine",
-            "offenceDate": "2010-04-05",
-            "guilty": false,
-            "courtCaseId": 964792,
-            "courtCaseRef": "L/R -22/08/13",
-            "courtLocation": "Liverpool Crown Court",
-            "sentenceSequence": 1,
-            "sentenceDate": "2010-09-15",
-            "resultDescription": "Recall to Prison"
-        },
-        "bookingId": 777831,
-        "bookNumber": "K63821"
-    },
-    {
-        "id": 175604667,
-        "date": "2013-08-10",
-        "resultCode": "4565",
-        "resultDescription": "Commit to Crown Court for Trial (Summary / Either Way Offences)",
-        "resultDispositionCode": "I",
-        "charge": {
-            "chargeId": 2228470,
-            "offenceCode": "TH68023",
-            "offenceStatue": "TH68",
-            "offenceDescription": "Robbery",
-            "guilty": false,
-            "courtCaseId": 957837,
-            "courtCaseRef": "T20137110",
-            "courtLocation": "Shrewsbury Crown Court",
-            "sentenceSequence": 2,
-            "sentenceDate": "2014-02-14",
-            "resultDescription": "Imprisonment"
-        },
-        "bookingId": 777831,
-        "bookNumber": "K63821"
-    },
-    {
-        "id": 175604667,
-        "date": "2013-08-10",
-        "resultCode": "4565",
-        "resultDescription": "Commit to Crown Court for Trial (Summary / Either Way Offences)",
-        "resultDispositionCode": "I",
-        "charge": {
-            "chargeId": 2228471,
-            "offenceCode": "TH68147",
-            "offenceStatue": "TH68",
-            "offenceDescription": "Aggravated vehicle taking - ( driver did not take ) and dangerous driving",
-            "guilty": false,
-            "courtCaseId": 957837,
-            "courtCaseRef": "T20137110",
-            "courtLocation": "Shrewsbury Crown Court",
-            "sentenceSequence": 3,
-            "sentenceDate": "2014-02-14",
-            "resultDescription": "Imprisonment"
-        },
-        "bookingId": 777831,
-        "bookNumber": "K63821"
-    },
-    {
-        "id": 176669175,
-        "date": "2013-08-19",
-        "resultCode": "4560",
-        "resultDescription": "Commit/Transfer/Send to Crown Court for Trial in Custody",
-        "resultDispositionCode": "I",
-        "charge": {
-            "chargeId": 2228470,
-            "offenceCode": "TH68023",
-            "offenceStatue": "TH68",
-            "offenceDescription": "Robbery",
-            "guilty": false,
-            "courtCaseId": 957837,
-            "courtCaseRef": "T20137110",
-            "courtLocation": "Shrewsbury Crown Court",
-            "sentenceSequence": 2,
-            "sentenceDate": "2014-02-14",
-            "resultDescription": "Imprisonment"
-        },
-        "bookingId": 777831,
-        "bookNumber": "K63821"
-    },
-    {
-        "id": 176669175,
-        "date": "2013-08-19",
-        "resultCode": "4560",
-        "resultDescription": "Commit/Transfer/Send to Crown Court for Trial in Custody",
-        "resultDispositionCode": "I",
-        "charge": {
-            "chargeId": 2228471,
-            "offenceCode": "TH68147",
-            "offenceStatue": "TH68",
-            "offenceDescription": "Aggravated vehicle taking - ( driver did not take ) and dangerous driving",
-            "guilty": false,
-            "courtCaseId": 957837,
-            "courtCaseRef": "T20137110",
-            "courtLocation": "Shrewsbury Crown Court",
-            "sentenceSequence": 3,
-            "sentenceDate": "2014-02-14",
-            "resultDescription": "Imprisonment"
-        },
-        "bookingId": 777831,
-        "bookNumber": "K63821"
-    },
-    {
-        "id": 186814131,
-        "date": "2013-11-04",
-        "resultCode": "4560",
-        "resultDescription": "Commit/Transfer/Send to Crown Court for Trial in Custody",
-        "resultDispositionCode": "I",
-        "charge": {
-            "chargeId": 2228470,
-            "offenceCode": "TH68023",
-            "offenceStatue": "TH68",
-            "offenceDescription": "Robbery",
-            "guilty": false,
-            "courtCaseId": 957837,
-            "courtCaseRef": "T20137110",
-            "courtLocation": "Shrewsbury Crown Court",
-            "sentenceSequence": 2,
-            "sentenceDate": "2014-02-14",
-            "resultDescription": "Imprisonment"
-        },
-        "bookingId": 777831,
-        "bookNumber": "K63821"
-    },
-    {
-        "id": 186814131,
-        "date": "2013-11-04",
-        "resultCode": "4560",
-        "resultDescription": "Commit/Transfer/Send to Crown Court for Trial in Custody",
-        "resultDispositionCode": "I",
-        "charge": {
-            "chargeId": 2228471,
-            "offenceCode": "TH68147",
-            "offenceStatue": "TH68",
-            "offenceDescription": "Aggravated vehicle taking - ( driver did not take ) and dangerous driving",
-            "guilty": false,
-            "courtCaseId": 957837,
-            "courtCaseRef": "T20137110",
-            "courtLocation": "Shrewsbury Crown Court",
-            "sentenceSequence": 3,
-            "sentenceDate": "2014-02-14",
-            "resultDescription": "Imprisonment"
-        },
-        "bookingId": 777831,
-        "bookNumber": "K63821"
-    },
-    {
-        "id": 196131170,
-        "date": "2014-01-20",
-        "resultCode": "4004",
-        "resultDescription": "Sentence Postponed",
-        "resultDispositionCode": "I",
-        "charge": {
-            "chargeId": 2228470,
-            "offenceCode": "TH68023",
-            "offenceStatue": "TH68",
-            "offenceDescription": "Robbery",
-            "guilty": false,
-            "courtCaseId": 957837,
-            "courtCaseRef": "T20137110",
-            "courtLocation": "Shrewsbury Crown Court",
-            "sentenceSequence": 2,
-            "sentenceDate": "2014-02-14",
-            "resultDescription": "Imprisonment"
-        },
-        "bookingId": 777831,
-        "bookNumber": "K63821"
-    },
-    {
-        "id": 196131170,
-        "date": "2014-01-20",
-        "resultCode": "4004",
-        "resultDescription": "Sentence Postponed",
-        "resultDispositionCode": "I",
-        "charge": {
-            "chargeId": 2228471,
-            "offenceCode": "TH68147",
-            "offenceStatue": "TH68",
-            "offenceDescription": "Aggravated vehicle taking - ( driver did not take ) and dangerous driving",
-            "guilty": false,
-            "courtCaseId": 957837,
-            "courtCaseRef": "T20137110",
-            "courtLocation": "Shrewsbury Crown Court",
-            "sentenceSequence": 3,
-            "sentenceDate": "2014-02-14",
-            "resultDescription": "Imprisonment"
-        },
-        "bookingId": 777831,
-        "bookNumber": "K63821"
-    },
-    {
-        "id": 199887241,
-        "date": "2014-02-14",
-        "resultCode": "1002",
-        "resultDescription": "Imprisonment",
-        "resultDispositionCode": "F",
-        "charge": {
-            "chargeId": 2228470,
-            "offenceCode": "TH68023",
-            "offenceStatue": "TH68",
-            "offenceDescription": "Robbery",
-            "guilty": false,
-            "courtCaseId": 957837,
-            "courtCaseRef": "T20137110",
-            "courtLocation": "Shrewsbury Crown Court",
-            "sentenceSequence": 2,
-            "sentenceDate": "2014-02-14",
-            "resultDescription": "Imprisonment"
-        },
-        "bookingId": 777831,
-        "bookNumber": "K63821"
-    },
-    {
-        "id": 199887241,
-        "date": "2014-02-14",
-        "resultCode": "1002",
-        "resultDescription": "Imprisonment",
-        "resultDispositionCode": "F",
-        "charge": {
-            "chargeId": 2228471,
-            "offenceCode": "TH68147",
-            "offenceStatue": "TH68",
-            "offenceDescription": "Aggravated vehicle taking - ( driver did not take ) and dangerous driving",
-            "guilty": false,
-            "courtCaseId": 957837,
-            "courtCaseRef": "T20137110",
-            "courtLocation": "Shrewsbury Crown Court",
-            "sentenceSequence": 3,
-            "sentenceDate": "2014-02-14",
-            "resultDescription": "Imprisonment"
-        },
-        "bookingId": 777831,
-        "bookNumber": "K63821"
+        "bookNumber": "K63821",
+        "outcomes": [
+            {
+                "id": 541969674,
+                "date": "2009-08-14",
+                "resultCode": "1002",
+                "resultDescription": "Imprisonment",
+                "resultDispositionCode": "F"
+            },
+            {
+                "id": 541969675,
+                "date": "2010-09-12",
+                "resultCode": "1501",
+                "resultDescription": "Recall to Prison",
+                "resultDispositionCode": "F"
+            }
+        ]
     }
 ]
 """
