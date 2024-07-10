@@ -13,7 +13,6 @@ import org.springframework.security.oauth2.client.web.reactive.function.client.S
 import org.springframework.web.reactive.function.client.ClientRequest
 import org.springframework.web.reactive.function.client.ExchangeFilterFunction
 import org.springframework.web.reactive.function.client.ExchangeFunction
-import org.springframework.web.reactive.function.client.ExchangeStrategies
 import org.springframework.web.reactive.function.client.WebClient
 
 @Configuration
@@ -26,16 +25,11 @@ class WebClientConfiguration(
 
   @Bean
   fun prisonApiWebClient(authorizedClientManager: OAuth2AuthorizedClientManager): WebClient {
-    val size = 16 * 1024 * 1024
-    val strategies = ExchangeStrategies.builder()
-      .codecs { it.defaultCodecs().maxInMemorySize(size) }
-      .build()
     val filter = ServletOAuth2AuthorizedClientExchangeFilterFunction(authorizedClientManager)
     filter.setDefaultClientRegistrationId("hmpps-api")
     return WebClient.builder()
       .baseUrl(prisonApiUri)
       .filter(filter)
-      .exchangeStrategies(strategies)
       .build()
   }
 

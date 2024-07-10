@@ -5,9 +5,9 @@ import org.junit.jupiter.api.Test
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.whenever
 import uk.gov.justice.digital.hmpps.adjustments.api.client.PrisonApiClient
+import uk.gov.justice.digital.hmpps.adjustments.api.model.prisonapi.CourtDateChargeAndOutcomes
+import uk.gov.justice.digital.hmpps.adjustments.api.model.prisonapi.CourtDateOutcome
 import uk.gov.justice.digital.hmpps.adjustments.api.model.prisonapi.OffenderOffence
-import uk.gov.justice.digital.hmpps.adjustments.api.model.prisonapi.PrisonApiCharge
-import uk.gov.justice.digital.hmpps.adjustments.api.model.prisonapi.PrisonApiCourtDateResult
 import uk.gov.justice.digital.hmpps.adjustments.api.model.prisonapi.PrisonerDetails
 import uk.gov.justice.digital.hmpps.adjustments.api.model.prisonapi.RECALL_COURT_EVENT
 import uk.gov.justice.digital.hmpps.adjustments.api.model.prisonapi.SentenceAndOffences
@@ -55,11 +55,14 @@ class PrisonServiceTest {
       ),
     )
     val courtEvents = listOf(
-      PrisonApiCourtDateResult(
-        resultCode = RECALL_COURT_EVENT,
-        date = recallDate,
-        charge = PrisonApiCharge(
-          chargeId = chargeId,
+      CourtDateChargeAndOutcomes(
+        chargeId = chargeId,
+        outcomes = listOf(
+          CourtDateOutcome(
+            id = -1,
+            resultCode = RECALL_COURT_EVENT,
+            date = recallDate,
+          ),
         ),
       ),
     )

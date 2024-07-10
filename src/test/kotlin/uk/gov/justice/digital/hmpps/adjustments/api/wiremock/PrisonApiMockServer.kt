@@ -243,7 +243,7 @@ class PrisonApiMockServer : WireMockServer(WIREMOCK_PORT) {
         ),
     )
     stubFor(
-      get("/api/court-date-results/G4946VC")
+      get("/api/court-date-results/by-charge/G4946VC")
         .willReturn(
           aResponse()
             .withHeader("Content-Type", "application/json")
