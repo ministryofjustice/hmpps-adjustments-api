@@ -831,7 +831,6 @@ const val G4946VC_SENTENCES_AND_OFFENCES = """
 ]
 """
 
-
 const val G4946VC_COURT_DATE_RESULTS = """
   [
     {
