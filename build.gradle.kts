@@ -23,7 +23,7 @@ dependencies {
   implementation("io.hypersistence:hypersistence-utils-hibernate-63:3.8.1")
 
   // Enable kotlin reflect
-  implementation("org.jetbrains.kotlin:kotlin-reflect:1.9.24")
+  implementation("org.jetbrains.kotlin:kotlin-reflect:2.0.0")
 
   implementation("uk.gov.justice.service.hmpps:hmpps-sqs-spring-boot-starter:4.0.1")
 
