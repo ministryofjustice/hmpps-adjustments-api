@@ -25,7 +25,7 @@ dependencies {
   // Enable kotlin reflect
   implementation("org.jetbrains.kotlin:kotlin-reflect:2.0.0")
 
-  implementation("uk.gov.justice.service.hmpps:hmpps-sqs-spring-boot-starter:4.0.1")
+  implementation("uk.gov.justice.service.hmpps:hmpps-sqs-spring-boot-starter:4.1.0")
 
   implementation("org.springframework:spring-jms:6.1.11")
 
@@ -43,12 +43,12 @@ dependencies {
   testImplementation("org.springframework.security:spring-security-test")
   testImplementation("org.awaitility:awaitility-kotlin:4.2.1")
   testImplementation("io.jsonwebtoken:jjwt:0.12.6")
-  testImplementation("net.javacrumbs.json-unit:json-unit-assertj:3.4.0")
+  testImplementation("net.javacrumbs.json-unit:json-unit-assertj:3.4.1")
   testImplementation("io.swagger.parser.v3:swagger-parser-v2-converter:2.1.22")
   testImplementation("org.mockito:mockito-inline:5.2.0")
   testImplementation("org.junit.jupiter:junit-jupiter:5.10.3")
   testImplementation("com.h2database:h2")
-  testImplementation("org.testcontainers:localstack:1.19.8")
+  testImplementation("org.testcontainers:localstack:1.20.0")
 }
 
 kotlin {
