@@ -19,6 +19,7 @@ import uk.gov.justice.digital.hmpps.adjustments.api.entity.ChangeType
 import uk.gov.justice.digital.hmpps.adjustments.api.legacy.model.LegacyAdjustment
 import uk.gov.justice.digital.hmpps.adjustments.api.legacy.model.LegacyAdjustmentCreatedResponse
 import uk.gov.justice.digital.hmpps.adjustments.api.legacy.model.LegacyAdjustmentType
+import uk.gov.justice.digital.hmpps.adjustments.api.legacy.model.LegacyAdjustmentUpdatedResponse
 import uk.gov.justice.digital.hmpps.adjustments.api.legacy.model.LegacyData
 import uk.gov.justice.digital.hmpps.adjustments.api.model.prisonapi.PrisonerDetails
 import uk.gov.justice.digital.hmpps.adjustments.api.respository.AdjustmentRepository
@@ -55,10 +56,6 @@ class LegacyService(
     )
 
     adjustment = adjustmentRepository.save(adjustment)
-
-    if (!migration) {
-      updateAllAdjustmentsToHaveEffectiveDaysAsDpsDays(adjustment.person, prisonId)
-    }
 
     return LegacyAdjustmentCreatedResponse(adjustment.id)
   }
@@ -97,7 +94,7 @@ class LegacyService(
   }
 
   @Transactional
-  fun update(adjustmentId: UUID, resource: LegacyAdjustment) {
+  fun update(adjustmentId: UUID, resource: LegacyAdjustment): LegacyAdjustmentUpdatedResponse {
     val adjustment = adjustmentRepository.findById(adjustmentId)
       .map { if (it.status.isDeleted()) null else it }
       .orElseThrow {
@@ -127,12 +124,12 @@ class LegacyService(
       )
     }
 
-    if (isChangeToDays) {
-      updateAllAdjustmentsToHaveEffectiveDaysAsDpsDays(resource.offenderNo, resource.agencyId)
-    }
+    return LegacyAdjustmentUpdatedResponse(isChangeToDays)
   }
 
-  private fun updateAllAdjustmentsToHaveEffectiveDaysAsDpsDays(person: String, prisonId: String?) {
+  @Transactional
+  fun updateAllAdjustmentsToHaveEffectiveDaysAsDpsDays(person: String, apiPrisonId: String? = null) {
+    val prisonId = apiPrisonId ?: prisonApiClient.getPrisonerDetail(person).agencyId
     val adjustments = adjustmentRepository.findByPersonAndStatus(person, ACTIVE)
     adjustments.forEach {
       val dpsDays = it.days ?: it.daysCalculated
@@ -142,16 +139,19 @@ class LegacyService(
           toDate = it.fromDate?.plusDays(it.effectiveDays.toLong() - 1)
           days = if (this.days != null) it.effectiveDays else this.days
           daysCalculated = if (this.daysCalculated != null) it.effectiveDays else this.daysCalculated
-          status = if (it.effectiveDays == 0) INACTIVE else status
           source = AdjustmentSource.NOMIS
           adjustmentHistory += AdjustmentHistory(
             changeByUsername = "NOMIS",
-            changeType = ChangeType.UPDATE,
+            changeType = ChangeType.RESET_DAYS,
             change = change,
             changeSource = AdjustmentSource.NOMIS,
             adjustment = it,
             prisonId = prisonId,
           )
+
+          if (it.effectiveDays == 0) {
+            status = INACTIVE
+          }
         }
       }
     }
@@ -177,8 +177,6 @@ class LegacyService(
         prisonId = prisonId,
       )
     }
-
-    updateAllAdjustmentsToHaveEffectiveDaysAsDpsDays(adjustment.person, prisonId)
   }
 
   fun objectToJson(subject: Any): JsonNode {

@@ -48,6 +48,7 @@ class LegacyController(
   fun create(@RequestBody adjustment: LegacyAdjustment): LegacyAdjustmentCreatedResponse {
     return legacyService.create(adjustment, migration = false).also {
       eventService.create(listOf(it.adjustmentId), adjustment.offenderNo, AdjustmentSource.NOMIS)
+      legacyService.updateAllAdjustmentsToHaveEffectiveDaysAsDpsDays(adjustment.offenderNo, adjustment.agencyId)
     }
   }
 
@@ -111,6 +112,9 @@ class LegacyController(
   ) {
     legacyService.update(adjustmentId, adjustment).also {
       eventService.update(adjustmentId, adjustment.offenderNo, AdjustmentSource.NOMIS)
+      if (it.isChangeToDays) {
+        legacyService.updateAllAdjustmentsToHaveEffectiveDaysAsDpsDays(adjustment.offenderNo, adjustment.agencyId)
+      }
     }
   }
 
@@ -135,6 +139,7 @@ class LegacyController(
     legacyService.get(adjustmentId).also {
       legacyService.delete(adjustmentId)
       eventService.delete(adjustmentId, it.offenderNo, AdjustmentSource.NOMIS)
+      legacyService.updateAllAdjustmentsToHaveEffectiveDaysAsDpsDays(it.offenderNo)
     }
   }
 
