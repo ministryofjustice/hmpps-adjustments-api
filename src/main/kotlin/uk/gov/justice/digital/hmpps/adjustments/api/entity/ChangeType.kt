@@ -7,4 +7,5 @@ enum class ChangeType {
   RELEASE,
   ADMISSION,
   MERGE,
+  RESET_DAYS,
 }
