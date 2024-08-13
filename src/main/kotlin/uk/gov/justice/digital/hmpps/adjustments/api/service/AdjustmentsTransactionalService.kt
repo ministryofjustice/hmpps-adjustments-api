@@ -327,6 +327,13 @@ class AdjustmentsTransactionalService(
     )
   }
 
+  private fun getDtoDays(adjustment: Adjustment): Int {
+    if (adjustment.source == AdjustmentSource.NOMIS) {
+      return adjustment.effectiveDays
+    }
+    return adjustment.days ?: daysBetween(adjustment.fromDate, adjustment.toDate) ?: adjustment.effectiveDays
+  }
+
   private fun remandDto(adjustment: Adjustment, legacyData: LegacyData): RemandDto? {
     if (adjustment.adjustmentType === REMAND && legacyData.chargeIds.isNotEmpty()) {
       return RemandDto(legacyData.chargeIds)
