@@ -321,7 +321,7 @@ class AdjustmentsTransactionalService(
       prisonId = latestHistory.prisonId,
       prisonName = prisonDescription,
       adjustmentTypeText = adjustment.adjustmentType.text,
-      days = adjustment.days ?: daysBetween(adjustment.fromDate, adjustment.toDate) ?: adjustment.effectiveDays,
+      days = getDtoDays(adjustment),
       adjustmentArithmeticType = adjustment.adjustmentType.arithmeticType,
       source = adjustment.source,
     )
