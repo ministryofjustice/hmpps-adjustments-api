@@ -24,6 +24,7 @@ import uk.gov.justice.digital.hmpps.adjustments.api.model.AdjustmentEffectiveDay
 import uk.gov.justice.digital.hmpps.adjustments.api.model.CreateResponseDto
 import uk.gov.justice.digital.hmpps.adjustments.api.model.ManualUnusedDeductionsDto
 import uk.gov.justice.digital.hmpps.adjustments.api.model.RestoreAdjustmentsDto
+import uk.gov.justice.digital.hmpps.adjustments.api.model.UnusedDeductionsCalculationResultDto
 import uk.gov.justice.digital.hmpps.adjustments.api.model.ValidationMessage
 import uk.gov.justice.digital.hmpps.adjustments.api.service.AdjustmentsService
 import uk.gov.justice.digital.hmpps.adjustments.api.service.UnusedDeductionsService
@@ -193,6 +194,27 @@ class AdjustmentsController(
     @RequestBody manualUnusedDeductionsDto: ManualUnusedDeductionsDto,
   ) {
     unusedDeductionsService.setUnusedDaysManually(person, manualUnusedDeductionsDto)
+  }
+
+  @GetMapping("/person/{person}/unused-deductions-result")
+  @Operation(
+    summary = "Get the unused deductions result",
+    description = "Get the unused deductions result",
+  )
+  @ApiResponses(
+    value = [
+      ApiResponse(responseCode = "200", description = "Returns result"),
+      ApiResponse(responseCode = "401", description = "Unauthorised, requires a valid Oauth2 token"),
+      ApiResponse(responseCode = "404", description = "Person not found"),
+    ],
+  )
+  @PreAuthorize("hasAnyRole('ADJUSTMENTS__ADJUSTMENTS_RW', 'ADJUSTMENTS__ADJUSTMENTS_RO')")
+  fun getUnusedDeductionsResult(
+    @Parameter(required = true, description = "The person")
+    @PathVariable("person")
+    person: String,
+  ): UnusedDeductionsCalculationResultDto {
+    return unusedDeductionsService.getUnusedDeductionsResult(person)
   }
 
   @DeleteMapping("/{adjustmentId}")

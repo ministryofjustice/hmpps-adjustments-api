@@ -10,7 +10,10 @@ import software.amazon.awssdk.services.sns.model.MessageAttributeValue
 import software.amazon.awssdk.services.sns.model.PublishRequest
 import uk.gov.justice.digital.hmpps.adjustments.api.entity.AdjustmentType
 import uk.gov.justice.digital.hmpps.adjustments.api.integration.SqsIntegrationTestBase
+import uk.gov.justice.digital.hmpps.adjustments.api.model.UnusedDeductionsCalculationResultDto
+import uk.gov.justice.digital.hmpps.adjustments.api.model.UnusedDeductionsCalculationStatus
 import uk.gov.justice.digital.hmpps.adjustments.api.respository.AdjustmentRepository
+import uk.gov.justice.digital.hmpps.adjustments.api.respository.UnusedDeductionsCalculationResultRepository
 import uk.gov.justice.digital.hmpps.adjustments.api.wiremock.CalculateReleaseDatesApiExtension
 import uk.gov.justice.hmpps.sqs.countAllMessagesOnQueue
 
@@ -23,6 +26,9 @@ class UnusedDeductionsEventListenerIntTest : SqsIntegrationTestBase() {
 
   @Autowired
   private lateinit var adjustmentRepository: AdjustmentRepository
+
+  @Autowired
+  private lateinit var unusedDeductionsCalculationResultRepository: UnusedDeductionsCalculationResultRepository
 
   @Test
   @Sql(
@@ -60,6 +66,21 @@ class UnusedDeductionsEventListenerIntTest : SqsIntegrationTestBase() {
       assertThat(taggedBail.effectiveDays).isEqualTo(50)
 
       assertThat(unusedDeductions.days).isEqualTo(150)
+
+      val result = unusedDeductionsCalculationResultRepository.findFirstByPerson(UNUSED_DEDUCTIONS_PRISONER_ID)
+      assertThat(result).isNotNull
+      assertThat(result!!.status).isEqualTo(UnusedDeductionsCalculationStatus.CALCULATED)
+
+      val resultDto = webTestClient
+        .get()
+        .uri("/adjustments/person/$UNUSED_DEDUCTIONS_PRISONER_ID/unused-deductions-result")
+        .headers(setAdjustmentsRWAuth())
+        .exchange()
+        .expectStatus().isOk
+        .returnResult(UnusedDeductionsCalculationResultDto::class.java)
+        .responseBody.blockFirst()!!
+
+      assertThat(resultDto.status).isEqualTo(UnusedDeductionsCalculationStatus.CALCULATED)
     }
   }
 
@@ -103,6 +124,21 @@ class UnusedDeductionsEventListenerIntTest : SqsIntegrationTestBase() {
 
       assertThat(unusedDeductions).isNotNull
       assertThat(unusedDeductions!!.days).isEqualTo(150)
+
+      val result = unusedDeductionsCalculationResultRepository.findFirstByPerson(UNUSED_DEDUCTIONS_PRISONER_ID)
+      assertThat(result).isNotNull
+      assertThat(result!!.status).isEqualTo(UnusedDeductionsCalculationStatus.CALCULATED)
+
+      val resultDto = webTestClient
+        .get()
+        .uri("/adjustments/person/$UNUSED_DEDUCTIONS_PRISONER_ID/unused-deductions-result")
+        .headers(setAdjustmentsRWAuth())
+        .exchange()
+        .expectStatus().isOk
+        .returnResult(UnusedDeductionsCalculationResultDto::class.java)
+        .responseBody.blockFirst()!!
+
+      assertThat(resultDto.status).isEqualTo(UnusedDeductionsCalculationStatus.CALCULATED)
     }
   }
 
