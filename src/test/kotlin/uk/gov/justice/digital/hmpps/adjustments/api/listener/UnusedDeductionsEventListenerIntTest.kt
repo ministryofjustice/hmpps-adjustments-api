@@ -154,7 +154,7 @@ class UnusedDeductionsEventListenerIntTest : SqsIntegrationTestBase() {
     "classpath:test_data/insert-error-unused-deduction-adjustments.sql",
   )
   fun `handleAdjustmentEvent with an exception`() {
-    CalculateReleaseDatesApiExtension.calculateReleaseDatesApi.stubCalculateUnusedDeductions()
+    CalculateReleaseDatesApiExtension.calculateReleaseDatesApi.stubCalculateUnusedDeductionsError()
     val eventType = "release-date-adjustments.adjustment.inserted"
     domainEventsTopicSnsClient.publish(
       PublishRequest.builder().topicArn(domainEventsTopicArn)
