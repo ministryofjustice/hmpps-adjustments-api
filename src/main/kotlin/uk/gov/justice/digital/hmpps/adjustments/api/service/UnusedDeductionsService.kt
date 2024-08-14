@@ -27,6 +27,19 @@ class UnusedDeductionsService(
 ) {
 
   @Transactional
+  fun setStatusToInProgress(offenderNo: String) {
+    setUnusedDeductionsResult(offenderNo, UnusedDeductionsCalculationStatus.IN_PROGRESS)
+  }
+
+  @Transactional
+  fun removeInProgressStatus(offenderNo: String) {
+    val result = unusedDeductionsCalculationResultRepository.findFirstByPerson(offenderNo)
+    if (result != null && result.status == UnusedDeductionsCalculationStatus.IN_PROGRESS) {
+      unusedDeductionsCalculationResultRepository.delete(result)
+    }
+  }
+
+  @Transactional
   fun recalculateUnusedDeductions(offenderNo: String) {
     val sentences = prisonService.getSentencesAndStartDateDetails(offenderNo)
     val adjustments = adjustmentService.findCurrentAdjustments(offenderNo, AdjustmentStatus.ACTIVE, sentences.earliestSentenceDate)

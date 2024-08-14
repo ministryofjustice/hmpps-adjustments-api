@@ -7,6 +7,7 @@ import org.junit.jupiter.api.extension.AfterAllCallback
 import org.junit.jupiter.api.extension.BeforeAllCallback
 import org.junit.jupiter.api.extension.BeforeEachCallback
 import org.junit.jupiter.api.extension.ExtensionContext
+import uk.gov.justice.digital.hmpps.adjustments.api.listener.UNUSED_DEDUCTIONS_ERROR_PRISONER_ID
 import uk.gov.justice.digital.hmpps.adjustments.api.listener.UNUSED_DEDUCTIONS_PRISONER_ID
 
 /*
@@ -47,7 +48,25 @@ class CalculateReleaseDatesApiMockServer : WireMockServer(WIREMOCK_PORT) {
                 {"unusedDeductions":150}
               """.trimIndent(),
             )
+            .withFixedDelay(200)
             .withStatus(200),
+        ),
+    )
+  }
+
+  fun stubCalculateUnusedDeductionsError() {
+    stubFor(
+      post("/unused-deductions/$UNUSED_DEDUCTIONS_ERROR_PRISONER_ID/calculation")
+        .willReturn(
+          aResponse()
+            .withHeader("Content-Type", "application/json")
+            .withBody(
+              """
+                Error
+              """.trimIndent(),
+            )
+            .withFixedDelay(200)
+            .withStatus(500),
         ),
     )
   }
