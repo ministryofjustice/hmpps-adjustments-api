@@ -21,7 +21,6 @@ const val TAGGED_BAIL_ID = "5d2c10d0-0a31-49d1-93a9-52213bb344a5"
 const val REMAND_ID = "72ba4684-5674-4ada-9aa4-41011ff23451"
 const val UNUSED_DEDUCTIONS_PRISONER_ID = "A1234TT"
 const val UNUSED_DEDUCTIONS_ERROR_PRISONER_ID = "A1234TR"
-const val BOOKING_ID = 987651L
 
 class UnusedDeductionsEventListenerIntTest : SqsIntegrationTestBase() {
 
@@ -58,9 +57,6 @@ class UnusedDeductionsEventListenerIntTest : SqsIntegrationTestBase() {
 
     await untilAsserted {
       assertThat(awsSqsUnusedDeductionsClient!!.countAllMessagesOnQueue(unusedDeductionsQueueUrl).get()).isEqualTo(0)
-    }
-
-    await untilAsserted {
       val adjustments = adjustmentRepository.findByPerson(UNUSED_DEDUCTIONS_PRISONER_ID)
       val remand = adjustments.find { it.id.toString() == REMAND_ID }!!
       val taggedBail = adjustments.find { it.id.toString() == TAGGED_BAIL_ID }!!
@@ -121,9 +117,6 @@ class UnusedDeductionsEventListenerIntTest : SqsIntegrationTestBase() {
 
     await untilAsserted {
       assertThat(awsSqsUnusedDeductionsClient!!.countAllMessagesOnQueue(unusedDeductionsQueueUrl).get()).isEqualTo(0)
-    }
-
-    await untilAsserted {
       val adjustments = adjustmentRepository.findByPerson(UNUSED_DEDUCTIONS_PRISONER_ID)
       val remand = adjustments.find { it.id.toString() == REMAND_ID }!!
       val taggedBail = adjustments.find { it.id.toString() == TAGGED_BAIL_ID }!!

@@ -47,6 +47,7 @@ class CalculateReleaseDatesApiMockServer : WireMockServer(WIREMOCK_PORT) {
                 {"unusedDeductions":150}
               """.trimIndent(),
             )
+            .withFixedDelay(200)
             .withStatus(200),
         ),
     )
