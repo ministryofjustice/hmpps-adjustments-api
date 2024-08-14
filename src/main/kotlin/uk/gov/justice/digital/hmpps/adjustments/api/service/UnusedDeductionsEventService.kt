@@ -12,7 +12,7 @@ class UnusedDeductionsEventService(
     UserContext.setOverrideUsername("UnusedDeductionsListener")
     val (_, offenderNo, source, unusedDeductions, lastEvent) = adjustmentEvent.additionalInformation
     if (source == "DPS" && !unusedDeductions && lastEvent) {
-      unusedDeductionsService.recalculateUnusedDeductions(offenderNo)
+      calculateUnusedDeductions(offenderNo)
     }
   }
 
@@ -20,7 +20,16 @@ class UnusedDeductionsEventService(
     UserContext.setOverrideUsername("UnusedDeductionsListener")
     val (categoriesChanged, nomsNumber) = prisonerSearchEvent.additionalInformation
     if (categoriesChanged.contains("SENTENCE")) {
-      unusedDeductionsService.recalculateUnusedDeductions(nomsNumber)
+      calculateUnusedDeductions(nomsNumber)
+    }
+  }
+
+  private fun calculateUnusedDeductions(person: String) {
+    unusedDeductionsService.setStatusToInProgress(person)
+    try {
+      unusedDeductionsService.recalculateUnusedDeductions(person)
+    } finally {
+      unusedDeductionsService.removeInProgressStatus(person)
     }
   }
 }
