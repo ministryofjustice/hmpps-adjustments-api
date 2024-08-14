@@ -61,6 +61,7 @@ class UnusedDeductionsEventServiceTest {
     hasRecall = false,
     earliestSentenceDate = sentenceDate,
   )
+  val expectedValidationMessage = CrdsValidationMessage("CUSTODIAL_PERIOD_EXTINGUISHED_TAGGED_BAIL", "Message", "VALIDATION", emptyList())
 
   @Nested
   inner class AdjustmentEventTests {
@@ -84,7 +85,10 @@ class UnusedDeductionsEventServiceTest {
       whenever(prisonService.getSentencesAndStartDateDetails(person)).thenReturn(defaultSentenceDetail)
       whenever(adjustmentService.findCurrentAdjustments(person, AdjustmentStatus.ACTIVE, sentenceDate)).thenReturn(adjustments)
       whenever(calculateReleaseDatesApiClient.calculateUnusedDeductions(adjustments, person)).thenReturn(
-        UnusedDeductionCalculationResponse(100),
+        UnusedDeductionCalculationResponse(
+          100,
+          listOf(expectedValidationMessage),
+        ),
       )
 
       eventService.handleAdjustmentMessage(
@@ -119,7 +123,10 @@ class UnusedDeductionsEventServiceTest {
       whenever(prisonService.getSentencesAndStartDateDetails(person)).thenReturn(defaultSentenceDetail)
       whenever(adjustmentService.findCurrentAdjustments(person, AdjustmentStatus.ACTIVE, sentenceDate)).thenReturn(adjustments)
       whenever(calculateReleaseDatesApiClient.calculateUnusedDeductions(adjustments, person)).thenReturn(
-        UnusedDeductionCalculationResponse(100),
+        UnusedDeductionCalculationResponse(
+          100,
+          listOf(expectedValidationMessage),
+        ),
       )
 
       eventService.handleAdjustmentMessage(
@@ -172,7 +179,8 @@ class UnusedDeductionsEventServiceTest {
       whenever(prisonService.getSentencesAndStartDateDetails(person)).thenReturn(defaultSentenceDetail)
       whenever(adjustmentService.findCurrentAdjustments(person, AdjustmentStatus.ACTIVE, sentenceDate)).thenReturn(adjustments)
       whenever(calculateReleaseDatesApiClient.calculateUnusedDeductions(adjustments, person)).thenReturn(
-        UnusedDeductionCalculationResponse(0),
+        UnusedDeductionCalculationResponse(0, emptyList()),
+
       )
 
       eventService.handleAdjustmentMessage(
@@ -203,7 +211,7 @@ class UnusedDeductionsEventServiceTest {
       whenever(prisonService.getSentencesAndStartDateDetails(person)).thenReturn(defaultSentenceDetail)
       whenever(adjustmentService.findCurrentAdjustments(person, AdjustmentStatus.ACTIVE, sentenceDate)).thenReturn(adjustments)
       whenever(calculateReleaseDatesApiClient.calculateUnusedDeductions(adjustments, person)).thenReturn(
-        UnusedDeductionCalculationResponse(0),
+        UnusedDeductionCalculationResponse(0, emptyList()),
       )
 
       eventService.handleAdjustmentMessage(
@@ -300,7 +308,7 @@ class UnusedDeductionsEventServiceTest {
       whenever(prisonService.getSentencesAndStartDateDetails(person)).thenReturn(defaultSentenceDetail)
       whenever(adjustmentService.findCurrentAdjustments(person, AdjustmentStatus.ACTIVE, sentenceDate)).thenReturn(adjustments)
       whenever(calculateReleaseDatesApiClient.calculateUnusedDeductions(adjustments, person)).thenReturn(
-        UnusedDeductionCalculationResponse(100),
+        UnusedDeductionCalculationResponse(100, listOf(expectedValidationMessage)),
       )
 
       eventService.handlePrisonerSearchEvent(

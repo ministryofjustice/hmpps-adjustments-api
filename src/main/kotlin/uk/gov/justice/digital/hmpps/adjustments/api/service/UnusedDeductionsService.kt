@@ -65,7 +65,7 @@ class UnusedDeductionsService(
           setUnusedDeductionsResult(offenderNo, UnusedDeductionsCalculationStatus.UNSUPPORTED)
         } else if (sentences.hasRecall) {
           setUnusedDeductionsResult(offenderNo, UnusedDeductionsCalculationStatus.RECALL)
-        } else if (unusedDeductionsResponse.validationMessages.isNotEmpty()) {
+        } else if (unusedDeductionsResponse.validationMessages.any { !EXPECTED_VALIDATION_CODES.contains(it.code) }) {
           setUnusedDeductionsResult(offenderNo, UnusedDeductionsCalculationStatus.VALIDATION)
         } else if (unusedDeductionsResponse.unusedDeductions == null) {
           setUnusedDeductionsResult(offenderNo, UnusedDeductionsCalculationStatus.UNKNOWN)
@@ -171,5 +171,9 @@ class UnusedDeductionsService(
 
   private companion object {
     val log: Logger = LoggerFactory.getLogger(this::class.java)
+    private val EXPECTED_VALIDATION_CODES = listOf(
+      "CUSTODIAL_PERIOD_EXTINGUISHED_TAGGED_BAIL",
+      "CUSTODIAL_PERIOD_EXTINGUISHED_REMAND",
+    )
   }
 }
