@@ -14,6 +14,9 @@ class UnusedDeductionsEventService(
     if (source == "DPS" && !unusedDeductions && lastEvent) {
       calculateUnusedDeductions(offenderNo)
     }
+    if (source == "NOMIS") {
+      unusedDeductionsService.setStatusToNomisAdjustments(offenderNo)
+    }
   }
 
   fun handlePrisonerSearchEvent(prisonerSearchEvent: PrisonerSearchEvent) {
