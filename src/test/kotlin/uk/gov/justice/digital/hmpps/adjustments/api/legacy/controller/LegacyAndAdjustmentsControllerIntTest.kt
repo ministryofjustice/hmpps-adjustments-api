@@ -2,6 +2,8 @@ package uk.gov.justice.digital.hmpps.adjustments.api.legacy.controller
 
 import jakarta.transaction.Transactional
 import org.assertj.core.api.Assertions.assertThat
+import org.awaitility.kotlin.await
+import org.awaitility.kotlin.untilAsserted
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.http.MediaType
@@ -11,6 +13,7 @@ import uk.gov.justice.digital.hmpps.adjustments.api.entity.AdjustmentSource
 import uk.gov.justice.digital.hmpps.adjustments.api.entity.AdjustmentStatus
 import uk.gov.justice.digital.hmpps.adjustments.api.entity.AdjustmentType
 import uk.gov.justice.digital.hmpps.adjustments.api.entity.ChangeType
+import uk.gov.justice.digital.hmpps.adjustments.api.entity.UnusedDeductionsCalculationResult
 import uk.gov.justice.digital.hmpps.adjustments.api.integration.SqsIntegrationTestBase
 import uk.gov.justice.digital.hmpps.adjustments.api.legacy.model.LegacyAdjustment
 import uk.gov.justice.digital.hmpps.adjustments.api.legacy.model.LegacyAdjustmentCreatedResponse
@@ -21,7 +24,9 @@ import uk.gov.justice.digital.hmpps.adjustments.api.model.AdjustmentEffectiveDay
 import uk.gov.justice.digital.hmpps.adjustments.api.model.CreateResponseDto
 import uk.gov.justice.digital.hmpps.adjustments.api.model.RemandDto
 import uk.gov.justice.digital.hmpps.adjustments.api.model.RestoreAdjustmentsDto
+import uk.gov.justice.digital.hmpps.adjustments.api.model.UnusedDeductionsCalculationStatus
 import uk.gov.justice.digital.hmpps.adjustments.api.respository.AdjustmentRepository
+import uk.gov.justice.digital.hmpps.adjustments.api.respository.UnusedDeductionsCalculationResultRepository
 import uk.gov.justice.digital.hmpps.adjustments.api.wiremock.PrisonApiExtension
 import java.time.LocalDate
 import java.time.LocalDateTime
@@ -37,6 +42,9 @@ class LegacyAndAdjustmentsControllerIntTest : SqsIntegrationTestBase() {
 
   @Autowired
   private lateinit var adjustmentRepository: AdjustmentRepository
+
+  @Autowired
+  private lateinit var unusedDeductionsCalculationResultRepository: UnusedDeductionsCalculationResultRepository
 
   @Test
   fun `Create an adjustments from NOMIS and update it from DPS`() {
@@ -187,6 +195,7 @@ class LegacyAndAdjustmentsControllerIntTest : SqsIntegrationTestBase() {
   @Test
   fun `Update an adjustment in NOMIS without changing number of days`() {
     // Create an adjustment int DPS with different calculated + effective days.
+    unusedDeductionsCalculationResultRepository.save(UnusedDeductionsCalculationResult(person = ADJUSTMENT.person, status = UnusedDeductionsCalculationStatus.CALCULATED, calculationAt = LocalDateTime.now()))
     var adjustment = ADJUSTMENT.copy()
     val id = postCreateAdjustments(listOf(adjustment))[0]
     val totalDays = (ChronoUnit.DAYS.between(adjustment.fromDate, adjustment.toDate) + 1).toInt()
@@ -201,11 +210,18 @@ class LegacyAndAdjustmentsControllerIntTest : SqsIntegrationTestBase() {
     val daysBetweenResult = (ChronoUnit.DAYS.between(adjustment.fromDate, adjustment.toDate) + 1).toInt()
     assertThat(daysBetweenResult).isEqualTo(totalDays)
     assertThat(adjustment.status).isEqualTo(AdjustmentStatus.INACTIVE)
+
+    await untilAsserted {
+      val unusedDeductionsCalculationResult =
+        unusedDeductionsCalculationResultRepository.findFirstByPerson(ADJUSTMENT.person)
+      assertThat(unusedDeductionsCalculationResult!!.status).isEqualTo(UnusedDeductionsCalculationStatus.NOMIS_ADJUSTMENT)
+    }
   }
 
   @Test
   fun `Update a DPS adjustment in NOMIS when DPS unused days is shared over multiple adjustments`() {
     // Create two adjustments with a used and unused part.
+    unusedDeductionsCalculationResultRepository.save(UnusedDeductionsCalculationResult(person = ADJUSTMENT.person, status = UnusedDeductionsCalculationStatus.CALCULATED, calculationAt = LocalDateTime.now()))
     var adjustmentOne = ADJUSTMENT.copy()
     var adjustmentTwo = ADJUSTMENT.copy()
     val (idOne, idTwo) = postCreateAdjustments(listOf(adjustmentOne, adjustmentTwo))
@@ -223,11 +239,17 @@ class LegacyAndAdjustmentsControllerIntTest : SqsIntegrationTestBase() {
     assertThat(adjustmentTwo.status).isEqualTo(AdjustmentStatus.INACTIVE)
     assertThat(adjustmentOne.source).isEqualTo(AdjustmentSource.NOMIS)
     assertThat(adjustmentTwo.source).isEqualTo(AdjustmentSource.NOMIS)
+    await untilAsserted {
+      val unusedDeductionsCalculationResult =
+        unusedDeductionsCalculationResultRepository.findFirstByPerson(ADJUSTMENT.person)
+      assertThat(unusedDeductionsCalculationResult!!.status).isEqualTo(UnusedDeductionsCalculationStatus.NOMIS_ADJUSTMENT)
+    }
   }
 
   @Test
   fun `Create an adjustment in NOMIS when DPS unused days exists`() {
     // Create an DPS adjustment with used and unused part.
+    unusedDeductionsCalculationResultRepository.save(UnusedDeductionsCalculationResult(person = ADJUSTMENT.person, status = UnusedDeductionsCalculationStatus.CALCULATED, calculationAt = LocalDateTime.now()))
     var adjustment = ADJUSTMENT.copy()
     val id = postCreateAdjustments(listOf(adjustment))[0]
     val totalDays = (ChronoUnit.DAYS.between(adjustment.fromDate, adjustment.toDate) + 1).toInt()
@@ -241,11 +263,17 @@ class LegacyAndAdjustmentsControllerIntTest : SqsIntegrationTestBase() {
     adjustment = getAdjustmentById(id)
     val daysBetweenResult = (ChronoUnit.DAYS.between(adjustment.fromDate, adjustment.toDate) + 1).toInt()
     assertThat(daysBetweenResult).isEqualTo(effectiveDays)
+    await untilAsserted {
+      val unusedDeductionsCalculationResult =
+        unusedDeductionsCalculationResultRepository.findFirstByPerson(ADJUSTMENT.person)
+      assertThat(unusedDeductionsCalculationResult!!.status).isEqualTo(UnusedDeductionsCalculationStatus.NOMIS_ADJUSTMENT)
+    }
   }
 
   @Test
   fun `Delete an adjustment in NOMIS when DPS unused days exists`() {
     // Create two adjustments with a used and unused part.
+    unusedDeductionsCalculationResultRepository.save(UnusedDeductionsCalculationResult(person = ADJUSTMENT.person, status = UnusedDeductionsCalculationStatus.CALCULATED, calculationAt = LocalDateTime.now()))
     var adjustmentOne = ADJUSTMENT.copy()
     var adjustmentTwo = ADJUSTMENT.copy()
     val (idOne, idTwo) = postCreateAdjustments(listOf(adjustmentOne, adjustmentTwo))
@@ -263,6 +291,11 @@ class LegacyAndAdjustmentsControllerIntTest : SqsIntegrationTestBase() {
     val daysBetweenResult = (ChronoUnit.DAYS.between(adjustmentTwo.fromDate, adjustmentTwo.toDate) + 1).toInt()
     assertThat(daysBetweenResult).isEqualTo(2)
     assertThat(adjustmentTwo.days).isEqualTo(2)
+    await untilAsserted {
+      val unusedDeductionsCalculationResult =
+        unusedDeductionsCalculationResultRepository.findFirstByPerson(ADJUSTMENT.person)
+      assertThat(unusedDeductionsCalculationResult!!.status).isEqualTo(UnusedDeductionsCalculationStatus.NOMIS_ADJUSTMENT)
+    }
   }
 
   @Test
