@@ -1,9 +1,11 @@
 package uk.gov.justice.digital.hmpps.adjustments.api.config
 
+import io.netty.channel.ChannelOption
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
 import org.springframework.http.HttpHeaders
+import org.springframework.http.client.reactive.ReactorClientHttpConnector
 import org.springframework.security.oauth2.client.AuthorizedClientServiceOAuth2AuthorizedClientManager
 import org.springframework.security.oauth2.client.OAuth2AuthorizedClientManager
 import org.springframework.security.oauth2.client.OAuth2AuthorizedClientProviderBuilder
@@ -14,11 +16,13 @@ import org.springframework.web.reactive.function.client.ClientRequest
 import org.springframework.web.reactive.function.client.ExchangeFilterFunction
 import org.springframework.web.reactive.function.client.ExchangeFunction
 import org.springframework.web.reactive.function.client.WebClient
+import reactor.netty.http.client.HttpClient
 
 @Configuration
 class WebClientConfiguration(
   @Value("\${hmpps.auth.url}") private val oauthApiUrl: String,
   @Value("\${prison.api.url}") private val prisonApiUri: String,
+  @Value("\${prison.api.timeout-seconds:90}") private val prisonApiTimeoutSeconds: Int,
   @Value("\${adjudications.api.url}") private val adjudicationsApiUri: String,
   @Value("\${calculate-release-dates.api.url}") private val calculateReleaseDatesApiUrl: String,
 ) {
@@ -27,8 +31,11 @@ class WebClientConfiguration(
   fun prisonApiWebClient(authorizedClientManager: OAuth2AuthorizedClientManager): WebClient {
     val filter = ServletOAuth2AuthorizedClientExchangeFilterFunction(authorizedClientManager)
     filter.setDefaultClientRegistrationId("hmpps-api")
+    val httpClient: HttpClient = HttpClient.create()
+      .option(ChannelOption.CONNECT_TIMEOUT_MILLIS, 1000 * prisonApiTimeoutSeconds)
     return WebClient.builder()
       .baseUrl(prisonApiUri)
+      .clientConnector(ReactorClientHttpConnector(httpClient))
       .filter(filter)
       .build()
   }
