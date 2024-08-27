@@ -32,6 +32,11 @@ class UnusedDeductionsService(
   }
 
   @Transactional
+  fun setStatusToNomisAdjustments(offenderNo: String) {
+    setUnusedDeductionsResult(offenderNo, UnusedDeductionsCalculationStatus.NOMIS_ADJUSTMENT)
+  }
+
+  @Transactional
   fun removeInProgressStatus(offenderNo: String) {
     val result = unusedDeductionsCalculationResultRepository.findFirstByPerson(offenderNo)
     if (result != null && result.status == UnusedDeductionsCalculationStatus.IN_PROGRESS) {
