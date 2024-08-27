@@ -216,23 +216,24 @@ class LegacyService(
     val adjustments = adjustmentRepository.findByPerson(prisoner.offenderNo)
 
     adjustments.forEach {
-      val persistedLegacyData = objectMapper.convertValue(it.legacyData, LegacyData::class.java).copy(
-        bookingActive = false,
-      )
+      val persistedLegacyData = objectMapper.convertValue(it.legacyData, LegacyData::class.java)
       if (persistedLegacyData.bookingId == prisoner.bookingId) {
         it.apply {
           status = if (it.status.isDeleted()) it.status else INACTIVE
-          legacyData = objectToJson(persistedLegacyData)
+          legacyData = objectToJson(
+            persistedLegacyData.copy(
+              bookingActive = false,
+            ),
+          )
         }
+        it.adjustmentHistory += AdjustmentHistory(
+          changeByUsername = "NOMIS",
+          changeType = ChangeType.RELEASE,
+          changeSource = AdjustmentSource.NOMIS,
+          adjustment = it,
+          prisonId = prisoner.agencyId,
+        )
       }
-
-      it.adjustmentHistory += AdjustmentHistory(
-        changeByUsername = "NOMIS",
-        changeType = ChangeType.RELEASE,
-        changeSource = AdjustmentSource.NOMIS,
-        adjustment = it,
-        prisonId = prisoner.agencyId,
-      )
     }
   }
 
@@ -241,23 +242,24 @@ class LegacyService(
     val adjustments = adjustmentRepository.findByPerson(prisoner.offenderNo)
 
     adjustments.forEach {
-      val persistedLegacyData = objectMapper.convertValue(it.legacyData, LegacyData::class.java).copy(
-        bookingActive = true,
-      )
+      val persistedLegacyData = objectMapper.convertValue(it.legacyData, LegacyData::class.java)
       if (persistedLegacyData.bookingId == prisoner.bookingId) {
         it.apply {
           status = if (it.status.isDeleted()) it.status else if (persistedLegacyData.adjustmentActive) ACTIVE else INACTIVE
-          legacyData = objectToJson(persistedLegacyData)
+          legacyData = objectToJson(
+            persistedLegacyData.copy(
+              bookingActive = true,
+            ),
+          )
         }
+        it.adjustmentHistory += AdjustmentHistory(
+          changeByUsername = "NOMIS",
+          changeType = ChangeType.ADMISSION,
+          changeSource = AdjustmentSource.NOMIS,
+          adjustment = it,
+          prisonId = prisoner.agencyId,
+        )
       }
-
-      it.adjustmentHistory += AdjustmentHistory(
-        changeByUsername = "NOMIS",
-        changeType = ChangeType.ADMISSION,
-        changeSource = AdjustmentSource.NOMIS,
-        adjustment = it,
-        prisonId = prisoner.agencyId,
-      )
     }
   }
 
