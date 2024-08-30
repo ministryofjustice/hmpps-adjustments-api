@@ -1,5 +1,7 @@
 package uk.gov.justice.digital.hmpps.adjustments.api.respository
 
+import org.springframework.data.jpa.repository.EntityGraph
+import org.springframework.data.jpa.repository.EntityGraph.EntityGraphType
 import org.springframework.data.jpa.repository.JpaRepository
 import org.springframework.data.jpa.repository.Query
 import org.springframework.stereotype.Repository
@@ -27,12 +29,14 @@ interface AdjustmentRepository : JpaRepository<Adjustment, UUID> {
       " OR ada.prospective" +
       ")",
   )
+  @EntityGraph(value = "Adjustment.detail", type = EntityGraphType.LOAD)
   fun findAdjustmentsByPersonWithinSentenceEnvelope(
     person: String,
     fromDate: LocalDate,
     status: AdjustmentStatus,
     adjustmentTypes: List<AdjustmentType>? = listOf(REMAND, TAGGED_BAIL, UNUSED_DEDUCTIONS),
   ): List<Adjustment>
+
 
   fun findByPerson(person: String): List<Adjustment>
 

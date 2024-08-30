@@ -9,17 +9,30 @@ import jakarta.persistence.Entity
 import jakarta.persistence.EnumType
 import jakarta.persistence.Enumerated
 import jakarta.persistence.Id
+import jakarta.persistence.NamedAttributeNode
+import jakarta.persistence.NamedEntityGraph
 import jakarta.persistence.OneToMany
 import jakarta.persistence.OneToOne
 import jakarta.persistence.PrimaryKeyJoinColumn
 import jakarta.persistence.Table
 import jakarta.validation.constraints.NotNull
+import org.hibernate.annotations.BatchSize
+import org.hibernate.annotations.Fetch
+import org.hibernate.annotations.FetchMode
 import org.hibernate.annotations.Type
 import java.time.LocalDate
 import java.util.UUID
 
 @Entity
 @Table
+@NamedEntityGraph(
+  name = "Adjustment.detail",
+  attributeNodes = [
+    NamedAttributeNode("adjustmentHistory"),
+    NamedAttributeNode("additionalDaysAwarded"),
+    NamedAttributeNode("unlawfullyAtLarge")
+  ],
+)
 data class Adjustment(
 
   @Id
@@ -57,6 +70,7 @@ data class Adjustment(
 
   @OneToMany(mappedBy = "adjustment", cascade = [CascadeType.ALL])
   @JsonIgnore
+  @BatchSize(size = 1000)
   var adjustmentHistory: List<AdjustmentHistory> = ArrayList(),
 
   @NotNull
