@@ -31,6 +31,8 @@ data class AdjustmentDto(
   val additionalDaysAwarded: AdditionalDaysAwardedDto?,
   @Schema(description = "Additional details of a UAL adjustment")
   val unlawfullyAtLarge: UnlawfullyAtLargeDto?,
+  @Schema(description = "Additional info for a LAL adjustment")
+  val lawfullyAtLarge: LawfullyAtLargeDto?,
   @Schema(description = "The details of a tagged-bail adjustment")
   val taggedBail: TaggedBailDto?,
   @Schema(description = "The NOMIS sentence sequence of the adjustment")

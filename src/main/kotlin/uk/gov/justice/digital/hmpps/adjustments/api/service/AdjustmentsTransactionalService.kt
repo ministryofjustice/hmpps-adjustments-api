@@ -21,10 +21,12 @@ import uk.gov.justice.digital.hmpps.adjustments.api.entity.AdjustmentStatus.DELE
 import uk.gov.justice.digital.hmpps.adjustments.api.entity.AdjustmentStatus.INACTIVE
 import uk.gov.justice.digital.hmpps.adjustments.api.entity.AdjustmentStatus.INACTIVE_WHEN_DELETED
 import uk.gov.justice.digital.hmpps.adjustments.api.entity.AdjustmentType
+import uk.gov.justice.digital.hmpps.adjustments.api.entity.AdjustmentType.LAWFULLY_AT_LARGE
 import uk.gov.justice.digital.hmpps.adjustments.api.entity.AdjustmentType.REMAND
 import uk.gov.justice.digital.hmpps.adjustments.api.entity.AdjustmentType.TAGGED_BAIL
 import uk.gov.justice.digital.hmpps.adjustments.api.entity.AdjustmentType.UNLAWFULLY_AT_LARGE
 import uk.gov.justice.digital.hmpps.adjustments.api.entity.ChangeType
+import uk.gov.justice.digital.hmpps.adjustments.api.entity.LawfullyAtLarge
 import uk.gov.justice.digital.hmpps.adjustments.api.entity.UnlawfullyAtLarge
 import uk.gov.justice.digital.hmpps.adjustments.api.error.ApiValidationException
 import uk.gov.justice.digital.hmpps.adjustments.api.legacy.model.LegacyAdjustmentType
@@ -33,6 +35,7 @@ import uk.gov.justice.digital.hmpps.adjustments.api.model.AdditionalDaysAwardedD
 import uk.gov.justice.digital.hmpps.adjustments.api.model.AdjustmentDto
 import uk.gov.justice.digital.hmpps.adjustments.api.model.AdjustmentEffectiveDaysDto
 import uk.gov.justice.digital.hmpps.adjustments.api.model.CreateResponseDto
+import uk.gov.justice.digital.hmpps.adjustments.api.model.LawfullyAtLargeDto
 import uk.gov.justice.digital.hmpps.adjustments.api.model.RemandDto
 import uk.gov.justice.digital.hmpps.adjustments.api.model.RestoreAdjustmentsDto
 import uk.gov.justice.digital.hmpps.adjustments.api.model.SentenceInfo
@@ -95,6 +98,7 @@ class AdjustmentsTransactionalService(
       ),
       additionalDaysAwarded = additionalDaysAwarded(resource),
       unlawfullyAtLarge = unlawfullyAtLarge(resource),
+      lawfullyAtLarge = lawfullyAtLarge(resource),
     )
     adjustment.adjustmentHistory = listOf(
       AdjustmentHistory(
@@ -135,6 +139,24 @@ class AdjustmentsTransactionalService(
       UnlawfullyAtLarge(adjustment = adjustment)
     } else {
       UnlawfullyAtLarge()
+    }
+
+  private fun lawfullyAtLarge(adjustmentDto: AdjustmentDto, adjustment: Adjustment? = null): LawfullyAtLarge? =
+    if (adjustmentDto.adjustmentType == LAWFULLY_AT_LARGE && adjustmentDto.lawfullyAtLarge != null) {
+      getLawfullyAtLarge(adjustment).apply {
+        affectsDates = adjustmentDto.lawfullyAtLarge.affectsDates
+      }
+    } else {
+      null
+    }
+
+  private fun getLawfullyAtLarge(adjustment: Adjustment?) =
+    if (adjustment?.lawfullyAtLarge != null) {
+      adjustment.lawfullyAtLarge!!
+    } else if (adjustment != null) {
+      LawfullyAtLarge(adjustment = adjustment)
+    } else {
+      LawfullyAtLarge()
     }
 
   private fun additionalDaysAwarded(resource: AdjustmentDto, adjustment: Adjustment? = null): AdditionalDaysAwarded? {
@@ -224,6 +246,7 @@ class AdjustmentsTransactionalService(
       )
       additionalDaysAwarded = additionalDaysAwarded(resource, this)
       unlawfullyAtLarge = unlawfullyAtLarge(resource, this)
+      lawfullyAtLarge = lawfullyAtLarge(resource, this)
       adjustmentHistory += AdjustmentHistory(
         changeByUsername = getCurrentAuthenticationUsername(),
         changeType = ChangeType.UPDATE,
@@ -312,6 +335,7 @@ class AdjustmentsTransactionalService(
       bookingId = legacyData.bookingId,
       additionalDaysAwarded = additionalDaysAwardedToDto(adjustment),
       unlawfullyAtLarge = unlawfullyAtLargeDto(adjustment),
+      lawfullyAtLarge = lawfullyAtLargeDto(adjustment),
       remand = remandDto(adjustment, legacyData),
       taggedBail = taggedBailDto(adjustment, legacyData),
       lastUpdatedBy = latestHistory.changeByUsername,
@@ -351,6 +375,13 @@ class AdjustmentsTransactionalService(
   private fun unlawfullyAtLargeDto(adjustment: Adjustment): UnlawfullyAtLargeDto? =
     if (adjustment.unlawfullyAtLarge != null) {
       UnlawfullyAtLargeDto(type = adjustment.unlawfullyAtLarge!!.type)
+    } else {
+      null
+    }
+
+  private fun lawfullyAtLargeDto(adjustment: Adjustment): LawfullyAtLargeDto? =
+    if (adjustment.lawfullyAtLarge != null) {
+      LawfullyAtLargeDto(affectsDates = adjustment.lawfullyAtLarge!!.affectsDates)
     } else {
       null
     }

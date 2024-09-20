@@ -446,6 +446,7 @@ class LegacyAndAdjustmentsControllerIntTest : SqsIntegrationTestBase() {
       days = 8,
       additionalDaysAwarded = null,
       unlawfullyAtLarge = null,
+      lawfullyAtLarge = null,
       remand = RemandDto(chargeId = listOf(9991)),
       taggedBail = null,
       lastUpdatedDate = LocalDateTime.now(),
