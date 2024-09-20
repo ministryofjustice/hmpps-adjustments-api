@@ -8,12 +8,31 @@ import org.mockito.kotlin.mock
 import org.mockito.kotlin.whenever
 import uk.gov.justice.digital.hmpps.adjustments.api.entity.AdjustmentStatus
 import uk.gov.justice.digital.hmpps.adjustments.api.entity.AdjustmentType
+import uk.gov.justice.digital.hmpps.adjustments.api.enums.LawfullyAtLargeAffectsDates
 import uk.gov.justice.digital.hmpps.adjustments.api.enums.UnlawfullyAtLargeType
 import uk.gov.justice.digital.hmpps.adjustments.api.model.AdjustmentDto
+import uk.gov.justice.digital.hmpps.adjustments.api.model.LawfullyAtLargeDto
 import uk.gov.justice.digital.hmpps.adjustments.api.model.UnlawfullyAtLargeDto
-import uk.gov.justice.digital.hmpps.adjustments.api.model.ValidationCode
+import uk.gov.justice.digital.hmpps.adjustments.api.model.ValidationCode.LAL_AFFECTS_DATES_NOT_NULL
+import uk.gov.justice.digital.hmpps.adjustments.api.model.ValidationCode.LAL_DATE_MUST_BE_AFTER_SENTENCE_DATE
+import uk.gov.justice.digital.hmpps.adjustments.api.model.ValidationCode.LAL_FIRST_DATE_CANNOT_BE_FUTURE
+import uk.gov.justice.digital.hmpps.adjustments.api.model.ValidationCode.LAL_FROM_DATE_AFTER_TO_DATE
+import uk.gov.justice.digital.hmpps.adjustments.api.model.ValidationCode.LAL_FROM_DATE_NOT_NULL
+import uk.gov.justice.digital.hmpps.adjustments.api.model.ValidationCode.LAL_LAST_DATE_CANNOT_BE_FUTURE
+import uk.gov.justice.digital.hmpps.adjustments.api.model.ValidationCode.LAL_TO_DATE_NOT_NULL
+import uk.gov.justice.digital.hmpps.adjustments.api.model.ValidationCode.MORE_RADAS_THAN_ADAS
+import uk.gov.justice.digital.hmpps.adjustments.api.model.ValidationCode.RADA_DATA_MUST_BE_AFTER_SENTENCE_DATE
+import uk.gov.justice.digital.hmpps.adjustments.api.model.ValidationCode.RADA_DATE_CANNOT_BE_FUTURE
+import uk.gov.justice.digital.hmpps.adjustments.api.model.ValidationCode.RADA_DAYS_MUST_BE_POSTIVE
+import uk.gov.justice.digital.hmpps.adjustments.api.model.ValidationCode.RADA_FROM_DATE_NOT_NULL
+import uk.gov.justice.digital.hmpps.adjustments.api.model.ValidationCode.RADA_REDUCES_BY_MORE_THAN_HALF
+import uk.gov.justice.digital.hmpps.adjustments.api.model.ValidationCode.UAL_DATE_MUST_BE_AFTER_SENTENCE_DATE
 import uk.gov.justice.digital.hmpps.adjustments.api.model.ValidationCode.UAL_FIRST_DATE_CANNOT_BE_FUTURE
 import uk.gov.justice.digital.hmpps.adjustments.api.model.ValidationCode.UAL_FROM_DATE_AFTER_TO_DATE
+import uk.gov.justice.digital.hmpps.adjustments.api.model.ValidationCode.UAL_FROM_DATE_NOT_NULL
+import uk.gov.justice.digital.hmpps.adjustments.api.model.ValidationCode.UAL_LAST_DATE_CANNOT_BE_FUTURE
+import uk.gov.justice.digital.hmpps.adjustments.api.model.ValidationCode.UAL_TO_DATE_NOT_NULL
+import uk.gov.justice.digital.hmpps.adjustments.api.model.ValidationCode.UAL_TYPE_NOT_NULL
 import uk.gov.justice.digital.hmpps.adjustments.api.model.ValidationMessage
 import java.time.LocalDate
 import java.time.LocalDateTime
@@ -40,6 +59,7 @@ class ValidationServiceTest {
     effectiveDays = 50,
     additionalDaysAwarded = null,
     unlawfullyAtLarge = null,
+    lawfullyAtLarge = null,
     remand = null,
     taggedBail = null,
     lastUpdatedDate = LocalDateTime.now(),
@@ -87,13 +107,13 @@ class ValidationServiceTest {
     @Test
     fun `RADA days missing`() {
       val result = validationService.validate(validNewRada.copy(days = null))
-      assertThat(result).isEqualTo(listOf(ValidationMessage(ValidationCode.RADA_DAYS_MUST_BE_POSTIVE)))
+      assertThat(result).isEqualTo(listOf(ValidationMessage(RADA_DAYS_MUST_BE_POSTIVE)))
     }
 
     @Test
     fun `RADA days zero`() {
       val result = validationService.validate(validNewRada.copy(days = 0))
-      assertThat(result).isEqualTo(listOf(ValidationMessage(ValidationCode.RADA_DAYS_MUST_BE_POSTIVE)))
+      assertThat(result).isEqualTo(listOf(ValidationMessage(RADA_DAYS_MUST_BE_POSTIVE)))
     }
 
     @Test
@@ -103,7 +123,7 @@ class ValidationServiceTest {
           days = 10,
         ),
       )
-      assertThat(result).isEqualTo(listOf(ValidationMessage(ValidationCode.RADA_REDUCES_BY_MORE_THAN_HALF)))
+      assertThat(result).isEqualTo(listOf(ValidationMessage(RADA_REDUCES_BY_MORE_THAN_HALF)))
       assertThat(result[0].message).isEqualTo("Are you sure you want to add more than 50% of the ADA time for this RADA?")
     }
 
@@ -114,13 +134,13 @@ class ValidationServiceTest {
           days = 40,
         ),
       )
-      assertThat(result).isEqualTo(listOf(ValidationMessage(ValidationCode.MORE_RADAS_THAN_ADAS)))
+      assertThat(result).isEqualTo(listOf(ValidationMessage(MORE_RADAS_THAN_ADAS)))
     }
 
     @Test
     fun `RADA missing from date`() {
       val result = validationService.validate(validNewRada.copy(fromDate = null))
-      assertThat(result).isEqualTo(listOf(ValidationMessage(ValidationCode.RADA_FROM_DATE_NOT_NULL)))
+      assertThat(result).isEqualTo(listOf(ValidationMessage(RADA_FROM_DATE_NOT_NULL)))
     }
 
     @Test
@@ -130,7 +150,7 @@ class ValidationServiceTest {
           fromDate = LocalDate.now().plusDays(1),
         ),
       )
-      assertThat(result).isEqualTo(listOf(ValidationMessage(ValidationCode.RADA_DATE_CANNOT_BE_FUTURE)))
+      assertThat(result).isEqualTo(listOf(ValidationMessage(RADA_DATE_CANNOT_BE_FUTURE)))
     }
 
     @Test
@@ -143,7 +163,7 @@ class ValidationServiceTest {
       assertThat(result).isEqualTo(
         listOf(
           ValidationMessage(
-            ValidationCode.RADA_DATA_MUST_BE_AFTER_SENTENCE_DATE,
+            RADA_DATA_MUST_BE_AFTER_SENTENCE_DATE,
             listOf("1 Jan 2022"),
           ),
         ),
@@ -159,13 +179,13 @@ class ValidationServiceTest {
     @Test
     fun `RADA update existing RADA so that days are more than 50 percent`() {
       val result = validationService.validate(existingRada.copy(days = 26))
-      assertThat(result).isEqualTo(listOf(ValidationMessage(ValidationCode.RADA_REDUCES_BY_MORE_THAN_HALF)))
+      assertThat(result).isEqualTo(listOf(ValidationMessage(RADA_REDUCES_BY_MORE_THAN_HALF)))
     }
 
     @Test
     fun `RADA update existing RADA so that days are more than ADAs`() {
       val result = validationService.validate(existingRada.copy(days = 51))
-      assertThat(result).isEqualTo(listOf(ValidationMessage(ValidationCode.MORE_RADAS_THAN_ADAS)))
+      assertThat(result).isEqualTo(listOf(ValidationMessage(MORE_RADAS_THAN_ADAS)))
     }
   }
 
@@ -196,13 +216,13 @@ class ValidationServiceTest {
     @Test
     fun `UAL missing from date`() {
       val result = validationService.validate(validNewUal.copy(fromDate = null))
-      assertThat(result).isEqualTo(listOf(ValidationMessage(ValidationCode.UAL_FROM_DATE_NOT_NULL)))
+      assertThat(result).isEqualTo(listOf(ValidationMessage(UAL_FROM_DATE_NOT_NULL)))
     }
 
     @Test
     fun `UAL missing to date`() {
       val result = validationService.validate(validNewUal.copy(toDate = null))
-      assertThat(result).isEqualTo(listOf(ValidationMessage(ValidationCode.UAL_TO_DATE_NOT_NULL)))
+      assertThat(result).isEqualTo(listOf(ValidationMessage(UAL_TO_DATE_NOT_NULL)))
     }
 
     @Test
@@ -214,7 +234,7 @@ class ValidationServiceTest {
     @Test
     fun `UAL missing ual type`() {
       val result = validationService.validate(validNewUal.copy(unlawfullyAtLarge = null))
-      assertThat(result).isEqualTo(listOf(ValidationMessage(ValidationCode.UAL_TYPE_NOT_NULL)))
+      assertThat(result).isEqualTo(listOf(ValidationMessage(UAL_TYPE_NOT_NULL)))
     }
 
     @Test
@@ -227,7 +247,7 @@ class ValidationServiceTest {
       assertThat(result).isEqualTo(
         listOf(
           ValidationMessage(
-            ValidationCode.UAL_DATE_MUST_BE_AFTER_SENTENCE_DATE,
+            UAL_DATE_MUST_BE_AFTER_SENTENCE_DATE,
             listOf("1 Jan 2022"),
           ),
         ),
@@ -256,7 +276,98 @@ class ValidationServiceTest {
           toDate = LocalDate.now().plusDays(1),
         ),
       )
-      assertThat(result).isEqualTo(listOf(ValidationMessage(ValidationCode.UAL_LAST_DATE_CANNOT_BE_FUTURE)))
+      assertThat(result).isEqualTo(listOf(ValidationMessage(UAL_LAST_DATE_CANNOT_BE_FUTURE)))
+    }
+  }
+
+  @Nested
+  inner class LalTests {
+
+    val validNewLal = existingRada.copy(
+      id = null,
+      days = 9,
+      fromDate = LocalDate.now().minusDays(10),
+      toDate = LocalDate.now().minusDays(2),
+      adjustmentType = AdjustmentType.LAWFULLY_AT_LARGE,
+      lawfullyAtLarge = LawfullyAtLargeDto(LawfullyAtLargeAffectsDates.YES),
+    )
+
+    @Test
+    fun `LAL valid`() {
+      val result = validationService.validate(validNewLal)
+      assertThat(result).isEmpty()
+    }
+
+    @Test
+    fun `LAL valid same from to date`() {
+      val result = validationService.validate(validNewLal.copy(toDate = validNewLal.fromDate))
+      assertThat(result).isEmpty()
+    }
+
+    @Test
+    fun `LAL missing from date`() {
+      val result = validationService.validate(validNewLal.copy(fromDate = null))
+      assertThat(result).isEqualTo(listOf(ValidationMessage(LAL_FROM_DATE_NOT_NULL)))
+    }
+
+    @Test
+    fun `LAL missing to date`() {
+      val result = validationService.validate(validNewLal.copy(toDate = null))
+      assertThat(result).isEqualTo(listOf(ValidationMessage(LAL_TO_DATE_NOT_NULL)))
+    }
+
+    @Test
+    fun `LAL to date before from date`() {
+      val result = validationService.validate(validNewLal.copy(toDate = validNewLal.fromDate!!.minusDays(1)))
+      assertThat(result).isEqualTo(listOf(ValidationMessage(LAL_FROM_DATE_AFTER_TO_DATE)))
+    }
+
+    @Test
+    fun `LAL missing affects dates`() {
+      val result = validationService.validate(validNewLal.copy(lawfullyAtLarge = null))
+      assertThat(result).isEqualTo(listOf(ValidationMessage(LAL_AFFECTS_DATES_NOT_NULL)))
+    }
+
+    @Test
+    fun `LAL before sentence envelope start`() {
+      val result = validationService.validate(
+        validNewLal.copy(
+          fromDate = startOfSentenceOverlap.minusDays(1),
+        ),
+      )
+      assertThat(result).isEqualTo(
+        listOf(
+          ValidationMessage(
+            LAL_DATE_MUST_BE_AFTER_SENTENCE_DATE,
+            listOf("1 Jan 2022"),
+          ),
+        ),
+      )
+    }
+
+    @Test
+    fun `Future dated LAL start date`() {
+      val result = validationService.validate(
+        validNewLal.copy(
+          fromDate = LocalDate.now().plusDays(1),
+        ),
+      )
+      assertThat(result).isEqualTo(
+        listOf(
+          ValidationMessage(LAL_FIRST_DATE_CANNOT_BE_FUTURE),
+          ValidationMessage(LAL_FROM_DATE_AFTER_TO_DATE),
+        ),
+      )
+    }
+
+    @Test
+    fun `Future dated LAL end date`() {
+      val result = validationService.validate(
+        validNewLal.copy(
+          toDate = LocalDate.now().plusDays(1),
+        ),
+      )
+      assertThat(result).isEqualTo(listOf(ValidationMessage(LAL_LAST_DATE_CANNOT_BE_FUTURE)))
     }
   }
 }

@@ -23,6 +23,9 @@ class ValidationService(
     if (adjustment.adjustmentType == AdjustmentType.UNLAWFULLY_AT_LARGE) {
       return validateUal(adjustment, startOfSentenceEnvelope)
     }
+    if (adjustment.adjustmentType == AdjustmentType.LAWFULLY_AT_LARGE) {
+      return validateLal(adjustment, startOfSentenceEnvelope)
+    }
     return emptyList()
   }
 
@@ -55,6 +58,39 @@ class ValidationService(
 
     if (adjustment.unlawfullyAtLarge?.type == null) {
       validationMessages.add(ValidationMessage(ValidationCode.UAL_TYPE_NOT_NULL))
+    }
+    return validationMessages
+  }
+
+  private fun validateLal(adjustment: AdjustmentDto, startOfSentenceEnvelope: LocalDate): List<ValidationMessage> {
+    val validationMessages = mutableListOf<ValidationMessage>()
+
+    if (adjustment.fromDate == null) {
+      validationMessages.add(ValidationMessage(ValidationCode.LAL_FROM_DATE_NOT_NULL))
+    } else {
+      if (adjustment.fromDate.isAfter(LocalDate.now())) {
+        validationMessages.add(ValidationMessage(ValidationCode.LAL_FIRST_DATE_CANNOT_BE_FUTURE))
+      }
+      if (adjustment.fromDate.isBefore(startOfSentenceEnvelope)) {
+        val formatter = DateTimeFormatter.ofPattern("d MMM yyyy")
+        validationMessages.add(ValidationMessage(ValidationCode.LAL_DATE_MUST_BE_AFTER_SENTENCE_DATE, listOf(startOfSentenceEnvelope.format(formatter))))
+      }
+    }
+
+    if (adjustment.toDate == null) {
+      validationMessages.add(ValidationMessage(ValidationCode.LAL_TO_DATE_NOT_NULL))
+    } else {
+      if (adjustment.toDate.isAfter(LocalDate.now())) {
+        validationMessages.add(ValidationMessage(ValidationCode.LAL_LAST_DATE_CANNOT_BE_FUTURE))
+      }
+    }
+
+    if (adjustment.fromDate != null && adjustment.toDate != null && adjustment.toDate.isBefore(adjustment.fromDate)) {
+      validationMessages.add(ValidationMessage(ValidationCode.LAL_FROM_DATE_AFTER_TO_DATE))
+    }
+
+    if (adjustment.lawfullyAtLarge?.affectsDates == null) {
+      validationMessages.add(ValidationMessage(ValidationCode.LAL_AFFECTS_DATES_NOT_NULL))
     }
     return validationMessages
   }

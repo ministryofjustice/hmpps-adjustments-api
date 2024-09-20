@@ -19,9 +19,12 @@ import uk.gov.justice.digital.hmpps.adjustments.api.entity.AdjustmentStatus
 import uk.gov.justice.digital.hmpps.adjustments.api.entity.AdjustmentStatus.ACTIVE
 import uk.gov.justice.digital.hmpps.adjustments.api.entity.AdjustmentStatus.DELETED
 import uk.gov.justice.digital.hmpps.adjustments.api.entity.AdjustmentType
+import uk.gov.justice.digital.hmpps.adjustments.api.entity.AdjustmentType.LAWFULLY_AT_LARGE
 import uk.gov.justice.digital.hmpps.adjustments.api.entity.AdjustmentType.TAGGED_BAIL
 import uk.gov.justice.digital.hmpps.adjustments.api.entity.AdjustmentType.UNLAWFULLY_AT_LARGE
 import uk.gov.justice.digital.hmpps.adjustments.api.entity.ChangeType
+import uk.gov.justice.digital.hmpps.adjustments.api.enums.LawfullyAtLargeAffectsDates.NO
+import uk.gov.justice.digital.hmpps.adjustments.api.enums.LawfullyAtLargeAffectsDates.YES
 import uk.gov.justice.digital.hmpps.adjustments.api.enums.UnlawfullyAtLargeType.ESCAPE
 import uk.gov.justice.digital.hmpps.adjustments.api.enums.UnlawfullyAtLargeType.RECALL
 import uk.gov.justice.digital.hmpps.adjustments.api.integration.SqsIntegrationTestBase
@@ -33,6 +36,7 @@ import uk.gov.justice.digital.hmpps.adjustments.api.model.AdditionalDaysAwardedD
 import uk.gov.justice.digital.hmpps.adjustments.api.model.AdjustmentDto
 import uk.gov.justice.digital.hmpps.adjustments.api.model.AdjustmentEffectiveDaysDto
 import uk.gov.justice.digital.hmpps.adjustments.api.model.CreateResponseDto
+import uk.gov.justice.digital.hmpps.adjustments.api.model.LawfullyAtLargeDto
 import uk.gov.justice.digital.hmpps.adjustments.api.model.ManualUnusedDeductionsDto
 import uk.gov.justice.digital.hmpps.adjustments.api.model.RemandDto
 import uk.gov.justice.digital.hmpps.adjustments.api.model.TaggedBailDto
@@ -536,6 +540,88 @@ class AdjustmentControllerIntTest : SqsIntegrationTestBase() {
   }
 
   @Nested
+  inner class LalTests {
+
+    @Test
+    fun `Create a LAL Adjustment, then update it`() {
+      val adjustmentId = postCreateAdjustments(
+        listOf(
+          CREATED_ADJUSTMENT.copy(
+            adjustmentType = LAWFULLY_AT_LARGE,
+            lawfullyAtLarge = LawfullyAtLargeDto(affectsDates = NO),
+            unlawfullyAtLarge = null,
+            remand = null,
+          ),
+        ),
+      )[0]
+
+      val adjustment = adjustmentRepository.findById(adjustmentId).get()
+
+      assertThat(adjustment.lawfullyAtLarge).isNotNull
+      assertThat(adjustment.lawfullyAtLarge!!.affectsDates).isEqualTo(NO)
+      assertThat(adjustment.lawfullyAtLarge!!.adjustmentId).isEqualTo(adjustmentId)
+
+      val createdAdjustment = getAdjustmentById(adjustmentId)
+
+      assertThat(createdAdjustment)
+        .usingRecursiveComparison()
+        .ignoringFieldsMatchingRegexes("lastUpdatedDate", "createdDate")
+        .isEqualTo(
+          CREATED_ADJUSTMENT.copy(
+            id = adjustmentId,
+            adjustmentType = LAWFULLY_AT_LARGE,
+            lawfullyAtLarge = LawfullyAtLargeDto(affectsDates = NO),
+            remand = null,
+            effectiveDays = 4,
+            lastUpdatedBy = "Test User",
+            status = ACTIVE,
+            adjustmentTypeText = LAWFULLY_AT_LARGE.text,
+            days = 4,
+            prisonId = "LDS",
+            prisonName = "Leeds",
+            adjustmentArithmeticType = LAWFULLY_AT_LARGE.arithmeticType,
+            source = AdjustmentSource.DPS,
+          ),
+        )
+
+      val updateDto = createdAdjustment.copy(days = null, lawfullyAtLarge = LawfullyAtLargeDto(affectsDates = NO))
+      putAdjustmentUpdate(adjustmentId, updateDto)
+      val updatedAdjustment = getAdjustmentById(adjustmentId)
+      assertThat(updatedAdjustment)
+        .usingRecursiveComparison()
+        .ignoringFieldsMatchingRegexes("lastUpdatedDate")
+        .isEqualTo(createdAdjustment.copy(lawfullyAtLarge = LawfullyAtLargeDto(affectsDates = NO)))
+    }
+
+    @Test
+    @Sql(
+      "classpath:test_data/reset-data.sql",
+      "classpath:test_data/insert-nomis-lal.sql",
+    )
+    fun `Update a LAL Adjustment that does not indicate if LAL affects the release dates (eg migrated from NOMIS) - update the type`() {
+      val adjustmentId = UUID.fromString("dfba24ef-a2d4-4b26-af63-4d9494dd5252")
+      val adjustment = getAdjustmentById(adjustmentId)
+
+      putAdjustmentUpdate(
+        adjustment.id!!,
+        adjustment.copy(lawfullyAtLarge = LawfullyAtLargeDto(affectsDates = YES), days = null),
+      )
+
+      val updatedAdjustment = getAdjustmentById(adjustmentId)
+      assertThat(updatedAdjustment)
+        .usingRecursiveComparison()
+        .ignoringFieldsMatchingRegexes("lastUpdatedDate")
+        .isEqualTo(
+          adjustment.copy(
+            lastUpdatedBy = "Test User",
+            lawfullyAtLarge = LawfullyAtLargeDto(affectsDates = YES),
+            source = AdjustmentSource.DPS,
+          ),
+        )
+    }
+  }
+
+  @Nested
   inner class UalTests {
 
     @Test
@@ -618,84 +704,6 @@ class AdjustmentControllerIntTest : SqsIntegrationTestBase() {
     @Test
     @Sql(
       "classpath:test_data/reset-data.sql",
-      "classpath:test_data/insert-adjustments-spanning-sentence-envelope.sql",
-    )
-    fun `Get adjustments by person where some have been deleted, and some fall outside of the sentence envelope`() {
-      val person = "BCDEFG"
-      val result = getAdjustmentsByPerson(person, startOfSentenceEnvelope = LocalDate.of(2015, 3, 17))
-
-      assertThat(result.map { it.lastUpdatedBy })
-        .usingRecursiveComparison()
-        .ignoringCollectionOrder()
-        .isEqualTo(listOf("current-ual", "current-rada", "tagged-bail-no-dates", "remand-before-sentence"))
-    }
-
-    @Test
-    @Sql(
-      "classpath:test_data/reset-data.sql",
-      "classpath:test_data/insert-adjustments-spanning-sentence-envelope.sql",
-    )
-    fun `Get adjustments by person filter for adjustments before sentence envelope`() {
-      val person = "BCDEFG"
-      val result = getAdjustmentsByPerson(person, startOfSentenceEnvelope = LocalDate.of(2000, 1, 1))
-
-      assertThat(result.map { it.lastUpdatedBy })
-        .usingRecursiveComparison()
-        .ignoringCollectionOrder()
-        .isEqualTo(
-          listOf(
-            "current-ual",
-            "current-rada",
-            "tagged-bail-no-dates",
-            "remand-before-sentence",
-            "expired-ual",
-            "expired-rada",
-          ),
-        )
-    }
-
-    @Test
-    @Sql(
-      "classpath:test_data/reset-data.sql",
-      "classpath:test_data/insert-adjustments-spanning-sentence-envelope.sql",
-    )
-    fun `Get adjustments by person filter for adjustments without envelope filter`() {
-      val person = "BCDEFG"
-      val result = getAdjustmentsByPerson(person)
-
-      assertThat(result.map { it.lastUpdatedBy })
-        .usingRecursiveComparison()
-        .ignoringCollectionOrder()
-        .isEqualTo(
-          listOf(
-            "current-ual",
-            "current-rada",
-            "tagged-bail-no-dates",
-            "remand-before-sentence",
-            "expired-ual",
-            "expired-rada",
-          ),
-        )
-    }
-
-    @Test
-    @Sql(
-      "classpath:test_data/reset-data.sql",
-      "classpath:test_data/insert-adjustments-spanning-sentence-envelope.sql",
-    )
-    fun `Get adjustments by person filter for deleted adjustments`() {
-      val person = "BCDEFG"
-      val result = getAdjustmentsByPerson(person, status = DELETED, startOfSentenceEnvelope = LocalDate.of(2015, 3, 17))
-
-      assertThat(result.map { it.lastUpdatedBy })
-        .usingRecursiveComparison()
-        .ignoringCollectionOrder()
-        .isEqualTo(listOf("deleted-ual"))
-    }
-
-    @Test
-    @Sql(
-      "classpath:test_data/reset-data.sql",
       "classpath:test_data/insert-adjustment-with-prison.sql",
     )
     fun `Get adjustment details where a prison is associated)`() {
@@ -720,6 +728,91 @@ class AdjustmentControllerIntTest : SqsIntegrationTestBase() {
             source = AdjustmentSource.DPS,
           ),
         )
+    }
+  }
+
+  @Nested
+  inner class SentenceEnvelopeTests {
+    @Test
+    @Sql(
+      "classpath:test_data/reset-data.sql",
+      "classpath:test_data/insert-adjustments-spanning-sentence-envelope.sql",
+    )
+    fun `Get adjustments by person where some have been deleted, and some fall outside of the sentence envelope`() {
+      val person = "BCDEFG"
+      val result = getAdjustmentsByPerson(person, startOfSentenceEnvelope = LocalDate.of(2015, 3, 17))
+
+      assertThat(result.map { it.lastUpdatedBy })
+        .usingRecursiveComparison()
+        .ignoringCollectionOrder()
+        .isEqualTo(listOf("current-ual", "current-lal", "current-rada", "tagged-bail-no-dates", "remand-before-sentence"))
+    }
+
+    @Test
+    @Sql(
+      "classpath:test_data/reset-data.sql",
+      "classpath:test_data/insert-adjustments-spanning-sentence-envelope.sql",
+    )
+    fun `Get adjustments by person filter for adjustments before sentence envelope`() {
+      val person = "BCDEFG"
+      val result = getAdjustmentsByPerson(person, startOfSentenceEnvelope = LocalDate.of(2000, 1, 1))
+
+      assertThat(result.map { it.lastUpdatedBy })
+        .usingRecursiveComparison()
+        .ignoringCollectionOrder()
+        .isEqualTo(
+          listOf(
+            "current-ual",
+            "current-lal",
+            "current-rada",
+            "tagged-bail-no-dates",
+            "remand-before-sentence",
+            "expired-ual",
+            "expired-lal",
+            "expired-rada",
+          ),
+        )
+    }
+
+    @Test
+    @Sql(
+      "classpath:test_data/reset-data.sql",
+      "classpath:test_data/insert-adjustments-spanning-sentence-envelope.sql",
+    )
+    fun `Get adjustments by person filter for adjustments without envelope filter`() {
+      val person = "BCDEFG"
+      val result = getAdjustmentsByPerson(person)
+
+      assertThat(result.map { it.lastUpdatedBy })
+        .usingRecursiveComparison()
+        .ignoringCollectionOrder()
+        .isEqualTo(
+          listOf(
+            "current-ual",
+            "current-lal",
+            "current-rada",
+            "tagged-bail-no-dates",
+            "remand-before-sentence",
+            "expired-ual",
+            "expired-lal",
+            "expired-rada",
+          ),
+        )
+    }
+
+    @Test
+    @Sql(
+      "classpath:test_data/reset-data.sql",
+      "classpath:test_data/insert-adjustments-spanning-sentence-envelope.sql",
+    )
+    fun `Get adjustments by person filter for deleted adjustments`() {
+      val person = "BCDEFG"
+      val result = getAdjustmentsByPerson(person, status = DELETED, startOfSentenceEnvelope = LocalDate.of(2015, 3, 17))
+
+      assertThat(result.map { it.lastUpdatedBy })
+        .usingRecursiveComparison()
+        .ignoringCollectionOrder()
+        .isEqualTo(listOf("deleted-ual"))
     }
   }
 
@@ -862,6 +955,7 @@ class AdjustmentControllerIntTest : SqsIntegrationTestBase() {
       days = null,
       additionalDaysAwarded = null,
       unlawfullyAtLarge = null,
+      lawfullyAtLarge = null,
       remand = RemandDto(chargeId = listOf(9991)),
       taggedBail = null,
     )
