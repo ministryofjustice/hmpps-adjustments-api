@@ -75,11 +75,16 @@ data class Adjustment(
   @PrimaryKeyJoinColumn
   var lawfullyAtLarge: LawfullyAtLarge? = null,
 
+  @OneToOne(mappedBy = "adjustment", cascade = [CascadeType.ALL])
+  @PrimaryKeyJoinColumn
+  var specialRemission: SpecialRemission? = null,
+
 ) {
   init {
     adjustmentHistory.forEach { it.adjustment = this }
     unlawfullyAtLarge?.adjustment = this
     lawfullyAtLarge?.adjustment = this
+    specialRemission?.adjustment = this
     additionalDaysAwarded?.adjustment = this
   }
 }

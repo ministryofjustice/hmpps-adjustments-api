@@ -24,4 +24,5 @@ enum class ValidationCode(val message: String, val validationType: ValidationTyp
   LAL_FIRST_DATE_CANNOT_BE_FUTURE("The first day of lawfully at large must not be in the future"),
   LAL_LAST_DATE_CANNOT_BE_FUTURE("The last day of lawfully at large must not be in the future"),
   LAL_DATE_MUST_BE_AFTER_SENTENCE_DATE("The first day of lawfully at large must be on or after the start of the sentence, %s"),
+  SREM_TYPE_NOT_NULL("You must select the type of Special Remission"),
 }

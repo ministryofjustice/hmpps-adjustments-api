@@ -26,6 +26,9 @@ class ValidationService(
     if (adjustment.adjustmentType == AdjustmentType.LAWFULLY_AT_LARGE) {
       return validateLal(adjustment, startOfSentenceEnvelope)
     }
+    if (adjustment.adjustmentType == AdjustmentType.SPECIAL_REMISSION) {
+      return validateSpecialRemission(adjustment)
+    }
     return emptyList()
   }
 
@@ -91,6 +94,15 @@ class ValidationService(
 
     if (adjustment.lawfullyAtLarge?.affectsDates == null) {
       validationMessages.add(ValidationMessage(ValidationCode.LAL_AFFECTS_DATES_NOT_NULL))
+    }
+    return validationMessages
+  }
+
+  private fun validateSpecialRemission(adjustment: AdjustmentDto): List<ValidationMessage> {
+    val validationMessages = mutableListOf<ValidationMessage>()
+
+    if (adjustment.specialRemission?.type == null) {
+      validationMessages.add(ValidationMessage(ValidationCode.SREM_TYPE_NOT_NULL))
     }
     return validationMessages
   }

@@ -20,11 +20,14 @@ import uk.gov.justice.digital.hmpps.adjustments.api.entity.AdjustmentStatus.ACTI
 import uk.gov.justice.digital.hmpps.adjustments.api.entity.AdjustmentStatus.DELETED
 import uk.gov.justice.digital.hmpps.adjustments.api.entity.AdjustmentType
 import uk.gov.justice.digital.hmpps.adjustments.api.entity.AdjustmentType.LAWFULLY_AT_LARGE
+import uk.gov.justice.digital.hmpps.adjustments.api.entity.AdjustmentType.SPECIAL_REMISSION
 import uk.gov.justice.digital.hmpps.adjustments.api.entity.AdjustmentType.TAGGED_BAIL
 import uk.gov.justice.digital.hmpps.adjustments.api.entity.AdjustmentType.UNLAWFULLY_AT_LARGE
 import uk.gov.justice.digital.hmpps.adjustments.api.entity.ChangeType
 import uk.gov.justice.digital.hmpps.adjustments.api.enums.LawfullyAtLargeAffectsDates.NO
 import uk.gov.justice.digital.hmpps.adjustments.api.enums.LawfullyAtLargeAffectsDates.YES
+import uk.gov.justice.digital.hmpps.adjustments.api.enums.SpecialRemissionType.RELEASE_DATE_CALCULATED_TOO_EARLY
+import uk.gov.justice.digital.hmpps.adjustments.api.enums.SpecialRemissionType.RELEASE_IN_ERROR
 import uk.gov.justice.digital.hmpps.adjustments.api.enums.UnlawfullyAtLargeType.ESCAPE
 import uk.gov.justice.digital.hmpps.adjustments.api.enums.UnlawfullyAtLargeType.RECALL
 import uk.gov.justice.digital.hmpps.adjustments.api.integration.SqsIntegrationTestBase
@@ -39,6 +42,7 @@ import uk.gov.justice.digital.hmpps.adjustments.api.model.CreateResponseDto
 import uk.gov.justice.digital.hmpps.adjustments.api.model.LawfullyAtLargeDto
 import uk.gov.justice.digital.hmpps.adjustments.api.model.ManualUnusedDeductionsDto
 import uk.gov.justice.digital.hmpps.adjustments.api.model.RemandDto
+import uk.gov.justice.digital.hmpps.adjustments.api.model.SpecialRemissionDto
 import uk.gov.justice.digital.hmpps.adjustments.api.model.TaggedBailDto
 import uk.gov.justice.digital.hmpps.adjustments.api.model.UnlawfullyAtLargeDto
 import uk.gov.justice.digital.hmpps.adjustments.api.model.ValidationCode
@@ -622,6 +626,88 @@ class AdjustmentControllerIntTest : SqsIntegrationTestBase() {
   }
 
   @Nested
+  inner class SpecialRemissionTests {
+    @Test
+    fun `Create a Special Remission Adjustment, then update it`() {
+      val adjustmentId = postCreateAdjustments(
+        listOf(
+          CREATED_ADJUSTMENT.copy(
+            adjustmentType = SPECIAL_REMISSION,
+            specialRemission = SpecialRemissionDto(RELEASE_DATE_CALCULATED_TOO_EARLY),
+            lawfullyAtLarge = null,
+            unlawfullyAtLarge = null,
+            remand = null,
+          ),
+        ),
+      )[0]
+
+      val adjustment = adjustmentRepository.findById(adjustmentId).get()
+
+      assertThat(adjustment.specialRemission).isNotNull
+      assertThat(adjustment.specialRemission!!.type).isEqualTo(RELEASE_DATE_CALCULATED_TOO_EARLY)
+      assertThat(adjustment.specialRemission!!.adjustmentId).isEqualTo(adjustmentId)
+
+      val createdAdjustment = getAdjustmentById(adjustmentId)
+
+      assertThat(createdAdjustment)
+        .usingRecursiveComparison()
+        .ignoringFieldsMatchingRegexes("lastUpdatedDate", "createdDate")
+        .isEqualTo(
+          CREATED_ADJUSTMENT.copy(
+            id = adjustmentId,
+            adjustmentType = SPECIAL_REMISSION,
+            specialRemission = SpecialRemissionDto(type = RELEASE_DATE_CALCULATED_TOO_EARLY),
+            remand = null,
+            effectiveDays = 4,
+            lastUpdatedBy = "Test User",
+            status = ACTIVE,
+            adjustmentTypeText = SPECIAL_REMISSION.text,
+            days = 4,
+            prisonId = "LDS",
+            prisonName = "Leeds",
+            adjustmentArithmeticType = SPECIAL_REMISSION.arithmeticType,
+            source = AdjustmentSource.DPS,
+          ),
+        )
+
+      val updateDto = createdAdjustment.copy(days = null, specialRemission = SpecialRemissionDto(type = RELEASE_DATE_CALCULATED_TOO_EARLY))
+      putAdjustmentUpdate(adjustmentId, updateDto)
+      val updatedAdjustment = getAdjustmentById(adjustmentId)
+      assertThat(updatedAdjustment)
+        .usingRecursiveComparison()
+        .ignoringFieldsMatchingRegexes("lastUpdatedDate")
+        .isEqualTo(createdAdjustment.copy(specialRemission = SpecialRemissionDto(type = RELEASE_DATE_CALCULATED_TOO_EARLY)))
+    }
+
+    @Test
+    @Sql(
+      "classpath:test_data/reset-data.sql",
+      "classpath:test_data/insert-nomis-special-remission.sql",
+    )
+    fun `Update a Special Remission Adjustment that does not have a type (eg migrated from NOMIS) - update the type`() {
+      val adjustmentId = UUID.fromString("cbe4ccb7-f56d-47e1-849f-51158d3449bf")
+      val adjustment = getAdjustmentById(adjustmentId)
+
+      putAdjustmentUpdate(
+        adjustment.id!!,
+        adjustment.copy(specialRemission = SpecialRemissionDto(type = RELEASE_IN_ERROR), days = 3),
+      )
+
+      val updatedAdjustment = getAdjustmentById(adjustmentId)
+      assertThat(updatedAdjustment)
+        .usingRecursiveComparison()
+        .ignoringFieldsMatchingRegexes("lastUpdatedDate")
+        .isEqualTo(
+          adjustment.copy(
+            lastUpdatedBy = "Test User",
+            specialRemission = SpecialRemissionDto(type = RELEASE_IN_ERROR),
+            source = AdjustmentSource.DPS,
+          ),
+        )
+    }
+  }
+
+  @Nested
   inner class UalTests {
 
     @Test
@@ -956,6 +1042,7 @@ class AdjustmentControllerIntTest : SqsIntegrationTestBase() {
       additionalDaysAwarded = null,
       unlawfullyAtLarge = null,
       lawfullyAtLarge = null,
+      specialRemission = null,
       remand = RemandDto(chargeId = listOf(9991)),
       taggedBail = null,
     )
