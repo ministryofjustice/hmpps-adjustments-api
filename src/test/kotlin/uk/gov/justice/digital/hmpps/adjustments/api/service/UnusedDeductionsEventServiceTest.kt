@@ -45,8 +45,19 @@ class UnusedDeductionsEventServiceTest {
 
   val person = "ABC123"
   private val ninetyDaysRemand = AdjustmentDto(
-    UUID.randomUUID(), 1, person, AdjustmentType.REMAND, LocalDate.now().minusDays(100),
-    LocalDate.now().minusDays(9), 90, remand = RemandDto(listOf(1L)), additionalDaysAwarded = null, unlawfullyAtLarge = null, lawfullyAtLarge = null, taggedBail = null,
+    UUID.randomUUID(),
+    1,
+    person,
+    AdjustmentType.REMAND,
+    LocalDate.now().minusDays(100),
+    LocalDate.now().minusDays(9),
+    90,
+    remand = RemandDto(listOf(1L)),
+    additionalDaysAwarded = null,
+    unlawfullyAtLarge = null,
+    lawfullyAtLarge = null,
+    specialRemission = null,
+    taggedBail = null,
     effectiveDays = 90,
     sentenceSequence = 1,
     source = AdjustmentSource.DPS,

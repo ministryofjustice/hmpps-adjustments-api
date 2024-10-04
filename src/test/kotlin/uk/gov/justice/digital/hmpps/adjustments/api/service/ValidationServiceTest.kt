@@ -9,9 +9,11 @@ import org.mockito.kotlin.whenever
 import uk.gov.justice.digital.hmpps.adjustments.api.entity.AdjustmentStatus
 import uk.gov.justice.digital.hmpps.adjustments.api.entity.AdjustmentType
 import uk.gov.justice.digital.hmpps.adjustments.api.enums.LawfullyAtLargeAffectsDates
+import uk.gov.justice.digital.hmpps.adjustments.api.enums.SpecialRemissionType.MERITORIOUS_CONDUCT
 import uk.gov.justice.digital.hmpps.adjustments.api.enums.UnlawfullyAtLargeType
 import uk.gov.justice.digital.hmpps.adjustments.api.model.AdjustmentDto
 import uk.gov.justice.digital.hmpps.adjustments.api.model.LawfullyAtLargeDto
+import uk.gov.justice.digital.hmpps.adjustments.api.model.SpecialRemissionDto
 import uk.gov.justice.digital.hmpps.adjustments.api.model.UnlawfullyAtLargeDto
 import uk.gov.justice.digital.hmpps.adjustments.api.model.ValidationCode.LAL_AFFECTS_DATES_NOT_NULL
 import uk.gov.justice.digital.hmpps.adjustments.api.model.ValidationCode.LAL_DATE_MUST_BE_AFTER_SENTENCE_DATE
@@ -26,6 +28,7 @@ import uk.gov.justice.digital.hmpps.adjustments.api.model.ValidationCode.RADA_DA
 import uk.gov.justice.digital.hmpps.adjustments.api.model.ValidationCode.RADA_DAYS_MUST_BE_POSTIVE
 import uk.gov.justice.digital.hmpps.adjustments.api.model.ValidationCode.RADA_FROM_DATE_NOT_NULL
 import uk.gov.justice.digital.hmpps.adjustments.api.model.ValidationCode.RADA_REDUCES_BY_MORE_THAN_HALF
+import uk.gov.justice.digital.hmpps.adjustments.api.model.ValidationCode.SREM_TYPE_NOT_NULL
 import uk.gov.justice.digital.hmpps.adjustments.api.model.ValidationCode.UAL_DATE_MUST_BE_AFTER_SENTENCE_DATE
 import uk.gov.justice.digital.hmpps.adjustments.api.model.ValidationCode.UAL_FIRST_DATE_CANNOT_BE_FUTURE
 import uk.gov.justice.digital.hmpps.adjustments.api.model.ValidationCode.UAL_FROM_DATE_AFTER_TO_DATE
@@ -60,6 +63,7 @@ class ValidationServiceTest {
     additionalDaysAwarded = null,
     unlawfullyAtLarge = null,
     lawfullyAtLarge = null,
+    specialRemission = null,
     remand = null,
     taggedBail = null,
     lastUpdatedDate = LocalDateTime.now(),
@@ -368,6 +372,29 @@ class ValidationServiceTest {
         ),
       )
       assertThat(result).isEqualTo(listOf(ValidationMessage(LAL_LAST_DATE_CANNOT_BE_FUTURE)))
+    }
+  }
+
+  @Nested
+  inner class SpecialRemissionTests {
+
+    val validNewSpecialRemission = existingRada.copy(
+      id = null,
+      days = 9,
+      adjustmentType = AdjustmentType.SPECIAL_REMISSION,
+      specialRemission = SpecialRemissionDto(MERITORIOUS_CONDUCT),
+    )
+
+    @Test
+    fun `Special Remission valid`() {
+      val result = validationService.validate(validNewSpecialRemission)
+      assertThat(result).isEmpty()
+    }
+
+    @Test
+    fun `Special Remission with no type is not valid`() {
+      val result = validationService.validate(validNewSpecialRemission.copy(specialRemission = null))
+      assertThat(result).isEqualTo(listOf(ValidationMessage(SREM_TYPE_NOT_NULL)))
     }
   }
 }

@@ -33,6 +33,8 @@ data class AdjustmentDto(
   val unlawfullyAtLarge: UnlawfullyAtLargeDto?,
   @Schema(description = "Additional info for a LAL adjustment")
   val lawfullyAtLarge: LawfullyAtLargeDto?,
+  @Schema(description = "Additional info for a Special Remission adjustment")
+  val specialRemission: SpecialRemissionDto?,
   @Schema(description = "The details of a tagged-bail adjustment")
   val taggedBail: TaggedBailDto?,
   @Schema(description = "The NOMIS sentence sequence of the adjustment")
