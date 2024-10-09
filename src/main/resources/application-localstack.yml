@@ -1,0 +1,25 @@
+hmpps.sqs:
+  provider: localstack
+  queues:
+    prisonerlistener:
+      queueName: "prisonerlistener-${random.uuid}"
+      dlqName: "prisonerlistener-dlq-${random.uuid}"
+      subscribeTopicId: domainevents
+      subscribeFilter: "{\"eventType\":[\"prisoner-offender-search.prisoner.released\", \"prisoner-offender-search.prisoner.received\", \"prison-offender-events.prisoner.merged\"]}"
+      dlqMaxReceiveCount: 3
+      visibilityTimeout: 120
+    adjustments:
+      queueName: adjustments-test-event-queue
+      dlqName: adjustments-test-event-dlq
+      subscribeTopicId: domainevents
+      subscribeFilter: '{"eventType":[ "release-date-adjustments.adjustment.inserted", "release-date-adjustments.adjustment.updated", "release-date-adjustments.adjustment.deleted" ] }'
+    unuseddeductions:
+      queueName: "unuseddeductions-${random.uuid}"
+      dlqName: "unuseddeductions-dlq-${random.uuid}"
+      subscribeTopicId: domainevents
+      subscribeFilter: "{\"eventType\":[\"release-date-adjustments.adjustment.inserted\", \"release-date-adjustments.adjustment.updated\", \"release-date-adjustments.adjustment.deleted\", \"prisoner-offender-search.prisoner.updated\"]}"
+      dlqMaxReceiveCount: 3
+      visibilityTimeout: 120
+  topics:
+    domainevents:
+      arn: arn:aws:sns:eu-west-2:000000000000:${random.uuid}
