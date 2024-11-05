@@ -28,18 +28,18 @@ class ThingsToDoController(
   @ResponseBody
   @Operation(
     summary = "Retrieve things-to-do for a prisoner",
-    description = "Provides a list of things-to-do for a specified prisoner based on their ID."
+    description = "Provides a list of things-to-do for a specified prisoner based on their ID.",
   )
   @ApiResponses(
     value = [
       ApiResponse(responseCode = "200", description = "Successfully returns the things-to-do list"),
       ApiResponse(responseCode = "401", description = "Unauthorized - valid Oauth2 token required"),
       ApiResponse(responseCode = "403", description = "Forbidden - requires appropriate role"),
-    ]
+    ],
   )
   fun getThingsToDo(
     @Parameter(required = true, example = "A1234AB", description = "Prisoner's ID (also known as nomsId)")
-    @PathVariable prisonerId: String
+    @PathVariable prisonerId: String,
   ): ThingsToDo {
     log.info("Request to retrieve things-to-do list for prisoner ID: {}", prisonerId)
     return thingsToDoService.getToDoList(prisonerId)

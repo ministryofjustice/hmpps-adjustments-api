@@ -6,7 +6,7 @@ import uk.gov.justice.digital.hmpps.adjustments.api.service.ToDoType.ADA_INTERCE
 
 @Service
 class ThingsToDoService(
-  private val additionalDaysAwardedService: AdditionalDaysAwardedService
+  private val additionalDaysAwardedService: AdditionalDaysAwardedService,
 ) {
 
   fun getToDoList(prisonerId: String): ThingsToDo {
@@ -23,8 +23,6 @@ class ThingsToDoService(
     )
   }
 }
-
-
 
 enum class ToDoType {
   ADA_INTERCEPT,
