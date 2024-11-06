@@ -21,13 +21,13 @@ class ThingsToDoControllerIntTest : SqsIntegrationTestBase() {
     fun `Get things to do for a prisoner`() {
       val thingsToDo = getThingsToDo(PRISONER_ID)
 
-      assertThat(thingsToDo).isEqualTo(ThingsToDo(prisonerId = PRISONER_ID, thingsToDo= listOf(ADA_INTERCEPT)))
+      assertThat(thingsToDo).isEqualTo(ThingsToDo(prisonerId = PRISONER_ID, thingsToDo = listOf(ADA_INTERCEPT)))
     }
   }
 
   private fun getThingsToDo(prisonerId: String): ThingsToDo? = webTestClient
     .get()
-    .uri("/things-to-do/prisoner/${prisonerId}")
+    .uri("/things-to-do/prisoner/$prisonerId")
     .headers(setAdjustmentsRWAuth())
     .header("Active-Caseload", "KMI")
     .exchange()
