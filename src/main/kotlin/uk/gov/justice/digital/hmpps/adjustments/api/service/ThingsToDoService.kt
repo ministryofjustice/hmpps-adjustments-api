@@ -10,6 +10,7 @@ class ThingsToDoService(
   private val additionalDaysAwardedService: AdditionalDaysAwardedService,
 ) {
 
+  // TODO This is a placeholder at the moment, the actual return object will contain more info, wil revisit after discussion with analyst/designer
   fun getToDoList(prisonerId: String): ThingsToDo {
     val ada = additionalDaysAwardedService.getAdaAdjudicationDetails(prisonerId)
     val thingsToDo = if (ada.intercept.type != NONE) {
