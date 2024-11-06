@@ -16,7 +16,6 @@ class ThingsToDoControllerIntTest : SqsIntegrationTestBase() {
     @Test
     @Sql(
       "classpath:test_data/reset-data.sql",
-      "classpath:test_data/insert-nomis-special-remission.sql",
     )
     fun `Get things to do for a prisoner`() {
       val thingsToDo = getThingsToDo(PRISONER_ID)
