@@ -12,7 +12,6 @@ import org.springframework.security.access.prepost.PreAuthorize
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.PathVariable
 import org.springframework.web.bind.annotation.RequestMapping
-import org.springframework.web.bind.annotation.ResponseBody
 import org.springframework.web.bind.annotation.RestController
 import uk.gov.justice.digital.hmpps.adjustments.api.service.ThingsToDo
 import uk.gov.justice.digital.hmpps.adjustments.api.service.ThingsToDoService
@@ -24,8 +23,7 @@ class ThingsToDoController(
   private val thingsToDoService: ThingsToDoService,
 ) {
   @GetMapping("/prisoner/{prisonerId}")
-  @PreAuthorize("hasAnyRole('SYSTEM_USER', 'RELEASE_DATES_CALCULATOR')")
-  @ResponseBody
+  @PreAuthorize("hasAnyRole('ADJUSTMENTS__ADJUSTMENTS_RW', 'ADJUSTMENTS__ADJUSTMENTS_RO')")
   @Operation(
     summary = "Retrieve things-to-do for a prisoner",
     description = "Provides a list of things-to-do for a specified prisoner based on their ID.",

@@ -2,7 +2,8 @@ package uk.gov.justice.digital.hmpps.adjustments.api.service
 
 import org.springframework.stereotype.Service
 import uk.gov.justice.digital.hmpps.adjustments.api.enums.InterceptType.NONE
-import uk.gov.justice.digital.hmpps.adjustments.api.service.ToDoType.ADA_INTERCEPT
+import uk.gov.justice.digital.hmpps.adjustments.api.enums.ToDoType.ADA_INTERCEPT
+import uk.gov.justice.digital.hmpps.adjustments.api.model.ThingsToDo
 
 @Service
 class ThingsToDoService(
@@ -23,12 +24,3 @@ class ThingsToDoService(
     )
   }
 }
-
-enum class ToDoType {
-  ADA_INTERCEPT,
-}
-
-data class ThingsToDo(
-  val prisonerId: String,
-  val thingsToDo: List<ToDoType> = emptyList(),
-)
