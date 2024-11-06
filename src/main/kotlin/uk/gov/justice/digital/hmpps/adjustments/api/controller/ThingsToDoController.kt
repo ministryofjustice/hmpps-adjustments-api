@@ -23,7 +23,7 @@ class ThingsToDoController(
   private val thingsToDoService: ThingsToDoService,
 ) {
   @GetMapping("/prisoner/{prisonerId}")
-  @PreAuthorize("hasAnyRole('ADJUSTMENTS__ADJUSTMENTS_RW', 'ADJUSTMENTS__ADJUSTMENTS_RO')")
+  @PreAuthorize("hasRole('ADJUSTMENTS__ADJUSTMENTS_RO')")
   @Operation(
     summary = "Retrieve things-to-do for a prisoner",
     description = "Provides a list of things-to-do for a specified prisoner based on their ID.",
