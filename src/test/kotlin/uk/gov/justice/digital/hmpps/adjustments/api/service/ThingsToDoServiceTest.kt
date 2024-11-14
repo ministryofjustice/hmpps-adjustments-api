@@ -29,7 +29,11 @@ class ThingsToDoServiceTest {
 
       val thingsToDo = thingsToDoService.getToDoList(NOMS_ID)
 
-      assertThat(thingsToDo).isEqualTo(ThingsToDo(prisonerId = NOMS_ID, thingsToDo = listOf(ADA_INTERCEPT)))
+      assertThat(thingsToDo).isEqualTo(ThingsToDo(
+        prisonerId = NOMS_ID,
+        thingsToDo = listOf(ADA_INTERCEPT),
+        adaIntercept = getAdaAdjudicationDetails(PADA).intercept
+      ))
     }
 
     @Test

@@ -15,6 +15,7 @@ class AdjudicationApiClient(@Qualifier("adjudicationApiWebClient") private val w
 
   fun getAdjudications(person: String): AdjudicationResponse {
     log.info("Requesting adjudications for $person")
+    // TODO This adjudications endpoint needs 'active caseload' passed in as a header but it doesnt actually use it, maybe pass in a dummy val?
     val caseloadId = UserContext.getActiveCaseloadId() ?: throw ValidationException("no active caseload set")
     return webClient.get()
       .uri("/reported-adjudications/bookings/prisoner/$person?page=0&size=1000&ada=true&pada=true")

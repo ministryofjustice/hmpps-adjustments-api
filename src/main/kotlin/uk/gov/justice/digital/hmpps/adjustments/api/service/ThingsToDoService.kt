@@ -9,19 +9,19 @@ import uk.gov.justice.digital.hmpps.adjustments.api.model.ThingsToDo
 class ThingsToDoService(
   private val additionalDaysAwardedService: AdditionalDaysAwardedService,
 ) {
-
-  // TODO This is a placeholder at the moment, the actual return object will contain more info, wil revisit after discussion with analyst/designer
   fun getToDoList(prisonerId: String): ThingsToDo {
     val ada = additionalDaysAwardedService.getAdaAdjudicationDetails(prisonerId)
-    val thingsToDo = if (ada.intercept.type != NONE) {
-      listOf(ADA_INTERCEPT)
-    } else {
-      emptyList()
+    if (ada.intercept.type != NONE) {
+      return ThingsToDo(
+        prisonerId = prisonerId,
+        thingsToDo = listOf(ADA_INTERCEPT),
+        adaIntercept = ada.intercept
+      )
     }
 
     return ThingsToDo(
       prisonerId = prisonerId,
-      thingsToDo = thingsToDo,
+      thingsToDo = emptyList(),
     )
   }
 }
