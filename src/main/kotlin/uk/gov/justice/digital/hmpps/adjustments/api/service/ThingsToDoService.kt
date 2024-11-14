@@ -15,7 +15,7 @@ class ThingsToDoService(
       return ThingsToDo(
         prisonerId = prisonerId,
         thingsToDo = listOf(ADA_INTERCEPT),
-        adaIntercept = ada.intercept
+        adaIntercept = ada.intercept,
       )
     }
 
