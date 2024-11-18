@@ -25,7 +25,7 @@ dependencies {
   // Enable kotlin reflect
   implementation("org.jetbrains.kotlin:kotlin-reflect:2.0.21")
 
-  implementation("uk.gov.justice.service.hmpps:hmpps-sqs-spring-boot-starter:4.5.0")
+  implementation("uk.gov.justice.service.hmpps:hmpps-sqs-spring-boot-starter:5.1.1")
 
   implementation("org.springframework:spring-jms:6.2.0")
 
