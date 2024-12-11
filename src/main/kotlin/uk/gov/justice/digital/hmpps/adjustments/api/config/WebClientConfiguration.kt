@@ -26,6 +26,7 @@ class WebClientConfiguration(
   @Value("\${prison.api.timeout-seconds:90}") private val prisonApiTimeoutSeconds: Int,
   @Value("\${adjudications.api.url}") private val adjudicationsApiUri: String,
   @Value("\${calculate-release-dates.api.url}") private val calculateReleaseDatesApiUrl: String,
+  @Value("\${remand-and-sentencing.api.url}") private val remandAndSentencingApiUrl: String,
 ) {
 
   @Bean
@@ -48,6 +49,17 @@ class WebClientConfiguration(
 
     return WebClient.builder()
       .baseUrl(calculateReleaseDatesApiUrl)
+      .filter(filter)
+      .build()
+  }
+
+  @Bean
+  fun remandAndSentencingApiWebClient(authorizedClientManager: OAuth2AuthorizedClientManager): WebClient {
+    val filter = ServletOAuth2AuthorizedClientExchangeFilterFunction(authorizedClientManager)
+    filter.setDefaultClientRegistrationId("hmpps-api")
+
+    return WebClient.builder()
+      .baseUrl(remandAndSentencingApiUrl)
       .filter(filter)
       .build()
   }
