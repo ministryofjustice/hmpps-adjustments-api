@@ -13,6 +13,7 @@ generic-service:
     PRISON_API_URL: https://prison-api-preprod.prison.service.justice.gov.uk
     CALCULATERELEASEDATES_API_URL: https://calculate-release-dates-api-preprod.hmpps.service.justice.gov.uk
     ADJUDICATIONS_API_URL: https://manage-adjudications-api-preprod.hmpps.service.justice.gov.uk
+    REMANDANDSENTENCING_API_URL: https://remand-and-sentencing-api-preprod.hmpps.service.justice.gov.uk
 
   allowlist:
     cymulate-1: 54.217.50.18/32
