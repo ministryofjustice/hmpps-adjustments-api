@@ -7,7 +7,9 @@ import jakarta.persistence.EntityNotFoundException
 import org.springframework.security.core.context.SecurityContextHolder
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
+import org.springframework.web.reactive.function.client.WebClientResponseException
 import uk.gov.justice.digital.hmpps.adjustments.api.client.PrisonApiClient
+import uk.gov.justice.digital.hmpps.adjustments.api.client.RemandAndSentencingApiClient
 import uk.gov.justice.digital.hmpps.adjustments.api.config.AuthAwareAuthenticationToken
 import uk.gov.justice.digital.hmpps.adjustments.api.config.UserContext
 import uk.gov.justice.digital.hmpps.adjustments.api.entity.AdditionalDaysAwarded
@@ -29,6 +31,7 @@ import uk.gov.justice.digital.hmpps.adjustments.api.entity.AdjustmentType.UNLAWF
 import uk.gov.justice.digital.hmpps.adjustments.api.entity.ChangeType
 import uk.gov.justice.digital.hmpps.adjustments.api.entity.LawfullyAtLarge
 import uk.gov.justice.digital.hmpps.adjustments.api.entity.SpecialRemission
+import uk.gov.justice.digital.hmpps.adjustments.api.entity.TaggedBail
 import uk.gov.justice.digital.hmpps.adjustments.api.entity.UnlawfullyAtLarge
 import uk.gov.justice.digital.hmpps.adjustments.api.error.ApiValidationException
 import uk.gov.justice.digital.hmpps.adjustments.api.legacy.model.LegacyAdjustmentType
@@ -44,6 +47,7 @@ import uk.gov.justice.digital.hmpps.adjustments.api.model.SentenceInfo
 import uk.gov.justice.digital.hmpps.adjustments.api.model.SpecialRemissionDto
 import uk.gov.justice.digital.hmpps.adjustments.api.model.TaggedBailDto
 import uk.gov.justice.digital.hmpps.adjustments.api.model.UnlawfullyAtLargeDto
+import uk.gov.justice.digital.hmpps.adjustments.api.model.remandandsentencing.CourtCase
 import uk.gov.justice.digital.hmpps.adjustments.api.respository.AdjustmentRepository
 import java.time.LocalDate
 import java.time.temporal.ChronoUnit
@@ -56,6 +60,7 @@ class AdjustmentsTransactionalService(
   val objectMapper: ObjectMapper,
   private val prisonService: PrisonService,
   private val prisonApiClient: PrisonApiClient,
+  private val remandAndSentencingApiClient: RemandAndSentencingApiClient,
 ) {
 
   fun getCurrentAuthenticationUsername(): String =
@@ -76,6 +81,9 @@ class AdjustmentsTransactionalService(
         throw ApiValidationException("The number of days provide does not match the period between the from and to dates of the adjustment")
       }
     }
+
+    validateTaggedBail(resource)
+
     val sentenceInfo = sentenceInfo(resource)
     val prisoner = prisonApiClient.getPrisonerDetail(resource.person)
     val adjustment = Adjustment(
@@ -103,6 +111,7 @@ class AdjustmentsTransactionalService(
       unlawfullyAtLarge = unlawfullyAtLarge(resource),
       lawfullyAtLarge = lawfullyAtLarge(resource),
       specialRemission = specialRemission(resource),
+      taggedBail = taggedBail(resource),
     )
     adjustment.adjustmentHistory = listOf(
       AdjustmentHistory(
@@ -113,6 +122,7 @@ class AdjustmentsTransactionalService(
         prisonId = prisoner.agencyId,
       ),
     )
+
     return adjustmentRepository.save(adjustment).id
   }
 
@@ -124,6 +134,12 @@ class AdjustmentsTransactionalService(
       }
     adjustment.apply {
       effectiveDays = effectiveDaysDto.effectiveDays
+    }
+  }
+
+  private fun validateTaggedBail(adjustmentDto: AdjustmentDto) {
+    if (adjustmentDto.taggedBail != null && adjustmentDto.taggedBail.courtCaseUuid == null && adjustmentDto.taggedBail.caseSequence == null) {
+      throw ApiValidationException("Either courtCaseUuid or caseSequence must be provided for a tagged bail adjustment")
     }
   }
 
@@ -144,6 +160,21 @@ class AdjustmentsTransactionalService(
     } else {
       UnlawfullyAtLarge()
     }
+
+  private fun taggedBail(adjustmentDto: AdjustmentDto): TaggedBail? {
+    val courtCase: CourtCase?
+    if (adjustmentDto.adjustmentType == TAGGED_BAIL && adjustmentDto.taggedBail?.courtCaseUuid != null) {
+      try {
+        courtCase = remandAndSentencingApiClient.validateCourtCase(adjustmentDto.taggedBail.courtCaseUuid)
+      } catch (e: WebClientResponseException) {
+        throw ApiValidationException("No court case found with id ${adjustmentDto.taggedBail.courtCaseUuid}")
+      }
+      if (courtCase != null) {
+        return TaggedBail(courtCaseUuid = adjustmentDto.taggedBail.courtCaseUuid)
+      }
+    }
+    return null
+  }
 
   private fun lawfullyAtLarge(adjustmentDto: AdjustmentDto, adjustment: Adjustment? = null): LawfullyAtLarge? =
     if (adjustmentDto.adjustmentType == LAWFULLY_AT_LARGE && adjustmentDto.lawfullyAtLarge != null) {
@@ -243,6 +274,9 @@ class AdjustmentsTransactionalService(
         throw ApiValidationException("The number of days provide does not match the period between the from and to dates of the adjustment")
       }
     }
+
+    validateTaggedBail(resource)
+
     val prisoner = prisonApiClient.getPrisonerDetail(adjustment.person)
     val persistedLegacyData = objectMapper.convertValue(adjustment.legacyData, LegacyData::class.java)
     val change = objectToJson(adjustment)
@@ -270,6 +304,7 @@ class AdjustmentsTransactionalService(
       unlawfullyAtLarge = unlawfullyAtLarge(resource, this)
       lawfullyAtLarge = lawfullyAtLarge(resource, this)
       specialRemission = specialRemission(resource, this)
+      taggedBail = taggedBail(resource)
       adjustmentHistory += AdjustmentHistory(
         changeByUsername = getCurrentAuthenticationUsername(),
         changeType = ChangeType.UPDATE,
@@ -304,11 +339,15 @@ class AdjustmentsTransactionalService(
         }
         SentenceInfo(matchingSentences.maxBy { it.sentenceDate })
       } else if (resource.taggedBail != null && resource.adjustmentType == TAGGED_BAIL) {
-        val matchingSentences = sentences.filter { it.caseSequence == resource.taggedBail.caseSequence }
-        if (matchingSentences.isEmpty()) {
-          throw ApiValidationException("No matching sentences for caseSequence ${resource.taggedBail.caseSequence}")
+        if (resource.taggedBail.caseSequence != null) {
+          val matchingSentences = sentences.filter { it.caseSequence == resource.taggedBail.caseSequence }
+          if (matchingSentences.isEmpty()) {
+            throw ApiValidationException("No matching sentences for caseSequence ${resource.taggedBail.caseSequence}")
+          }
+          SentenceInfo(matchingSentences.maxBy { it.sentenceDate })
+        } else {
+          null
         }
-        SentenceInfo(matchingSentences.maxBy { it.sentenceDate })
       } else {
         val matchingSentence = sentences.find { it.sentenceSequence == resource.sentenceSequence }
           ?: throw ApiValidationException("No matching sentences for sentence sequence ${resource.sentenceSequence}")
@@ -392,6 +431,9 @@ class AdjustmentsTransactionalService(
   private fun taggedBailDto(adjustment: Adjustment, legacyData: LegacyData): TaggedBailDto? {
     if (adjustment.adjustmentType === TAGGED_BAIL && legacyData.caseSequence != null) {
       return TaggedBailDto(legacyData.caseSequence)
+    }
+    if (adjustment.adjustmentType === TAGGED_BAIL && adjustment.taggedBail?.courtCaseUuid != null) {
+      return TaggedBailDto(courtCaseUuid = adjustment.taggedBail?.courtCaseUuid)
     }
     return null
   }

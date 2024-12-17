@@ -56,6 +56,10 @@ calculate-release-dates:
   api:
     url: http://localhost:8334
 
+remand-and-sentencing:
+  api:
+    url: http://localhost:8335
+
 hmpps.sqs:
   reactiveApi: true
   provider: localstack

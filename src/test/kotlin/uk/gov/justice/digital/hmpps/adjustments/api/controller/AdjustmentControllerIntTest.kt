@@ -492,7 +492,53 @@ class AdjustmentControllerIntTest : SqsIntegrationTestBase() {
     }
 
     @Test
-    fun `Create a Tagged Bail Adjustment, then update it`() {
+    fun `Create tagged-bail with court case uuid that doesn't exist should fail`() {
+      webTestClient
+        .post()
+        .uri("/adjustments")
+        .headers(setAdjustmentsRWAuth())
+        .contentType(MediaType.APPLICATION_JSON)
+        .bodyValue(
+          listOf(
+            CREATED_ADJUSTMENT.copy(
+              toDate = null,
+              fromDate = null,
+              days = 987,
+              adjustmentType = TAGGED_BAIL,
+              taggedBail = TaggedBailDto(courtCaseUuid = UUID.fromString("f32f2e70-9be3-42c4-b4a8-2cebc1a9b1db")),
+              remand = null,
+            ),
+          ),
+        )
+        .exchange()
+        .expectStatus().isBadRequest
+    }
+
+    @Test
+    fun `Create tagged-bail with neither court case uuid nor case sequence should fail`() {
+      webTestClient
+        .post()
+        .uri("/adjustments")
+        .headers(setAdjustmentsRWAuth())
+        .contentType(MediaType.APPLICATION_JSON)
+        .bodyValue(
+          listOf(
+            CREATED_ADJUSTMENT.copy(
+              toDate = null,
+              fromDate = null,
+              days = 987,
+              adjustmentType = TAGGED_BAIL,
+              taggedBail = TaggedBailDto(),
+              remand = null,
+            ),
+          ),
+        )
+        .exchange()
+        .expectStatus().isBadRequest
+    }
+
+    @Test
+    fun `Create a Tagged Bail Adjustment with case sequence, then update it`() {
       val adjustmentId = postCreateAdjustments(
         listOf(
           CREATED_ADJUSTMENT.copy(
@@ -524,6 +570,56 @@ class AdjustmentControllerIntTest : SqsIntegrationTestBase() {
             lastUpdatedBy = "Test User",
             status = ACTIVE,
             sentenceSequence = 1,
+            adjustmentTypeText = TAGGED_BAIL.text,
+            days = 987,
+            prisonId = "LDS",
+            prisonName = "Leeds",
+            adjustmentArithmeticType = TAGGED_BAIL.arithmeticType,
+            source = AdjustmentSource.DPS,
+          ),
+        )
+
+      val updateDto = createdAdjustment.copy(days = 986)
+      putAdjustmentUpdate(adjustmentId, updateDto)
+      val updatedAdjustment = getAdjustmentById(adjustmentId)
+      assertThat(updatedAdjustment)
+        .usingRecursiveComparison()
+        .ignoringFieldsMatchingRegexes("lastUpdatedDate")
+        .isEqualTo(createdAdjustment.copy(effectiveDays = 986, days = 986))
+    }
+
+    @Test
+    fun `Create a Tagged Bail Adjustment with court case uuid, then update it`() {
+      val adjustmentId = postCreateAdjustments(
+        listOf(
+          CREATED_ADJUSTMENT.copy(
+            fromDate = null,
+            toDate = null,
+            days = 987,
+            adjustmentType = TAGGED_BAIL,
+            taggedBail = TaggedBailDto(courtCaseUuid = UUID.fromString("73df3e55-9c5d-487e-959a-5befa13b7123")),
+            remand = null,
+            sentenceSequence = null,
+          ),
+        ),
+      )[0]
+
+      val createdAdjustment = getAdjustmentById(adjustmentId)
+
+      assertThat(createdAdjustment)
+        .usingRecursiveComparison()
+        .ignoringFieldsMatchingRegexes("lastUpdatedDate", "createdDate")
+        .isEqualTo(
+          CREATED_ADJUSTMENT.copy(
+            id = adjustmentId,
+            fromDate = null,
+            toDate = null,
+            adjustmentType = TAGGED_BAIL,
+            taggedBail = TaggedBailDto(courtCaseUuid = UUID.fromString("73df3e55-9c5d-487e-959a-5befa13b7123")),
+            effectiveDays = 987,
+            remand = null,
+            lastUpdatedBy = "Test User",
+            status = ACTIVE,
             adjustmentTypeText = TAGGED_BAIL.text,
             days = 987,
             prisonId = "LDS",
