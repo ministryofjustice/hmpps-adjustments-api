@@ -27,4 +27,6 @@ data class LegacyAdjustment(
   val bookingReleased: Boolean,
   @Schema(description = "The ID of the agency the prisoner is located")
   val agencyId: String?,
+  @Schema(description = "Is the adjustment part of the current term. (Most recent booking NOMIS)")
+  val currentTerm: Boolean? = null,
 )
