@@ -78,10 +78,17 @@ class AdditionalDaysAwardedService(
     val suspended = getAdasByDateCharged(adas, SUSPENDED)
     val totalSuspended = getTotalDays(suspended)
 
-    val (prospectiveAwarded, prospective) = filterAdasByMatchingAdjustment(
-      getAdasByDateCharged(adas, PROSPECTIVE),
-      adaAdjustments,
-    )
+    val (prospectiveAwarded, prospective) =
+      if (sentenceDetail.hasRecall &&
+        sentenceDetail.earliestNonRecallSentenceDate == null
+      ) {
+        emptyList<AdasByDateCharged>() to emptyList<AdasByDateCharged>()
+      } else {
+        filterAdasByMatchingAdjustment(
+          getAdasByDateCharged(adas, PROSPECTIVE),
+          adaAdjustments,
+        )
+      }
 
     awarded = awarded + prospectiveAwarded
     val totalAwarded = getTotalDays(awarded)

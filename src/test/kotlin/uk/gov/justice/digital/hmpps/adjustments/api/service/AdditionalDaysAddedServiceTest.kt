@@ -758,6 +758,106 @@ class AdditionalDaysAddedServiceTest {
       assertPadaIntercept(intercept, 1, true)
     }
 
+    @Nested
+    inner class FilterPADAsWithActiveLicenceRecalls {
+
+      private fun setupMocks(
+        adjudications: List<Adjudication>,
+        hasRecall: Boolean,
+        earliestNonRecallSentenceDate: LocalDate?,
+        earliestRecallDate: LocalDate? = null,
+      ) {
+        whenever(adjustmentRepository.findByPersonAndAdjustmentTypeAndStatus(NOMS_ID, ADDITIONAL_DAYS_AWARDED)).thenReturn(emptyList())
+        whenever(adjudicationApiClient.getAdjudications(NOMS_ID)).thenReturn(AdjudicationResponse(adjudications))
+        whenever(prospectiveAdaRejectionRepository.findByPerson(NOMS_ID)).thenReturn(emptyList())
+        whenever(prisonService.getSentencesAndStartDateDetails(NOMS_ID)).thenReturn(
+          SentenceAndStartDateDetails(
+            sentences,
+            earliestRecallDate = earliestRecallDate,
+            latestSentenceDate = LocalDate.of(2023, 1, 1),
+            earliestNonRecallSentenceDate = earliestNonRecallSentenceDate,
+            hasRecall = hasRecall,
+            earliestSentenceDate = LocalDate.of(2023, 1, 1),
+          ),
+        )
+      }
+
+      @Test
+      fun `Should intercept if only prospective adas with non licence recalls`() {
+        setupMocks(
+          adjudications = listOf(adjudicationOneProspective),
+          hasRecall = false,
+          earliestNonRecallSentenceDate = LocalDate.of(2023, 1, 1),
+        )
+
+        val intercept = additionalDaysAwardedService.getAdaAdjudicationDetails(NOMS_ID).intercept
+
+        assertPadaIntercept(intercept, 1, true)
+      }
+
+      @Test
+      fun `Should not intercept if only prospective adas and licence recalls`() {
+        setupMocks(
+          adjudications = listOf(adjudicationOneProspective),
+          hasRecall = true,
+          earliestNonRecallSentenceDate = null,
+          earliestRecallDate = LocalDate.of(2023, 1, 1),
+        )
+
+        val intercept = additionalDaysAwardedService.getAdaAdjudicationDetails(NOMS_ID).intercept
+
+        assertThat(intercept).isEqualTo(
+          AdaIntercept(
+            NONE,
+            0,
+            false,
+          ),
+        )
+      }
+
+      @Test
+      fun `Should intercept if there are prospective and none prospective adas with only licence recalls`() {
+        setupMocks(
+          adjudications = listOf(adjudicationOne, adjudicationOneProspective),
+          hasRecall = true,
+          earliestNonRecallSentenceDate = null,
+          earliestRecallDate = LocalDate.of(2023, 1, 1),
+        )
+
+        val intercept = additionalDaysAwardedService.getAdaAdjudicationDetails(NOMS_ID).intercept
+
+        assertThat(intercept).isEqualTo(
+          AdaIntercept(
+            UPDATE,
+            1,
+            false,
+            messageArguments = listOf("Prisoner, Default"),
+          ),
+        )
+      }
+
+      @Test
+      fun `Should intercept if there are only prospective adas with licence recalls and other sentences`() {
+        setupMocks(
+          adjudications = listOf(adjudicationOneProspective),
+          hasRecall = true,
+          earliestNonRecallSentenceDate = LocalDate.of(2023, 2, 1),
+          earliestRecallDate = LocalDate.of(2023, 1, 1),
+        )
+
+        val intercept = additionalDaysAwardedService.getAdaAdjudicationDetails(NOMS_ID).intercept
+
+        assertThat(intercept).isEqualTo(
+          AdaIntercept(
+            PADA,
+            1,
+            true,
+            messageArguments = listOf("Prisoner, Default"),
+          ),
+        )
+      }
+    }
+
     private fun assertUpdateIntercept(intercept: AdaIntercept, number: Int, anyProspective: Boolean) {
       assertThat(intercept).isEqualTo(
         AdaIntercept(
