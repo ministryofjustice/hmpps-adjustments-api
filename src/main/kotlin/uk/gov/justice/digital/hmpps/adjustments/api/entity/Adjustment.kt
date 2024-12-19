@@ -2,6 +2,7 @@ package uk.gov.justice.digital.hmpps.adjustments.api.entity
 
 import com.fasterxml.jackson.annotation.JsonIgnore
 import com.fasterxml.jackson.databind.JsonNode
+import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import io.hypersistence.utils.hibernate.type.json.JsonType
 import jakarta.persistence.CascadeType
 import jakarta.persistence.Column
@@ -91,5 +92,10 @@ data class Adjustment(
     specialRemission?.adjustment = this
     taggedBail?.adjustment = this
     additionalDaysAwarded?.adjustment = this
+  }
+
+  fun getBookingIdFromLegacyData(): String? {
+    val objectMapper = jacksonObjectMapper()
+    return legacyData?.get("bookingId")?.asText()
   }
 }

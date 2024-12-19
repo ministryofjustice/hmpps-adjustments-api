@@ -170,6 +170,41 @@ class PrisonerListenerIntTest : SqsIntegrationTestBase() {
   }
 
   @Test
+  fun handlePrisonerBookingMoved() {
+    val id = createAnAdjustment(
+      createdAdjustment.copy(),
+    )
+    val eventType = "prison-offender-events.prisoner.booking.moved"
+    val newPersonId = "NEWPERSON"
+    val oldPersonId = PrisonApiExtension.PRISONER_ID
+    val bookingId = PrisonApiExtension.BOOKING_ID
+
+    val payload = prisonerBookingMovedPayload(eventType, bookingId.toString(), oldPersonId, newPersonId)
+
+    domainEventsTopicSnsClient.publish(
+      PublishRequest.builder().topicArn(domainEventsTopicArn)
+        .message(payload)
+        .messageAttributes(
+          mapOf(
+            "eventType" to MessageAttributeValue.builder().dataType("String")
+              .stringValue(eventType).build(),
+          ),
+        ).build(),
+    ).get()
+
+    await untilAsserted {
+      assertThat(prisonerListenerQueue.sqsClient.countAllMessagesOnQueue(prisonerListenerQueueUrl).get()).isEqualTo(0)
+    }
+
+    await untilAsserted {
+      val adjustment = adjustmentRepository.findById(id).get()
+      assertThat(adjustment.person).isEqualTo(newPersonId)
+      val newPersonAdjustments = adjustmentRepository.findByPerson(newPersonId)
+      assertThat(newPersonAdjustments.find { it.id == id }).isNotNull
+    }
+  }
+
+  @Test
   @Transactional
   fun handlePrisonerMerged() {
     val id = createAnAdjustment(
@@ -211,6 +246,30 @@ class PrisonerListenerIntTest : SqsIntegrationTestBase() {
 
   private fun prisonerMergedPayload(nomsNumber: String, removedNomsNumber: String) =
     """{"eventType":"prison-offender-events.prisoner.merged","description":"A prisoner has been merged from $removedNomsNumber to $nomsNumber","additionalInformation":{"nomsNumber":"$nomsNumber","removedNomsNumber":"$removedNomsNumber","reason":"MERGE"}}"""
+
+  private fun prisonerBookingMovedPayload(eventType: String, bookingId: String, oldPersonId: String, newPersonId: String) =
+    """
+        {
+            "eventType": "$eventType",
+            "additionalInformation": {
+                "bookingId": "$bookingId",
+                "movedFromNomsNumber": "$oldPersonId",
+                "movedToNomsNumber": "$newPersonId",
+                "bookingStartDateTime": "2023-10-01T12:00:00Z"
+            },
+            "occurredAt": "2023-10-01T12:00:00Z",
+            "personReference": {
+                "identifiers": [
+                    {
+                        "type": "NOMS",
+                        "value": "$newPersonId"
+                    }
+                ]
+            },
+            "publishedAt": "2023-10-01T12:00:00Z",
+            "version": 1
+        }
+    """
 
   private fun createAnAdjustment(adjustment: LegacyAdjustment): UUID {
     return webTestClient
