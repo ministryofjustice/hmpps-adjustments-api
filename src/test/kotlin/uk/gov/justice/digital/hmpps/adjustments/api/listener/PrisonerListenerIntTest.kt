@@ -172,9 +172,7 @@ class PrisonerListenerIntTest : SqsIntegrationTestBase() {
   }
 
   fun getAdjustmentWithHistory(id: UUID): Adjustment {
-    val adjustment = adjustmentRepository.findById(id).orElseThrow { EntityNotFoundException("Adjustment not found") }
-    adjustment.adjustmentHistory.size // Access the collection to initialize it
-    return adjustment
+    return adjustmentRepository.findWithHistoryById(id) ?: throw EntityNotFoundException("Adjustment not found")
   }
 
   @Test
