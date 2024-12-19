@@ -1,6 +1,5 @@
 package uk.gov.justice.digital.hmpps.adjustments.api.respository
 
-import org.springframework.data.jpa.repository.EntityGraph
 import org.springframework.data.jpa.repository.JpaRepository
 import org.springframework.data.jpa.repository.Query
 import org.springframework.stereotype.Repository
@@ -41,9 +40,6 @@ interface AdjustmentRepository : JpaRepository<Adjustment, UUID> {
     person: String,
     status: AdjustmentStatus,
   ): List<Adjustment>
-
-  @EntityGraph(attributePaths = ["adjustmentHistory"])
-  fun findWithHistoryById(id: UUID): Adjustment?
 
   fun findByPersonAndAdjustmentTypeAndStatus(person: String, adjustmentType: AdjustmentType, status: AdjustmentStatus = ACTIVE): List<Adjustment>
 }
