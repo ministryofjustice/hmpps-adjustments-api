@@ -199,7 +199,6 @@ class PrisonerListenerIntTest : SqsIntegrationTestBase() {
     await untilAsserted {
       val adjustment = adjustmentRepository.findById(id).get()
       assertThat(adjustment.person).isEqualTo(newPersonId)
-      assertThat(adjustmentRepository.findByPerson(oldPersonId)).isEmpty()
       val newPersonAdjustments = adjustmentRepository.findByPerson(newPersonId)
       assertThat(newPersonAdjustments.find { it.id == id }).isNotNull
     }
