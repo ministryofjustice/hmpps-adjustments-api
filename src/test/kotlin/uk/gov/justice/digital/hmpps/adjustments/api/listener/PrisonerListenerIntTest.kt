@@ -201,11 +201,9 @@ class PrisonerListenerIntTest : SqsIntegrationTestBase() {
       val adjustment = adjustmentRepository.findById(id).get()
       assertThat(adjustment.person).isEqualTo(newPersonId)
       assertThat(adjustmentRepository.findByPerson(oldPersonId)).isEmpty()
-      assertThat(adjustmentRepository.findByPerson(newPersonId).find { it.id == id }).isNotNull
+      val newPersonAdjustments = adjustmentRepository.findByPerson(newPersonId)
+      assertThat(newPersonAdjustments.find { it.id == id }).isNotNull
     }
-
-    val adjustment = adjustmentRepository.findById(id).get()
-    assertThat(adjustment.adjustmentHistory.last().changeType == ChangeType.MOVE)
   }
 
   @Test
