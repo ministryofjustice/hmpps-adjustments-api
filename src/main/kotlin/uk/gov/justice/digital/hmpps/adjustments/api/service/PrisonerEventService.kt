@@ -29,6 +29,15 @@ class PrisonerEventService(
     legacyService.setAdmission(prisoner)
   }
 
+  fun handleBookingMoved(event: PrisonerBookingMovedEvent) {
+    log.info("Handling booking moved from ${event.additionalInformation.movedFromNomsNumber} to ${event.additionalInformation.movedToNomsNumber}")
+    legacyService.moveBooking(
+      event.additionalInformation.bookingId,
+      event.additionalInformation.movedFromNomsNumber,
+      event.additionalInformation.movedToNomsNumber,
+    )
+  }
+
   fun handlePrisonerMerged(event: PrisonerMergedEvent) {
     log.info("Handling merge of ${event.additionalInformation.removedNomsNumber} to ${event.additionalInformation.nomsNumber}")
     legacyService.prisonerMerged(event.additionalInformation.nomsNumber, event.additionalInformation.removedNomsNumber)
@@ -50,4 +59,29 @@ data class PrisonerMergedEvent(
 data class PrisonerMergedAdditionalInformation(
   val removedNomsNumber: String,
   val nomsNumber: String,
+)
+
+data class PrisonerBookingMovedEvent(
+  val additionalInformation: PrisonerBookingMovedAdditionalInformation,
+  val eventType: String,
+  val occurredAt: String,
+  val personReference: PersonReference,
+  val publishedAt: String,
+  val version: Int,
+)
+
+data class PrisonerBookingMovedAdditionalInformation(
+  val bookingId: String,
+  val movedFromNomsNumber: String,
+  val movedToNomsNumber: String,
+  val bookingStartDateTime: String,
+)
+
+data class PersonReference(
+  val identifiers: List<Identifier>,
+)
+
+data class Identifier(
+  val type: String,
+  val value: String,
 )

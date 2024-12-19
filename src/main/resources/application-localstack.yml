@@ -5,7 +5,7 @@ hmpps.sqs:
       queueName: "prisonerlistener-${random.uuid}"
       dlqName: "prisonerlistener-dlq-${random.uuid}"
       subscribeTopicId: domainevents
-      subscribeFilter: "{\"eventType\":[\"prisoner-offender-search.prisoner.released\", \"prisoner-offender-search.prisoner.received\", \"prison-offender-events.prisoner.merged\"]}"
+      subscribeFilter: "{\"eventType\":[\"prisoner-offender-search.prisoner.released\", \"prisoner-offender-search.prisoner.received\", \"prison-offender-events.prisoner.merged\", \"prison-offender-events.prisoner.booking.moved\"]}"
       dlqMaxReceiveCount: 3
       visibilityTimeout: 120
     adjustments:
