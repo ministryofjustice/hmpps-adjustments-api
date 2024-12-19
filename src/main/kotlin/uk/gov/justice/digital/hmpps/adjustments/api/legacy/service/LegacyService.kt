@@ -32,7 +32,6 @@ class LegacyService(
   private val objectMapper: ObjectMapper,
   private val prisonApiClient: PrisonApiClient,
 ) {
-
   @Transactional
   fun create(resource: LegacyAdjustment, migration: Boolean): LegacyAdjustmentCreatedResponse {
     val prisonId = if (migration) null else resource.agencyId
@@ -275,6 +274,28 @@ class LegacyService(
         changeSource = AdjustmentSource.NOMIS,
         adjustment = it,
       )
+    }
+  }
+
+  @Transactional
+  fun moveBooking(bookingId: String, movedFromNomsNumber: String, movedToNomsNumber: String) {
+    // Find all adjustments for the old prisoner
+    val adjustments = adjustmentRepository.findByPerson(movedFromNomsNumber)
+
+    // Filter adjustments by bookingId extracted from legacyData
+    val filteredAdjustments = adjustments.filter { it.getBookingIdFromLegacyData() == bookingId }
+
+    // Update each adjustment to the new prisoner
+    filteredAdjustments.forEach { adjustment ->
+      adjustment.apply {
+        person = movedToNomsNumber
+        adjustmentHistory += AdjustmentHistory(
+          changeByUsername = "NOMIS",
+          changeType = ChangeType.MOVE,
+          changeSource = AdjustmentSource.NOMIS,
+          adjustment = this,
+        )
+      }
     }
   }
 }

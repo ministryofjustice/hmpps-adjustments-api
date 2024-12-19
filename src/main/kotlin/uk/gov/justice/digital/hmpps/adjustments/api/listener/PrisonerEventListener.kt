@@ -42,6 +42,8 @@ class PrisonerEventListener(
         prisonerEventService.handleReceived(objectMapper.readValue(message))
       "prison-offender-events.prisoner.merged",
       -> prisonerEventService.handlePrisonerMerged(objectMapper.readValue(message))
+      "prison-offender-events.prisoner.booking.moved" ->
+        prisonerEventService.handleBookingMoved(objectMapper.readValue(message))
 
       else -> log.info("Received a message I wasn't expecting: {}", eventType)
     }
