@@ -1,5 +1,6 @@
 package uk.gov.justice.digital.hmpps.adjustments.api.listener
 
+import jakarta.persistence.EntityNotFoundException
 import org.assertj.core.api.Assertions.assertThat
 import org.awaitility.kotlin.await
 import org.awaitility.kotlin.untilAsserted
@@ -8,6 +9,7 @@ import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.transaction.annotation.Transactional
 import software.amazon.awssdk.services.sns.model.MessageAttributeValue
 import software.amazon.awssdk.services.sns.model.PublishRequest
+import uk.gov.justice.digital.hmpps.adjustments.api.entity.Adjustment
 import uk.gov.justice.digital.hmpps.adjustments.api.entity.AdjustmentStatus
 import uk.gov.justice.digital.hmpps.adjustments.api.entity.ChangeType
 import uk.gov.justice.digital.hmpps.adjustments.api.integration.SqsIntegrationTestBase
@@ -169,6 +171,12 @@ class PrisonerListenerIntTest : SqsIntegrationTestBase() {
     }
   }
 
+  fun getAdjustmentWithHistory(id: UUID): Adjustment {
+    val adjustment = adjustmentRepository.findById(id).orElseThrow { EntityNotFoundException("Adjustment not found") }
+    adjustment.adjustmentHistory.size // Access the collection to initialize it
+    return adjustment
+  }
+
   @Test
   @Transactional
   fun handlePrisonerBookingMoved() {
@@ -198,13 +206,13 @@ class PrisonerListenerIntTest : SqsIntegrationTestBase() {
     }
 
     await untilAsserted {
-      val adjustment = adjustmentRepository.findById(id).get()
+      val adjustment = getAdjustmentWithHistory(id)
       assertThat(adjustment.person).isEqualTo(newPersonId)
       assertThat(adjustmentRepository.findByPerson(oldPersonId)).isEmpty()
       assertThat(adjustmentRepository.findByPerson(newPersonId).find { it.id == id }).isNotNull
     }
 
-    val adjustment = adjustmentRepository.findById(id).get()
+    val adjustment = getAdjustmentWithHistory(id)
     assertThat(adjustment.person).isEqualTo(newPersonId)
     assertThat(adjustment.adjustmentHistory.last().changeType == ChangeType.MOVE)
   }
