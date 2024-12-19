@@ -14,6 +14,7 @@ import jakarta.persistence.OneToMany
 import jakarta.persistence.OneToOne
 import jakarta.persistence.PrimaryKeyJoinColumn
 import jakarta.persistence.Table
+import jakarta.persistence.FetchType
 import jakarta.validation.constraints.NotNull
 import org.hibernate.annotations.Type
 import java.time.LocalDate
@@ -56,7 +57,7 @@ data class Adjustment(
   @Enumerated(EnumType.STRING)
   var status: AdjustmentStatus = AdjustmentStatus.ACTIVE,
 
-  @OneToMany(mappedBy = "adjustment", cascade = [CascadeType.ALL])
+  @OneToMany(fetch = FetchType.EAGER, mappedBy = "adjustment", cascade = [CascadeType.ALL])
   @JsonIgnore
   var adjustmentHistory: List<AdjustmentHistory> = ArrayList(),
 
