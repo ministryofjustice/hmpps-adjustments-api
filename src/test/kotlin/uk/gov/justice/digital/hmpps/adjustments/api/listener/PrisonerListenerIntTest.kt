@@ -170,7 +170,6 @@ class PrisonerListenerIntTest : SqsIntegrationTestBase() {
   }
 
   @Test
-  @Transactional
   fun handlePrisonerBookingMoved() {
     val id = createAnAdjustment(
       createdAdjustment.copy(),
