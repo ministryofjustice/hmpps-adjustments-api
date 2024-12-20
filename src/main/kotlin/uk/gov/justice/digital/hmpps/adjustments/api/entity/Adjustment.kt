@@ -94,10 +94,4 @@ data class Adjustment(
     taggedBail?.adjustment = this
     additionalDaysAwarded?.adjustment = this
   }
-
-  fun getBookingIdFromLegacyData(): String? {
-    val objectMapper = jacksonObjectMapper()
-    val legacyData = objectMapper.convertValue(this.legacyData, LegacyData::class.java)
-    return legacyData.bookingId.toString()
-  }
 }

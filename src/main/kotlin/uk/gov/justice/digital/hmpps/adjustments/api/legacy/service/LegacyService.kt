@@ -32,6 +32,12 @@ class LegacyService(
   private val objectMapper: ObjectMapper,
   private val prisonApiClient: PrisonApiClient,
 ) {
+
+  fun getBookingIdFromLegacyData(legacyData: JsonNode?): String {
+    val legacyData = objectMapper.convertValue(legacyData, LegacyData::class.java)
+    return legacyData.bookingId.toString()
+  }
+
   @Transactional
   fun create(resource: LegacyAdjustment, migration: Boolean): LegacyAdjustmentCreatedResponse {
     val prisonId = if (migration) null else resource.agencyId
@@ -283,7 +289,7 @@ class LegacyService(
     val adjustments = adjustmentRepository.findByPerson(movedFromNomsNumber)
 
     // Filter adjustments by bookingId extracted from legacyData
-    val filteredAdjustments = adjustments.filter { it.getBookingIdFromLegacyData() == bookingId }
+    val filteredAdjustments = adjustments.filter { this.getBookingIdFromLegacyData(it.legacyData) == bookingId }
 
     // Update each adjustment to the new prisoner
     filteredAdjustments.forEach { adjustment ->
