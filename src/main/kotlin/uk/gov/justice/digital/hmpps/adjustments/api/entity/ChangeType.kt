@@ -8,5 +8,5 @@ enum class ChangeType {
   ADMISSION,
   MERGE,
   RESET_DAYS,
-  MOVE,
+  BOOKING_MOVE,
 }

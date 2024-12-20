@@ -291,7 +291,7 @@ class LegacyService(
         person = movedToNomsNumber
         adjustmentHistory += AdjustmentHistory(
           changeByUsername = "NOMIS",
-          changeType = ChangeType.MOVE,
+          changeType = ChangeType.BOOKING_MOVE,
           changeSource = AdjustmentSource.NOMIS,
           adjustment = this,
         )

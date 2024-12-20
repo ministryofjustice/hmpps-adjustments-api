@@ -16,6 +16,7 @@ import jakarta.persistence.PrimaryKeyJoinColumn
 import jakarta.persistence.Table
 import jakarta.validation.constraints.NotNull
 import org.hibernate.annotations.Type
+import uk.gov.justice.digital.hmpps.adjustments.api.legacy.model.LegacyData
 import java.time.LocalDate
 import java.util.UUID
 
@@ -96,6 +97,7 @@ data class Adjustment(
 
   fun getBookingIdFromLegacyData(): String? {
     val objectMapper = jacksonObjectMapper()
-    return legacyData?.get("bookingId")?.asText()
+    val legacyData = objectMapper.convertValue(this.legacyData, LegacyData::class.java)
+    return legacyData.bookingId.toString()
   }
 }
