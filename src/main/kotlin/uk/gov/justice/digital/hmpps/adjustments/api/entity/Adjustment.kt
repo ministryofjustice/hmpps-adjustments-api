@@ -2,7 +2,6 @@ package uk.gov.justice.digital.hmpps.adjustments.api.entity
 
 import com.fasterxml.jackson.annotation.JsonIgnore
 import com.fasterxml.jackson.databind.JsonNode
-import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import io.hypersistence.utils.hibernate.type.json.JsonType
 import jakarta.persistence.CascadeType
 import jakarta.persistence.Column
@@ -16,7 +15,6 @@ import jakarta.persistence.PrimaryKeyJoinColumn
 import jakarta.persistence.Table
 import jakarta.validation.constraints.NotNull
 import org.hibernate.annotations.Type
-import uk.gov.justice.digital.hmpps.adjustments.api.legacy.model.LegacyData
 import java.time.LocalDate
 import java.util.UUID
 
