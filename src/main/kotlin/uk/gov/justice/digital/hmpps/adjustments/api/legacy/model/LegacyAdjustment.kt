@@ -24,9 +24,10 @@ data class LegacyAdjustment(
   @Schema(description = "The NOMIS active or inactive flag")
   val active: Boolean,
   @Schema(description = "Has the prisoner been released from the NOMIS booking")
+  @Deprecated("This parameter is no longer used to determine if an adjustment is active.")
   val bookingReleased: Boolean,
   @Schema(description = "The ID of the agency the prisoner is located")
   val agencyId: String?,
   @Schema(description = "Is the adjustment part of the current term. (Most recent booking NOMIS)")
-  val currentTerm: Boolean? = null,
+  val currentTerm: Boolean,
 )

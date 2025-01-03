@@ -34,9 +34,6 @@ class PrisonerEventListener(
 
   private fun processMessage(eventType: String, message: String) {
     when (eventType) {
-      "prisoner-offender-search.prisoner.released",
-      ->
-        prisonerEventService.handleRelease(objectMapper.readValue(message))
       "prisoner-offender-search.prisoner.received",
       ->
         prisonerEventService.handleReceived(objectMapper.readValue(message))

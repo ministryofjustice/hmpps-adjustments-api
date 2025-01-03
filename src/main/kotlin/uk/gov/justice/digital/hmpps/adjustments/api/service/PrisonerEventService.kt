@@ -15,13 +15,6 @@ class PrisonerEventService(
   private companion object {
     val log: Logger = LoggerFactory.getLogger(this::class.java)
   }
-  fun handleRelease(event: PrisonerEvent) {
-    if (event.additionalInformation.reason == RELEASE_REASON) {
-      log.info("Handling release of ${event.additionalInformation.nomsNumber}")
-      val prisoner = prisonApiClient.getPrisonerDetail(event.additionalInformation.nomsNumber)
-      legacyService.setReleased(prisoner)
-    }
-  }
 
   fun handleReceived(event: PrisonerEvent) {
     log.info("Handling admission of ${event.additionalInformation.nomsNumber}")

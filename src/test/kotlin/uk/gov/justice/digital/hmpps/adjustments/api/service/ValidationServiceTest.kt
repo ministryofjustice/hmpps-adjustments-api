@@ -87,7 +87,7 @@ class ValidationServiceTest {
   @BeforeEach
   fun init() {
     whenever(prisonService.getStartOfSentenceEnvelope(bookingId)).thenReturn(startOfSentenceOverlap)
-    whenever(adjustmentService.findCurrentAdjustments(person, AdjustmentStatus.ACTIVE, startOfSentenceOverlap)).thenReturn(listOf(existingAda, existingRada))
+    whenever(adjustmentService.findCurrentAdjustments(person, AdjustmentStatus.ACTIVE, true, startOfSentenceOverlap)).thenReturn(listOf(existingAda, existingRada))
   }
 
   @Nested
@@ -103,7 +103,7 @@ class ValidationServiceTest {
 
     @Test
     fun `RADA days valid if existing rada is from NOMIS`() {
-      whenever(adjustmentService.findCurrentAdjustments(person, AdjustmentStatus.ACTIVE, startOfSentenceOverlap)).thenReturn(listOf(existingAda, existingNomisRada))
+      whenever(adjustmentService.findCurrentAdjustments(person, AdjustmentStatus.ACTIVE, true, startOfSentenceOverlap)).thenReturn(listOf(existingAda, existingNomisRada))
       val result = validationService.validate(validNewRada)
       assertThat(result).isEmpty()
     }

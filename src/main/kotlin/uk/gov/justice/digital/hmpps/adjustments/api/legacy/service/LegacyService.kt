@@ -48,8 +48,9 @@ class LegacyService(
       toDate = resource.adjustmentFromDate?.plusDays(resource.adjustmentDays.toLong() - 1),
       source = AdjustmentSource.NOMIS,
       adjustmentType = transform(resource.adjustmentType),
-      status = if (resource.active && !resource.bookingReleased) ACTIVE else INACTIVE,
-      legacyData = objectToJson(LegacyData(resource.bookingId, resource.sentenceSequence, resource.adjustmentDate, resource.comment, resource.adjustmentType, migration, adjustmentActive = resource.active, bookingActive = !resource.bookingReleased)),
+      status = if (resource.active) ACTIVE else INACTIVE,
+      currentPeriodOfCustody = resource.currentTerm,
+      legacyData = objectToJson(LegacyData(resource.bookingId, resource.sentenceSequence, resource.adjustmentDate, resource.comment, resource.adjustmentType, migration, adjustmentActive = resource.active)),
       adjustmentHistory = listOf(
         AdjustmentHistory(
           changeByUsername = "NOMIS",
@@ -81,9 +82,10 @@ class LegacyService(
       sentenceSequence = legacyData.sentenceSequence,
       bookingId = legacyData.bookingId,
       active = legacyData.adjustmentActive && !shouldSetAdjustmentToInactiveBecauseOfUnusedDeductions(adjustment),
-      bookingReleased = !legacyData.bookingActive,
+      bookingReleased = false,
       comment = legacyData.comment,
       agencyId = null,
+      currentTerm = adjustment.currentPeriodOfCustody,
     )
   }
 
@@ -116,8 +118,9 @@ class LegacyService(
       days = if (this.days != null && isChangeToDays) resource.adjustmentDays else this.days
       daysCalculated = if (this.daysCalculated != null && isChangeToDays) resource.adjustmentDays else this.daysCalculated
       source = AdjustmentSource.NOMIS
-      status = if (resource.active && !resource.bookingReleased) ACTIVE else INACTIVE
-      legacyData = objectToJson(LegacyData(resource.bookingId, resource.sentenceSequence, resource.adjustmentDate, resource.comment, resource.adjustmentType, false, adjustmentActive = resource.active, bookingActive = !resource.bookingReleased))
+      status = if (resource.active) ACTIVE else INACTIVE
+      currentPeriodOfCustody = resource.currentTerm
+      legacyData = objectToJson(LegacyData(resource.bookingId, resource.sentenceSequence, resource.adjustmentDate, resource.comment, resource.adjustmentType, false, adjustmentActive = resource.active))
       adjustmentType = transform(resource.adjustmentType)
       adjustmentHistory += AdjustmentHistory(
         changeByUsername = "NOMIS",
@@ -133,33 +136,38 @@ class LegacyService(
   }
 
   @Transactional
-  fun updateAllAdjustmentsToHaveEffectiveDaysAsDpsDays(person: String, apiPrisonId: String? = null) {
+  fun updateAllAdjustmentsToHaveEffectiveDaysAsDpsDays(person: String, bookingId: Long, apiPrisonId: String? = null) {
     val prisonId = apiPrisonId ?: prisonApiClient.getPrisonerDetail(person).agencyId
     val adjustments = adjustmentRepository.findByPersonAndStatus(person, ACTIVE)
-    adjustments.forEach {
-      val dpsDays = it.days ?: it.daysCalculated
-      if (dpsDays != null && dpsDays != it.effectiveDays) {
-        val change = objectToJson(it)
-        it.apply {
-          toDate = it.fromDate?.plusDays(it.effectiveDays.toLong() - 1)
-          days = if (this.days != null) it.effectiveDays else this.days
-          daysCalculated = if (this.daysCalculated != null) it.effectiveDays else this.daysCalculated
-          source = AdjustmentSource.NOMIS
-          adjustmentHistory += AdjustmentHistory(
-            changeByUsername = "NOMIS",
-            changeType = ChangeType.RESET_DAYS,
-            change = change,
-            changeSource = AdjustmentSource.NOMIS,
-            adjustment = it,
-            prisonId = prisonId,
-          )
+    adjustments
+      .filter {
+        val legacyData = objectMapper.convertValue(it.legacyData, LegacyData::class.java)
+        legacyData.bookingId == bookingId
+      }
+      .forEach {
+        val dpsDays = it.days ?: it.daysCalculated
+        if (dpsDays != null && dpsDays != it.effectiveDays) {
+          val change = objectToJson(it)
+          it.apply {
+            toDate = it.fromDate?.plusDays(it.effectiveDays.toLong() - 1)
+            days = if (this.days != null) it.effectiveDays else this.days
+            daysCalculated = if (this.daysCalculated != null) it.effectiveDays else this.daysCalculated
+            source = AdjustmentSource.NOMIS
+            adjustmentHistory += AdjustmentHistory(
+              changeByUsername = "NOMIS",
+              changeType = ChangeType.RESET_DAYS,
+              change = change,
+              changeSource = AdjustmentSource.NOMIS,
+              adjustment = it,
+              prisonId = prisonId,
+            )
 
-          if (it.effectiveDays == 0) {
-            status = INACTIVE
+            if (it.effectiveDays == 0) {
+              status = INACTIVE
+            }
           }
         }
       }
-    }
   }
 
   @Transactional
@@ -217,45 +225,15 @@ class LegacyService(
   }
 
   @Transactional
-  fun setReleased(prisoner: PrisonerDetails) {
-    val adjustments = adjustmentRepository.findByPerson(prisoner.offenderNo)
-
-    adjustments.forEach {
-      val persistedLegacyData = objectMapper.convertValue(it.legacyData, LegacyData::class.java)
-      if (persistedLegacyData.bookingId == prisoner.bookingId) {
-        it.apply {
-          status = if (it.status.isDeleted()) it.status else INACTIVE
-          legacyData = objectToJson(
-            persistedLegacyData.copy(
-              bookingActive = false,
-            ),
-          )
-        }
-        it.adjustmentHistory += AdjustmentHistory(
-          changeByUsername = "NOMIS",
-          changeType = ChangeType.RELEASE,
-          changeSource = AdjustmentSource.NOMIS,
-          adjustment = it,
-          prisonId = prisoner.agencyId,
-        )
-      }
-    }
-  }
-
-  @Transactional
   fun setAdmission(prisoner: PrisonerDetails) {
     val adjustments = adjustmentRepository.findByPerson(prisoner.offenderNo)
 
     adjustments.forEach {
       val persistedLegacyData = objectMapper.convertValue(it.legacyData, LegacyData::class.java)
-      if (persistedLegacyData.bookingId == prisoner.bookingId) {
+      val isCurrentBooking = persistedLegacyData.bookingId == prisoner.bookingId
+      if (it.currentPeriodOfCustody != isCurrentBooking) {
         it.apply {
-          status = if (it.status.isDeleted()) it.status else if (persistedLegacyData.adjustmentActive) ACTIVE else INACTIVE
-          legacyData = objectToJson(
-            persistedLegacyData.copy(
-              bookingActive = true,
-            ),
-          )
+          currentPeriodOfCustody = isCurrentBooking
         }
         it.adjustmentHistory += AdjustmentHistory(
           changeByUsername = "NOMIS",
@@ -302,6 +280,19 @@ class LegacyService(
           adjustment = this,
         )
       }
+    }
+  }
+
+  @Transactional
+  fun patchCurrentTerm(adjustmentId: UUID, resource: LegacyAdjustment) {
+    val adjustment = adjustmentRepository.findById(adjustmentId)
+      .map { if (it.status.isDeleted()) null else it }
+      .orElseThrow {
+        EntityNotFoundException("No adjustment found with id $adjustmentId")
+      }!!
+
+    adjustment.apply {
+      currentPeriodOfCustody = resource.currentTerm
     }
   }
 }

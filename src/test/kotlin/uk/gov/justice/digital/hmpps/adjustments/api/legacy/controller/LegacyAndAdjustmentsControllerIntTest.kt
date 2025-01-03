@@ -214,6 +214,7 @@ class LegacyAndAdjustmentsControllerIntTest : SqsIntegrationTestBase() {
     await untilAsserted {
       val unusedDeductionsCalculationResult =
         unusedDeductionsCalculationResultRepository.findFirstByPerson(ADJUSTMENT.person)
+      assertThat(unusedDeductionsCalculationResult).isNotNull
       assertThat(unusedDeductionsCalculationResult!!.status).isEqualTo(UnusedDeductionsCalculationStatus.NOMIS_ADJUSTMENT)
     }
   }
@@ -242,6 +243,7 @@ class LegacyAndAdjustmentsControllerIntTest : SqsIntegrationTestBase() {
     await untilAsserted {
       val unusedDeductionsCalculationResult =
         unusedDeductionsCalculationResultRepository.findFirstByPerson(ADJUSTMENT.person)
+      assertThat(unusedDeductionsCalculationResult).isNotNull
       assertThat(unusedDeductionsCalculationResult!!.status).isEqualTo(UnusedDeductionsCalculationStatus.NOMIS_ADJUSTMENT)
     }
   }
@@ -266,6 +268,7 @@ class LegacyAndAdjustmentsControllerIntTest : SqsIntegrationTestBase() {
     await untilAsserted {
       val unusedDeductionsCalculationResult =
         unusedDeductionsCalculationResultRepository.findFirstByPerson(ADJUSTMENT.person)
+      assertThat(unusedDeductionsCalculationResult).isNotNull
       assertThat(unusedDeductionsCalculationResult!!.status).isEqualTo(UnusedDeductionsCalculationStatus.NOMIS_ADJUSTMENT)
     }
   }
@@ -294,6 +297,7 @@ class LegacyAndAdjustmentsControllerIntTest : SqsIntegrationTestBase() {
     await untilAsserted {
       val unusedDeductionsCalculationResult =
         unusedDeductionsCalculationResultRepository.findFirstByPerson(ADJUSTMENT.person)
+      assertThat(unusedDeductionsCalculationResult).isNotNull
       assertThat(unusedDeductionsCalculationResult!!.status).isEqualTo(UnusedDeductionsCalculationStatus.NOMIS_ADJUSTMENT)
     }
   }
@@ -423,7 +427,7 @@ class LegacyAndAdjustmentsControllerIntTest : SqsIntegrationTestBase() {
 
   companion object {
     private val LEGACY_ADJUSTMENT = LegacyAdjustment(
-      bookingId = 1,
+      bookingId = PrisonApiExtension.BOOKING_ID,
       sentenceSequence = 1,
       offenderNo = PrisonApiExtension.PRISONER_ID,
       adjustmentType = LegacyAdjustmentType.RSR,
@@ -433,6 +437,7 @@ class LegacyAndAdjustmentsControllerIntTest : SqsIntegrationTestBase() {
       comment = "Created",
       active = false,
       bookingReleased = false,
+      currentTerm = true,
       agencyId = null,
     )
 

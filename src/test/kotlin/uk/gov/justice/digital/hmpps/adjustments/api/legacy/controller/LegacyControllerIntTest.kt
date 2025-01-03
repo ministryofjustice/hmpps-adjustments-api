@@ -195,7 +195,7 @@ class LegacyControllerIntTest : SqsIntegrationTestBase() {
         setLegacySynchronisationAuth(),
       )
       .header("Content-Type", LegacyController.LEGACY_CONTENT_TYPE)
-      .bodyValue(CREATED_ADJUSTMENT.copy(active = true, bookingReleased = true))
+      .bodyValue(CREATED_ADJUSTMENT.copy(active = true, currentTerm = false))
       .exchange()
       .expectStatus().isCreated
       .returnResult(LegacyAdjustmentCreatedResponse::class.java)
@@ -204,10 +204,37 @@ class LegacyControllerIntTest : SqsIntegrationTestBase() {
     // Created in @BeforeEach.
     val adjustment = adjustmentRepository.findById(createdId).get()
 
-    assertThat(adjustment.status).isEqualTo(AdjustmentStatus.INACTIVE)
+    assertThat(adjustment.status).isEqualTo(AdjustmentStatus.ACTIVE)
+    assertThat(adjustment.currentPeriodOfCustody).isEqualTo(false)
 
     val legacyData = objectMapper.convertValue(adjustment.legacyData, LegacyData::class.java)
-    assertThat(legacyData).isEqualTo(LegacyData(bookingId = 1, sentenceSequence = 1, postedDate = LocalDate.now(), comment = "Created", type = LegacyAdjustmentType.UR, migration = false, bookingActive = false, adjustmentActive = true))
+    assertThat(legacyData).isEqualTo(LegacyData(bookingId = 1, sentenceSequence = 1, postedDate = LocalDate.now(), comment = "Created", type = LegacyAdjustmentType.UR, migration = false, adjustmentActive = true))
+  }
+
+  @Test
+  fun patchCurrentTerm() {
+    val createdId = createDefaultAdjustmentAndCleanQueue()
+    val currentTermUpdate = !CREATED_ADJUSTMENT.currentTerm
+    webTestClient
+      .patch()
+      .uri("/legacy/adjustments/$createdId/current-term")
+      .headers(
+        setLegacySynchronisationAuth(),
+      )
+      .header("Content-Type", LegacyController.LEGACY_CONTENT_TYPE)
+      .bodyValue(
+        CREATED_ADJUSTMENT.copy(
+          currentTerm = currentTermUpdate,
+        ),
+      )
+      .exchange()
+      .expectStatus().isOk
+
+    val adjustment = adjustmentRepository.findById(createdId).get()
+
+    assertThat(adjustment.currentPeriodOfCustody).isEqualTo(currentTermUpdate)
+
+    awaitAtMost30Secs untilCallTo { getNumberOfMessagesCurrentlyOnQueue() } matches { it == 0 }
   }
 
   private fun createAdjustment(legacyAdjustment: LegacyAdjustment): LegacyAdjustmentCreatedResponse {
@@ -244,6 +271,7 @@ class LegacyControllerIntTest : SqsIntegrationTestBase() {
       comment = "Created",
       active = false,
       bookingReleased = false,
+      currentTerm = true,
       agencyId = "LDS",
     )
   }

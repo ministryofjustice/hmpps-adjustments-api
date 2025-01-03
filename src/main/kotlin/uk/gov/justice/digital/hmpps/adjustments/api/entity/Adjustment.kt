@@ -47,6 +47,9 @@ data class Adjustment(
   @Enumerated(EnumType.STRING)
   var adjustmentType: AdjustmentType = AdjustmentType.REMAND,
 
+  @NotNull
+  var currentPeriodOfCustody: Boolean = true,
+
   @Type(value = JsonType::class)
   @Column(columnDefinition = "jsonb")
   var legacyData: JsonNode? = null,
