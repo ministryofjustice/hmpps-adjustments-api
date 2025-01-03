@@ -78,6 +78,9 @@ class AdjustmentsController(
     @Parameter(required = false, description = "The status of adjustments. Defaults to ACTIVE")
     @RequestParam("status")
     status: AdjustmentStatus?,
+    @Parameter(required = false, description = "Only get the adjustments linked to the current period of custody. Defaults to true")
+    @RequestParam("currentPeriodOfCustody")
+    currentPeriodOfCustody: Boolean?,
     @Parameter(
       required = false,
       description = "The earliest sentence date to filter adjustments by. Defaults to earliest active sentence date",
@@ -85,7 +88,7 @@ class AdjustmentsController(
     @RequestParam("sentenceEnvelopeDate")
     sentenceEnvelopeDate: LocalDate?,
   ): List<AdjustmentDto> {
-    return adjustmentsService.findCurrentAdjustments(person, status ?: AdjustmentStatus.ACTIVE, sentenceEnvelopeDate)
+    return adjustmentsService.findCurrentAdjustments(person, status ?: AdjustmentStatus.ACTIVE, currentPeriodOfCustody ?: true, sentenceEnvelopeDate)
   }
 
   @GetMapping("/{adjustmentId}")

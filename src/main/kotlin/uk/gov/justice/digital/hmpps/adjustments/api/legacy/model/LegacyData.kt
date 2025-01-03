@@ -12,5 +12,4 @@ data class LegacyData(
   val chargeIds: List<Long> = emptyList(),
   val caseSequence: Int? = null,
   val adjustmentActive: Boolean = true,
-  val bookingActive: Boolean = true,
 )

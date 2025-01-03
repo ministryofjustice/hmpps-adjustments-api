@@ -35,9 +35,10 @@ class AdjustmentsService(
   fun findCurrentAdjustments(
     person: String,
     status: AdjustmentStatus,
+    currentPeriodOfCustody: Boolean,
     startOfSentenceEnvelope: LocalDate?,
   ): List<AdjustmentDto> {
-    return adjustmentsTransactionalService.findCurrentAdjustments(person, status, startOfSentenceEnvelope)
+    return adjustmentsTransactionalService.findCurrentAdjustments(person, status, currentPeriodOfCustody, startOfSentenceEnvelope)
   }
 
   fun update(adjustmentId: UUID, adjustment: AdjustmentDto) {

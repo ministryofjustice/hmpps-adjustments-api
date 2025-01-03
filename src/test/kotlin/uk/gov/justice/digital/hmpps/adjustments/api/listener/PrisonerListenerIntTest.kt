@@ -27,44 +27,6 @@ class PrisonerListenerIntTest : SqsIntegrationTestBase() {
   lateinit var adjustmentRepository: AdjustmentRepository
 
   @Test
-  @Transactional
-  fun handleReleased() {
-    val id = createAnAdjustment(createdAdjustment.copy())
-    await untilAsserted {
-      val adjustment = adjustmentRepository.findById(id).get()
-      assertThat(adjustment.status).isEqualTo(AdjustmentStatus.ACTIVE)
-    }
-    val eventType = "prisoner-offender-search.prisoner.released"
-    domainEventsTopicSnsClient.publish(
-      PublishRequest.builder().topicArn(domainEventsTopicArn)
-        .message(prisonerReleasedPayload(PrisonApiExtension.PRISONER_ID, eventType))
-        .messageAttributes(
-          mapOf(
-            "eventType" to MessageAttributeValue.builder().dataType("String")
-              .stringValue(eventType).build(),
-          ),
-        ).build(),
-    ).get()
-
-    await untilAsserted {
-      assertThat(prisonerListenerQueue.sqsClient.countAllMessagesOnQueue(prisonerListenerQueueUrl).get()).isEqualTo(0)
-    }
-
-    await untilAsserted {
-      val adjustment = adjustmentRepository.findById(id).get()
-      assertThat(adjustment.status).isEqualTo(AdjustmentStatus.INACTIVE)
-    }
-
-    val legacyAdjustment = getLegacyAdjustment(id)
-
-    val adjustment = adjustmentRepository.findById(id).get()
-    assertThat(adjustment.adjustmentHistory.last().changeType == ChangeType.RELEASE)
-
-    assertThat(legacyAdjustment.bookingReleased).isEqualTo(true)
-    assertThat(legacyAdjustment.active).isEqualTo(true)
-  }
-
-  @Test
   fun `handleReleased for deleted adjustment`() {
     val id = createAnAdjustment(createdAdjustment.copy())
     deleteAdjustment(id)
@@ -96,15 +58,13 @@ class PrisonerListenerIntTest : SqsIntegrationTestBase() {
 
   @Test
   @Transactional
-  fun handleAdmission() {
+  fun handleAdmission_sameBooking() {
     val id = createAnAdjustment(
-      createdAdjustment.copy(
-        bookingReleased = true,
-      ),
+      createdAdjustment.copy(),
     )
     await untilAsserted {
       val adjustment = adjustmentRepository.findById(id).get()
-      assertThat(adjustment.status).isEqualTo(AdjustmentStatus.INACTIVE)
+      assertThat(adjustment.status).isEqualTo(AdjustmentStatus.ACTIVE)
     }
     val eventType = "prisoner-offender-search.prisoner.received"
     domainEventsTopicSnsClient.publish(
@@ -127,25 +87,22 @@ class PrisonerListenerIntTest : SqsIntegrationTestBase() {
       assertThat(adjustment.status).isEqualTo(AdjustmentStatus.ACTIVE)
     }
 
-    val legacyAdjustment = getLegacyAdjustment(id)
-
-    assertThat(legacyAdjustment.bookingReleased).isEqualTo(false)
-
     val adjustment = adjustmentRepository.findById(id).get()
-    assertThat(adjustment.adjustmentHistory.last().changeType == ChangeType.ADMISSION)
-
-    assertThat(legacyAdjustment.active).isEqualTo(true)
+    assertThat(adjustment.currentPeriodOfCustody).isEqualTo(true)
+    assertThat(adjustment.adjustmentHistory.last().changeType).isEqualTo(ChangeType.CREATE)
   }
 
   @Test
-  fun `handleAdmission for deleted adjustment`() {
+  @Transactional
+  fun handleAdmission_newBooking() {
     val id = createAnAdjustment(
-      createdAdjustment.copy(),
+      createdAdjustment.copy(
+        bookingId = 321,
+      ),
     )
-    deleteAdjustment(id)
     await untilAsserted {
       val adjustment = adjustmentRepository.findById(id).get()
-      assertThat(adjustment.status).isEqualTo(AdjustmentStatus.DELETED)
+      assertThat(adjustment.status).isEqualTo(AdjustmentStatus.ACTIVE)
     }
     val eventType = "prisoner-offender-search.prisoner.received"
     domainEventsTopicSnsClient.publish(
@@ -165,8 +122,12 @@ class PrisonerListenerIntTest : SqsIntegrationTestBase() {
 
     await untilAsserted {
       val adjustment = adjustmentRepository.findById(id).get()
-      assertThat(adjustment.status).isEqualTo(AdjustmentStatus.DELETED)
+      assertThat(adjustment.status).isEqualTo(AdjustmentStatus.ACTIVE)
     }
+
+    val adjustment = adjustmentRepository.findById(id).get()
+    assertThat(adjustment.currentPeriodOfCustody).isEqualTo(false)
+    assertThat(adjustment.adjustmentHistory.last().changeType).isEqualTo(ChangeType.ADMISSION)
   }
 
   @Test
@@ -321,6 +282,7 @@ class PrisonerListenerIntTest : SqsIntegrationTestBase() {
     comment = "Created",
     active = true,
     bookingReleased = false,
+    currentTerm = true,
     agencyId = null,
   )
 }

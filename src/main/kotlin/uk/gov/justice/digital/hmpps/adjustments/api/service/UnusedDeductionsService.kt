@@ -47,7 +47,7 @@ class UnusedDeductionsService(
   @Transactional
   fun recalculateUnusedDeductions(offenderNo: String) {
     val sentences = prisonService.getSentencesAndStartDateDetails(offenderNo)
-    val adjustments = adjustmentService.findCurrentAdjustments(offenderNo, AdjustmentStatus.ACTIVE, sentences.earliestSentenceDate)
+    val adjustments = adjustmentService.findCurrentAdjustments(offenderNo, AdjustmentStatus.ACTIVE, true, sentences.earliestSentenceDate)
     val anyDpsAdjustments = adjustments.any { it.source == AdjustmentSource.DPS }
     if (anyDpsAdjustments) {
       log.info("Recalculating unused deductions from $offenderNo")
@@ -135,7 +135,7 @@ class UnusedDeductionsService(
     }
   }
   fun setUnusedDaysManually(person: String, manualUnusedDeductionsDto: ManualUnusedDeductionsDto) {
-    val adjustments = adjustmentService.findCurrentAdjustments(person, AdjustmentStatus.ACTIVE, null)
+    val adjustments = adjustmentService.findCurrentAdjustments(person, AdjustmentStatus.ACTIVE, true, null)
     val deductions = adjustments
       .filter { it.adjustmentType === AdjustmentType.REMAND || it.adjustmentType === AdjustmentType.TAGGED_BAIL }
 

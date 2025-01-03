@@ -1,0 +1,1 @@
+ALTER TABLE adjustment ADD COLUMN current_period_of_custody boolean NOT NULL DEFAULT true;

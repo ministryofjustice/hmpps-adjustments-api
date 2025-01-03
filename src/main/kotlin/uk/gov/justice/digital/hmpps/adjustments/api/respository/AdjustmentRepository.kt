@@ -20,6 +20,7 @@ interface AdjustmentRepository : JpaRepository<Adjustment, UUID> {
       " LEFT JOIN a.additionalDaysAwarded ada" +
       " WHERE a.person = :person" +
       " AND a.status = :status" +
+      " AND a.currentPeriodOfCustody = :currentPeriodOfCustody" +
       " AND (" +
       " a.fromDate IS NULL" +
       " OR a.fromDate >= :fromDate" +
@@ -31,10 +32,17 @@ interface AdjustmentRepository : JpaRepository<Adjustment, UUID> {
     person: String,
     fromDate: LocalDate,
     status: AdjustmentStatus,
+    currentPeriodOfCustody: Boolean,
     adjustmentTypes: List<AdjustmentType>? = listOf(REMAND, TAGGED_BAIL, UNUSED_DEDUCTIONS),
   ): List<Adjustment>
 
   fun findByPerson(person: String): List<Adjustment>
+
+  fun findByPersonAndStatusAndCurrentPeriodOfCustody(
+    person: String,
+    status: AdjustmentStatus,
+    currentPeriodOfCustody: Boolean,
+  ): List<Adjustment>
 
   fun findByPersonAndStatus(
     person: String,

@@ -96,6 +96,7 @@ class AdjustmentsTransactionalService(
       source = AdjustmentSource.DPS,
       adjustmentType = resource.adjustmentType,
       status = ACTIVE,
+      currentPeriodOfCustody = true,
       legacyData = objectToJson(
         LegacyData(
           resource.bookingId,
@@ -244,12 +245,13 @@ class AdjustmentsTransactionalService(
   fun findCurrentAdjustments(
     person: String,
     status: AdjustmentStatus,
+    currentPeriodOfCustody: Boolean,
     startOfSentenceEnvelope: LocalDate?,
   ): List<AdjustmentDto> {
     return if (startOfSentenceEnvelope != null) {
-      adjustmentRepository.findAdjustmentsByPersonWithinSentenceEnvelope(person, startOfSentenceEnvelope, status)
+      adjustmentRepository.findAdjustmentsByPersonWithinSentenceEnvelope(person, startOfSentenceEnvelope, status, currentPeriodOfCustody)
     } else {
-      adjustmentRepository.findByPersonAndStatus(person, status)
+      adjustmentRepository.findByPersonAndStatusAndCurrentPeriodOfCustody(person, status, currentPeriodOfCustody)
     }.map { mapToDto(it) }
   }
 
@@ -289,6 +291,7 @@ class AdjustmentsTransactionalService(
       toDate = resource.toDate
       source = AdjustmentSource.DPS
       status = ACTIVE
+      currentPeriodOfCustody = true
       legacyData = objectToJson(
         LegacyData(
           resource.bookingId,
