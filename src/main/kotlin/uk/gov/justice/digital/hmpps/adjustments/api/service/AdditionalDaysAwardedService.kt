@@ -14,9 +14,12 @@ import uk.gov.justice.digital.hmpps.adjustments.api.enums.ChargeStatus.AWARDED_O
 import uk.gov.justice.digital.hmpps.adjustments.api.enums.ChargeStatus.PROSPECTIVE
 import uk.gov.justice.digital.hmpps.adjustments.api.enums.ChargeStatus.QUASHED
 import uk.gov.justice.digital.hmpps.adjustments.api.enums.ChargeStatus.SUSPENDED
+import uk.gov.justice.digital.hmpps.adjustments.api.enums.InterceptType
 import uk.gov.justice.digital.hmpps.adjustments.api.enums.InterceptType.FIRST_TIME
+import uk.gov.justice.digital.hmpps.adjustments.api.enums.InterceptType.FIRST_TIME_WITH_NO_ADJUDICATION
 import uk.gov.justice.digital.hmpps.adjustments.api.enums.InterceptType.NONE
 import uk.gov.justice.digital.hmpps.adjustments.api.enums.InterceptType.PADA
+import uk.gov.justice.digital.hmpps.adjustments.api.enums.InterceptType.PADAS
 import uk.gov.justice.digital.hmpps.adjustments.api.enums.InterceptType.UPDATE
 import uk.gov.justice.digital.hmpps.adjustments.api.model.ProspectiveAdaRejectionDto
 import uk.gov.justice.digital.hmpps.adjustments.api.model.additionaldays.Ada
@@ -107,6 +110,7 @@ class AdditionalDaysAwardedService(
     val totalExistingAdas = adaAdjustments.map { it.effectiveDays }.reduceOrNull { acc, it -> acc + it } ?: 0
 
     val padaRejections = prospectiveAdaRejectionRepository.findByPerson(nomsId)
+    val showExistingAdaMessage = pendingApproval.isEmpty() && quashed.isEmpty() && awarded.isEmpty() && prospective.isEmpty()
 
     return AdaAdjudicationDetails(
       awarded,
@@ -128,9 +132,10 @@ class AdditionalDaysAwardedService(
         awarded,
         sentenceDetail.latestSentenceDate!!,
         padaRejections,
+        showExistingAdaMessage
       ),
       totalExistingAdas,
-      pendingApproval.isEmpty() && quashed.isEmpty() && awarded.isEmpty() && prospective.isEmpty(),
+      showExistingAdaMessage,
       earliestNonRecallSentenceDate = sentenceDetail.earliestNonRecallSentenceDate,
       earliestRecallDate = sentenceDetail.earliestRecallDate,
 
@@ -143,7 +148,7 @@ class AdditionalDaysAwardedService(
 
   private fun getMessageParams(nomsId: String): List<String> {
     val prisonerDetail = prisonApiClient.getPrisonerDetail(nomsId)
-    return listOf("${prisonerDetail.lastName}, ${prisonerDetail.firstName}".toTitleCase())
+    return listOf("${prisonerDetail.firstName} ${prisonerDetail.lastName}".toTitleCase())
   }
 
   fun String.toTitleCase(): String =
@@ -160,6 +165,7 @@ class AdditionalDaysAwardedService(
     allAwarded: List<AdasByDateCharged>,
     latestSentenceDate: LocalDate,
     padaRejections: List<ProspectiveAdaRejection>,
+    showExistingAdaMessage: Boolean,
   ): AdaIntercept {
     val anyUnlinkedAdas = anyUnlinkedAdas(adaAdjustments)
     val totalAdjustments = adaAdjustments.sumOf { it.effectiveDays }
@@ -173,18 +179,20 @@ class AdditionalDaysAwardedService(
     }
     val numProspective = nonRejectedProspective.size
     val anyProspective = numProspective > 0
+    val isFirstTimeWithNoAdjudication = showExistingAdaMessage && anyUnlinkedAdas
     return when {
+      isFirstTimeWithNoAdjudication -> AdaIntercept(FIRST_TIME_WITH_NO_ADJUDICATION, numProspective + numPendingApproval, anyProspective)
       anyUnlinkedAdas -> AdaIntercept(FIRST_TIME, numProspective + numPendingApproval, anyProspective)
-      numPendingApproval > 0 -> AdaIntercept(UPDATE, numPendingApproval, anyProspective, getMessageParams(nomsId))
-      numQuashed > 0 -> AdaIntercept(UPDATE, numQuashed, anyProspective, getMessageParams(nomsId))
+      numPendingApproval > 0 -> AdaIntercept(UPDATE, numPendingApproval, anyProspective)
+      numQuashed > 0 -> AdaIntercept(UPDATE, numQuashed, anyProspective)
       totalAdjustments != totalAdjudications -> AdaIntercept(
         UPDATE,
         allAwarded.size,
         anyProspective,
-        getMessageParams(nomsId),
       )
 
-      numProspective > 0 -> AdaIntercept(PADA, numProspective, true, getMessageParams(nomsId))
+      numProspective == 1 -> AdaIntercept(PADA, numProspective, true, getMessageParams(nomsId))
+      numProspective > 1 -> AdaIntercept(PADAS, numProspective, true, getMessageParams(nomsId))
       else -> AdaIntercept(NONE, 0, false)
     }
   }
