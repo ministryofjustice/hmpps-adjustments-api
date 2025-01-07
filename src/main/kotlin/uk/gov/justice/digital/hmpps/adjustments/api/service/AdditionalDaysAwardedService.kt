@@ -14,7 +14,6 @@ import uk.gov.justice.digital.hmpps.adjustments.api.enums.ChargeStatus.AWARDED_O
 import uk.gov.justice.digital.hmpps.adjustments.api.enums.ChargeStatus.PROSPECTIVE
 import uk.gov.justice.digital.hmpps.adjustments.api.enums.ChargeStatus.QUASHED
 import uk.gov.justice.digital.hmpps.adjustments.api.enums.ChargeStatus.SUSPENDED
-import uk.gov.justice.digital.hmpps.adjustments.api.enums.InterceptType
 import uk.gov.justice.digital.hmpps.adjustments.api.enums.InterceptType.FIRST_TIME
 import uk.gov.justice.digital.hmpps.adjustments.api.enums.InterceptType.FIRST_TIME_WITH_NO_ADJUDICATION
 import uk.gov.justice.digital.hmpps.adjustments.api.enums.InterceptType.NONE
@@ -132,7 +131,7 @@ class AdditionalDaysAwardedService(
         awarded,
         sentenceDetail.latestSentenceDate!!,
         padaRejections,
-        showExistingAdaMessage
+        showExistingAdaMessage,
       ),
       totalExistingAdas,
       showExistingAdaMessage,
