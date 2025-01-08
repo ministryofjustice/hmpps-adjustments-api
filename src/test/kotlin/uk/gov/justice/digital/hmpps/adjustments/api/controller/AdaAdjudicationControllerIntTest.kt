@@ -24,7 +24,7 @@ class AdaAdjudicationControllerIntTest : SqsIntegrationTestBase() {
       .returnResult(AdaAdjudicationDetails::class.java)
       .responseBody.blockFirst()!!
 
-    assertThat(adjudicationDetails.intercept.type).isEqualTo(InterceptType.PADA)
+    assertThat(adjudicationDetails.intercept.type).isEqualTo(InterceptType.PADAS)
 
     adjudicationDetails.prospective.forEach {
       webTestClient
