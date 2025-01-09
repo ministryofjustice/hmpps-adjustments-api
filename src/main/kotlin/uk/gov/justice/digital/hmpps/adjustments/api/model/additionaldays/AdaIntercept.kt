@@ -9,5 +9,5 @@ data class AdaIntercept(
   val messageArguments: List<String> = listOf(),
 ) {
   val message: String?
-    get() = type.message?.format(*messageArguments.toTypedArray())
+    get() = type.message?.format(messageArguments.joinToString(" "))
 }
