@@ -11,4 +11,5 @@ enum class LegacyAdjustmentType {
   RX, // remand
   S240A, // tagged bail
   UR, // unused remand
+  TCA, // time spent in custody abroad
 }

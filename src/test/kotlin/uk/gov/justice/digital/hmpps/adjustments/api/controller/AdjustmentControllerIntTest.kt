@@ -19,6 +19,7 @@ import uk.gov.justice.digital.hmpps.adjustments.api.entity.AdjustmentStatus
 import uk.gov.justice.digital.hmpps.adjustments.api.entity.AdjustmentStatus.ACTIVE
 import uk.gov.justice.digital.hmpps.adjustments.api.entity.AdjustmentStatus.DELETED
 import uk.gov.justice.digital.hmpps.adjustments.api.entity.AdjustmentType
+import uk.gov.justice.digital.hmpps.adjustments.api.entity.AdjustmentType.CUSTODY_ABROAD
 import uk.gov.justice.digital.hmpps.adjustments.api.entity.AdjustmentType.LAWFULLY_AT_LARGE
 import uk.gov.justice.digital.hmpps.adjustments.api.entity.AdjustmentType.SPECIAL_REMISSION
 import uk.gov.justice.digital.hmpps.adjustments.api.entity.AdjustmentType.TAGGED_BAIL
@@ -28,6 +29,7 @@ import uk.gov.justice.digital.hmpps.adjustments.api.enums.LawfullyAtLargeAffects
 import uk.gov.justice.digital.hmpps.adjustments.api.enums.LawfullyAtLargeAffectsDates.YES
 import uk.gov.justice.digital.hmpps.adjustments.api.enums.SpecialRemissionType.RELEASE_DATE_CALCULATED_TOO_EARLY
 import uk.gov.justice.digital.hmpps.adjustments.api.enums.SpecialRemissionType.RELEASE_IN_ERROR
+import uk.gov.justice.digital.hmpps.adjustments.api.enums.TimeSpentInCustodyAbroadDocumentationSource.PPCS_LETTER
 import uk.gov.justice.digital.hmpps.adjustments.api.enums.UnlawfullyAtLargeType.ESCAPE
 import uk.gov.justice.digital.hmpps.adjustments.api.enums.UnlawfullyAtLargeType.RECALL
 import uk.gov.justice.digital.hmpps.adjustments.api.integration.SqsIntegrationTestBase
@@ -44,6 +46,7 @@ import uk.gov.justice.digital.hmpps.adjustments.api.model.ManualUnusedDeductions
 import uk.gov.justice.digital.hmpps.adjustments.api.model.RemandDto
 import uk.gov.justice.digital.hmpps.adjustments.api.model.SpecialRemissionDto
 import uk.gov.justice.digital.hmpps.adjustments.api.model.TaggedBailDto
+import uk.gov.justice.digital.hmpps.adjustments.api.model.TimeSpentInCustodyAbroadDto
 import uk.gov.justice.digital.hmpps.adjustments.api.model.UnlawfullyAtLargeDto
 import uk.gov.justice.digital.hmpps.adjustments.api.model.ValidationCode
 import uk.gov.justice.digital.hmpps.adjustments.api.model.ValidationMessage
@@ -804,6 +807,62 @@ class AdjustmentControllerIntTest : SqsIntegrationTestBase() {
   }
 
   @Nested
+  inner class TimeSpentInCustodyAbroadTests {
+    @Test
+    fun `Create a time spent in custody abroad adjustment, then update it`() {
+      val adjustmentId = postCreateAdjustments(
+        listOf(
+          CREATED_ADJUSTMENT.copy(
+            adjustmentType = CUSTODY_ABROAD,
+            timeSpentInCustodyAbroad = TimeSpentInCustodyAbroadDto(PPCS_LETTER),
+            lawfullyAtLarge = null,
+            unlawfullyAtLarge = null,
+            remand = null,
+          ),
+        ),
+      )[0]
+
+      val adjustment = adjustmentRepository.findById(adjustmentId).get()
+
+      assertThat(adjustment.timeSpentInCustodyAbroad).isNotNull
+      assertThat(adjustment.timeSpentInCustodyAbroad!!.documentationSource).isEqualTo(PPCS_LETTER)
+      assertThat(adjustment.timeSpentInCustodyAbroad!!.adjustmentId).isEqualTo(adjustmentId)
+
+      val createdAdjustment = getAdjustmentById(adjustmentId)
+
+      assertThat(createdAdjustment)
+        .usingRecursiveComparison()
+        .ignoringFieldsMatchingRegexes("lastUpdatedDate", "createdDate")
+        .isEqualTo(
+          CREATED_ADJUSTMENT.copy(
+            id = adjustmentId,
+            adjustmentType = CUSTODY_ABROAD,
+            timeSpentInCustodyAbroad = TimeSpentInCustodyAbroadDto(PPCS_LETTER),
+            remand = null,
+            effectiveDays = 4,
+            lastUpdatedBy = "Test User",
+            status = ACTIVE,
+            adjustmentTypeText = CUSTODY_ABROAD.text,
+            days = 4,
+            prisonId = "LDS",
+            prisonName = "Leeds",
+            adjustmentArithmeticType = CUSTODY_ABROAD.arithmeticType,
+            source = AdjustmentSource.DPS,
+          ),
+        )
+
+      val updateDto =
+        createdAdjustment.copy(days = null, timeSpentInCustodyAbroad = TimeSpentInCustodyAbroadDto(PPCS_LETTER))
+      putAdjustmentUpdate(adjustmentId, updateDto)
+      val updatedAdjustment = getAdjustmentById(adjustmentId)
+      assertThat(updatedAdjustment)
+        .usingRecursiveComparison()
+        .ignoringFieldsMatchingRegexes("lastUpdatedDate")
+        .isEqualTo(createdAdjustment.copy(timeSpentInCustodyAbroad = TimeSpentInCustodyAbroadDto(PPCS_LETTER)))
+    }
+  }
+
+  @Nested
   inner class UalTests {
 
     @Test
@@ -1139,6 +1198,7 @@ class AdjustmentControllerIntTest : SqsIntegrationTestBase() {
       unlawfullyAtLarge = null,
       lawfullyAtLarge = null,
       specialRemission = null,
+      timeSpentInCustodyAbroad = null,
       remand = RemandDto(chargeId = listOf(9991)),
       taggedBail = null,
     )

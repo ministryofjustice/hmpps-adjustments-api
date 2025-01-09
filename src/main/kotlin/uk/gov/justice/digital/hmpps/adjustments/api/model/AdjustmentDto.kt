@@ -37,6 +37,8 @@ data class AdjustmentDto(
   val specialRemission: SpecialRemissionDto?,
   @Schema(description = "The details of a tagged-bail adjustment")
   val taggedBail: TaggedBailDto?,
+  @Schema(description = "The details of a time spent in custody abroad adjustment")
+  val timeSpentInCustodyAbroad: TimeSpentInCustodyAbroadDto?,
   @Schema(description = "The NOMIS sentence sequence of the adjustment")
   val sentenceSequence: Int? = null,
 

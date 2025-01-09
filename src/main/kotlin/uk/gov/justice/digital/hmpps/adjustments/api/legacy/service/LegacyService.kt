@@ -206,6 +206,7 @@ class LegacyService(
       AdjustmentType.RESTORATION_OF_ADDITIONAL_DAYS_AWARDED -> LegacyAdjustmentType.RADA
       AdjustmentType.SPECIAL_REMISSION -> LegacyAdjustmentType.SREM
       AdjustmentType.UNUSED_DEDUCTIONS -> LegacyAdjustmentType.UR
+      AdjustmentType.CUSTODY_ABROAD -> LegacyAdjustmentType.TCA
     }
   }
 
@@ -221,6 +222,7 @@ class LegacyService(
       LegacyAdjustmentType.UR -> AdjustmentType.UNUSED_DEDUCTIONS
       LegacyAdjustmentType.LAL -> AdjustmentType.LAWFULLY_AT_LARGE
       LegacyAdjustmentType.SREM -> AdjustmentType.SPECIAL_REMISSION
+      LegacyAdjustmentType.TCA -> AdjustmentType.CUSTODY_ABROAD
     }
   }
 

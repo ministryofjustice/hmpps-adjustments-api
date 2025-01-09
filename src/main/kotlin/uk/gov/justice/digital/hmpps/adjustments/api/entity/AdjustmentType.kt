@@ -11,6 +11,7 @@ enum class AdjustmentType(val text: String, val arithmeticType: ArithmeticType) 
   RESTORATION_OF_ADDITIONAL_DAYS_AWARDED("RADA (Restoration of additional days awarded)", ArithmeticType.DEDUCTION),
   SPECIAL_REMISSION("Special remission", ArithmeticType.NONE),
   UNUSED_DEDUCTIONS("Unused deductions", ArithmeticType.NONE),
+  CUSTODY_ABROAD("Time spent in custody abroad", ArithmeticType.DEDUCTION),
   ;
 
   fun isSentenceType(): Boolean {

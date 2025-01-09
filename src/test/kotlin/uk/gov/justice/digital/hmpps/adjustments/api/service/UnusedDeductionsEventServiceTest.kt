@@ -58,6 +58,7 @@ class UnusedDeductionsEventServiceTest {
     lawfullyAtLarge = null,
     specialRemission = null,
     taggedBail = null,
+    timeSpentInCustodyAbroad = null,
     effectiveDays = 90,
     sentenceSequence = 1,
     source = AdjustmentSource.DPS,
