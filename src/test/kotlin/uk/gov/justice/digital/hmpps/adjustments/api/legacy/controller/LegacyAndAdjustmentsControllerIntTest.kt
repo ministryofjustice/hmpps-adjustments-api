@@ -456,6 +456,7 @@ class LegacyAndAdjustmentsControllerIntTest : SqsIntegrationTestBase() {
       remand = RemandDto(chargeId = listOf(9991)),
       taggedBail = null,
       timeSpentInCustodyAbroad = null,
+      timeSpentAsAnAppealApplicant = null,
       lastUpdatedDate = LocalDateTime.now(),
       createdDate = LocalDateTime.now(),
       effectiveDays = 8,

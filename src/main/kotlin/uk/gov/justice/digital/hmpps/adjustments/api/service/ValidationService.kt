@@ -32,6 +32,9 @@ class ValidationService(
     if (adjustment.adjustmentType == AdjustmentType.CUSTODY_ABROAD) {
       return validateTimeSpentInCustodyAbroad(adjustment)
     }
+    if (adjustment.adjustmentType == AdjustmentType.APPEAL_APPLICANT) {
+      return validateTimeSpentAsAnAppealApplicant(adjustment)
+    }
     return emptyList()
   }
 
@@ -114,7 +117,23 @@ class ValidationService(
     val validationMessages = mutableListOf<ValidationMessage>()
 
     if (adjustment.timeSpentInCustodyAbroad?.documentationSource == null) {
-      validationMessages.add(ValidationMessage(ValidationCode.TSICA_DOCUMENTATION_SOURCE_NOT_NULL))
+      validationMessages.add(ValidationMessage(ValidationCode.TCA_DOCUMENTATION_SOURCE_NOT_NULL))
+    }
+    return validationMessages
+  }
+
+  private fun validateTimeSpentAsAnAppealApplicant(adjustment: AdjustmentDto): List<ValidationMessage> {
+    val validationMessages = mutableListOf<ValidationMessage>()
+    val courtOfAppealReferenceNumber = adjustment.timeSpentAsAnAppealApplicant?.courtOfAppealReferenceNumber
+    if (courtOfAppealReferenceNumber == null) {
+      validationMessages.add(ValidationMessage(ValidationCode.TSA_COURT_OF_APPEAL_REFERENCE_NOT_NULL))
+      return validationMessages
+    }
+    if (courtOfAppealReferenceNumber.length !in 8..30) {
+      validationMessages.add(ValidationMessage(ValidationCode.TSA_COURT_OF_APPEAL_REFERENCE_WRONG_LENGTH))
+    }
+    if (!(courtOfAppealReferenceNumber.matches(Regex("[a-zA-Z0-9]+")))) {
+      validationMessages.add(ValidationMessage(ValidationCode.TSA_COURT_OF_APPEAL_REFERENCE_INVALID_CHARACTERS))
     }
     return validationMessages
   }

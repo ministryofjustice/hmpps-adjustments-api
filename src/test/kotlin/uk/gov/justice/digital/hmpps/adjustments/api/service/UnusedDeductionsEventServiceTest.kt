@@ -59,6 +59,7 @@ class UnusedDeductionsEventServiceTest {
     specialRemission = null,
     taggedBail = null,
     timeSpentInCustodyAbroad = null,
+    timeSpentAsAnAppealApplicant = null,
     effectiveDays = 90,
     sentenceSequence = 1,
     source = AdjustmentSource.DPS,

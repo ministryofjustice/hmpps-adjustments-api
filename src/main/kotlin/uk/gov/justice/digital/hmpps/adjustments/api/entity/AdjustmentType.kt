@@ -12,6 +12,7 @@ enum class AdjustmentType(val text: String, val arithmeticType: ArithmeticType) 
   SPECIAL_REMISSION("Special remission", ArithmeticType.NONE),
   UNUSED_DEDUCTIONS("Unused deductions", ArithmeticType.NONE),
   CUSTODY_ABROAD("Time spent in custody abroad", ArithmeticType.DEDUCTION),
+  APPEAL_APPLICANT("Time spent as an appeal applicant", ArithmeticType.ADDITION),
   ;
 
   fun isSentenceType(): Boolean {

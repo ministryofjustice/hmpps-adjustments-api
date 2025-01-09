@@ -39,6 +39,8 @@ data class AdjustmentDto(
   val taggedBail: TaggedBailDto?,
   @Schema(description = "The details of a time spent in custody abroad adjustment")
   val timeSpentInCustodyAbroad: TimeSpentInCustodyAbroadDto?,
+  @Schema(description = "The details of a time spent as an appeal applicant adjustment")
+  val timeSpentAsAnAppealApplicant: TimeSpentAsAnAppealApplicantDto?,
   @Schema(description = "The NOMIS sentence sequence of the adjustment")
   val sentenceSequence: Int? = null,
 

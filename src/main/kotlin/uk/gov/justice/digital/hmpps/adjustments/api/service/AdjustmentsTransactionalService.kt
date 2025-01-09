@@ -23,6 +23,7 @@ import uk.gov.justice.digital.hmpps.adjustments.api.entity.AdjustmentStatus.DELE
 import uk.gov.justice.digital.hmpps.adjustments.api.entity.AdjustmentStatus.INACTIVE
 import uk.gov.justice.digital.hmpps.adjustments.api.entity.AdjustmentStatus.INACTIVE_WHEN_DELETED
 import uk.gov.justice.digital.hmpps.adjustments.api.entity.AdjustmentType
+import uk.gov.justice.digital.hmpps.adjustments.api.entity.AdjustmentType.APPEAL_APPLICANT
 import uk.gov.justice.digital.hmpps.adjustments.api.entity.AdjustmentType.CUSTODY_ABROAD
 import uk.gov.justice.digital.hmpps.adjustments.api.entity.AdjustmentType.LAWFULLY_AT_LARGE
 import uk.gov.justice.digital.hmpps.adjustments.api.entity.AdjustmentType.REMAND
@@ -33,6 +34,7 @@ import uk.gov.justice.digital.hmpps.adjustments.api.entity.ChangeType
 import uk.gov.justice.digital.hmpps.adjustments.api.entity.LawfullyAtLarge
 import uk.gov.justice.digital.hmpps.adjustments.api.entity.SpecialRemission
 import uk.gov.justice.digital.hmpps.adjustments.api.entity.TaggedBail
+import uk.gov.justice.digital.hmpps.adjustments.api.entity.TimeSpentAsAnAppealApplicant
 import uk.gov.justice.digital.hmpps.adjustments.api.entity.TimeSpentInCustodyAbroad
 import uk.gov.justice.digital.hmpps.adjustments.api.entity.UnlawfullyAtLarge
 import uk.gov.justice.digital.hmpps.adjustments.api.error.ApiValidationException
@@ -48,6 +50,7 @@ import uk.gov.justice.digital.hmpps.adjustments.api.model.RestoreAdjustmentsDto
 import uk.gov.justice.digital.hmpps.adjustments.api.model.SentenceInfo
 import uk.gov.justice.digital.hmpps.adjustments.api.model.SpecialRemissionDto
 import uk.gov.justice.digital.hmpps.adjustments.api.model.TaggedBailDto
+import uk.gov.justice.digital.hmpps.adjustments.api.model.TimeSpentAsAnAppealApplicantDto
 import uk.gov.justice.digital.hmpps.adjustments.api.model.TimeSpentInCustodyAbroadDto
 import uk.gov.justice.digital.hmpps.adjustments.api.model.UnlawfullyAtLargeDto
 import uk.gov.justice.digital.hmpps.adjustments.api.model.remandandsentencing.CourtCase
@@ -117,6 +120,7 @@ class AdjustmentsTransactionalService(
       specialRemission = specialRemission(resource),
       taggedBail = taggedBail(resource),
       timeSpentInCustodyAbroad = timeSpentInCustodyAbroad(resource),
+      timeSpentAsAnAppealApplicant = timeSpentAsAnAppealApplicant(resource),
     )
     adjustment.adjustmentHistory = listOf(
       AdjustmentHistory(
@@ -217,7 +221,10 @@ class AdjustmentsTransactionalService(
       SpecialRemission()
     }
 
-  private fun timeSpentInCustodyAbroad(adjustmentDto: AdjustmentDto, adjustment: Adjustment? = null): TimeSpentInCustodyAbroad? =
+  private fun timeSpentInCustodyAbroad(
+    adjustmentDto: AdjustmentDto,
+    adjustment: Adjustment? = null,
+  ): TimeSpentInCustodyAbroad? =
     if (adjustmentDto.adjustmentType == CUSTODY_ABROAD && adjustmentDto.timeSpentInCustodyAbroad != null) {
       getTimeSpentInCustodyAbroad(adjustment).apply {
         documentationSource = adjustmentDto.timeSpentInCustodyAbroad.documentationSource
@@ -233,6 +240,28 @@ class AdjustmentsTransactionalService(
       TimeSpentInCustodyAbroad(adjustment = adjustment)
     } else {
       TimeSpentInCustodyAbroad()
+    }
+
+  private fun timeSpentAsAnAppealApplicant(
+    adjustmentDto: AdjustmentDto,
+    adjustment: Adjustment? = null,
+  ): TimeSpentAsAnAppealApplicant? =
+    if (adjustmentDto.adjustmentType == APPEAL_APPLICANT && adjustmentDto.timeSpentAsAnAppealApplicant != null) {
+      getTimeSpentAsAnAppealApplicant(adjustment).apply {
+        courtOfAppealReferenceNumber =
+          adjustmentDto.timeSpentAsAnAppealApplicant.courtOfAppealReferenceNumber?.uppercase()
+      }
+    } else {
+      null
+    }
+
+  private fun getTimeSpentAsAnAppealApplicant(adjustment: Adjustment?) =
+    if (adjustment?.timeSpentAsAnAppealApplicant != null) {
+      adjustment.timeSpentAsAnAppealApplicant!!
+    } else if (adjustment != null) {
+      TimeSpentAsAnAppealApplicant(adjustment = adjustment)
+    } else {
+      TimeSpentAsAnAppealApplicant()
     }
 
   private fun additionalDaysAwarded(resource: AdjustmentDto, adjustment: Adjustment? = null): AdditionalDaysAwarded? {
@@ -428,6 +457,7 @@ class AdjustmentsTransactionalService(
       remand = remandDto(adjustment, legacyData),
       taggedBail = taggedBailDto(adjustment, legacyData),
       timeSpentInCustodyAbroad = timeSpentInCustodyAbroadDto(adjustment),
+      timeSpentAsAnAppealApplicant = timeSpentAsAnAppealApplicantDto(adjustment),
       lastUpdatedBy = latestHistory.changeByUsername,
       lastUpdatedDate = latestHistory.changeAt,
       createdDate = adjustment.adjustmentHistory.first().changeAt,
@@ -485,9 +515,17 @@ class AdjustmentsTransactionalService(
     } else {
       null
     }
+
   private fun timeSpentInCustodyAbroadDto(adjustment: Adjustment): TimeSpentInCustodyAbroadDto? =
     if (adjustment.timeSpentInCustodyAbroad != null) {
       TimeSpentInCustodyAbroadDto(documentationSource = adjustment.timeSpentInCustodyAbroad!!.documentationSource)
+    } else {
+      null
+    }
+
+  private fun timeSpentAsAnAppealApplicantDto(adjustment: Adjustment): TimeSpentAsAnAppealApplicantDto? =
+    if (adjustment.timeSpentAsAnAppealApplicant != null) {
+      TimeSpentAsAnAppealApplicantDto(courtOfAppealReferenceNumber = adjustment.timeSpentAsAnAppealApplicant!!.courtOfAppealReferenceNumber)
     } else {
       null
     }

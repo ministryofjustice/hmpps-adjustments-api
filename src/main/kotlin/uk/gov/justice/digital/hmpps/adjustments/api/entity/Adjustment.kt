@@ -90,6 +90,10 @@ data class Adjustment(
   @PrimaryKeyJoinColumn
   var timeSpentInCustodyAbroad: TimeSpentInCustodyAbroad? = null,
 
+  @OneToOne(mappedBy = "adjustment", cascade = [CascadeType.ALL])
+  @PrimaryKeyJoinColumn
+  var timeSpentAsAnAppealApplicant: TimeSpentAsAnAppealApplicant? = null,
+
 ) {
   init {
     adjustmentHistory.forEach { it.adjustment = this }
@@ -99,5 +103,6 @@ data class Adjustment(
     taggedBail?.adjustment = this
     additionalDaysAwarded?.adjustment = this
     timeSpentInCustodyAbroad?.adjustment = this
+    timeSpentAsAnAppealApplicant?.adjustment = this
   }
 }
