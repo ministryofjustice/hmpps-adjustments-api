@@ -7,6 +7,7 @@ import uk.gov.justice.digital.hmpps.adjustments.api.enums.ChargeStatus
 import uk.gov.justice.digital.hmpps.adjustments.api.error.AdjudicationError
 import uk.gov.justice.digital.hmpps.adjustments.api.model.additionaldays.Ada
 import uk.gov.justice.digital.hmpps.adjustments.api.model.adjudications.Adjudication
+import uk.gov.justice.digital.hmpps.adjustments.api.model.adjudications.OutcomeAndHearing
 import uk.gov.justice.digital.hmpps.adjustments.api.model.adjudications.Punishment
 import java.time.LocalDate
 
@@ -20,29 +21,40 @@ class AdjudicationsLookupService(
     val adjudications = adjudicationApiClient.getAdjudications(nomsId)
     val agencies = mutableMapOf<String, String>()
 
-    return adjudications.content.map {
-      val punishment =
-        it.punishments.last { pun -> pun.type == "PROSPECTIVE_DAYS" || pun.type == "ADDITIONAL_DAYS" }
-      val outcome = it.outcomes.last { out -> out.hearing != null }
-      Ada(
-        dateChargeProved = outcome.hearing!!.dateTimeOfHearing.toLocalDate(),
-        days = punishment.schedule.duration,
-        chargeNumber = it.chargeNumber,
-        consecutiveToChargeNumber = punishment.consecutiveChargeNumber,
-        heardAt = outcome.hearing.agencyId,
-        status = deriveChargeStatus(it, punishment),
-      )
-    }.filter {
-      if (it.status == ChargeStatus.PROSPECTIVE) {
-        true
-      } else {
-        it.dateChargeProved.isAfter(startOfSentenceEnvelope)
+    return adjudications.content
+      .filter {
+        getPunishment(it) != null && getOutcome(it) != null
       }
-    }.map {
-      it.copy(
-        heardAt = fromAgencyId(it.heardAt, agencies),
-      )
-    }
+      .map {
+        val punishment = getPunishment(it)!!
+        val outcome = getOutcome(it)!!
+        Ada(
+          dateChargeProved = outcome.hearing!!.dateTimeOfHearing.toLocalDate(),
+          days = punishment.schedule.duration,
+          chargeNumber = it.chargeNumber,
+          consecutiveToChargeNumber = punishment.consecutiveChargeNumber,
+          heardAt = outcome.hearing.agencyId,
+          status = deriveChargeStatus(it, punishment),
+        )
+      }.filter {
+        if (it.status == ChargeStatus.PROSPECTIVE) {
+          true
+        } else {
+          it.dateChargeProved.isAfter(startOfSentenceEnvelope)
+        }
+      }.map {
+        it.copy(
+          heardAt = fromAgencyId(it.heardAt, agencies),
+        )
+      }
+  }
+
+  private fun getPunishment(it: Adjudication): Punishment? {
+    return it.punishments.lastOrNull { pun -> pun.type == "PROSPECTIVE_DAYS" || pun.type == "ADDITIONAL_DAYS" }
+  }
+
+  private fun getOutcome(it: Adjudication): OutcomeAndHearing? {
+    return it.outcomes.lastOrNull { out -> out.hearing != null }
   }
 
   private fun fromAgencyId(heardAt: String?, agencies: MutableMap<String, String>): String? {
