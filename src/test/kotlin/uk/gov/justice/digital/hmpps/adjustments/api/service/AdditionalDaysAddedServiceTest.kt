@@ -433,6 +433,32 @@ class AdditionalDaysAddedServiceTest {
         ),
       )
     }
+
+    @Test
+    fun `Should handle missing punishments`() {
+      whenever(adjudicationApiClient.getAdjudications(NOMS_ID)).thenReturn(
+        AdjudicationResponse(
+          listOf(
+            adjudicationOne.copy(
+              punishments = listOf(adjudicationOne.punishments[0].copy(type = "NOT_AN_ADDITIONAL_DAY")),
+            ),
+          ),
+        ),
+      )
+      whenever(prospectiveAdaRejectionRepository.findByPerson(NOMS_ID)).thenReturn(emptyList())
+      whenever(prisonService.getSentencesAndStartDateDetails(NOMS_ID)).thenReturn(defaultSentenceDetail)
+
+      val adaAdjudicationDetails = additionalDaysAwardedService.getAdaAdjudicationDetails(NOMS_ID)
+
+      assertThat(
+        adaAdjudicationDetails,
+      ).isEqualTo(
+        AdaAdjudicationDetails(
+          earliestNonRecallSentenceDate = sentenceDate,
+          showExistingAdaMessage = true,
+        ),
+      )
+    }
   }
 
   @Nested
