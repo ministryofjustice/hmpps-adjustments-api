@@ -69,7 +69,7 @@ class AdditionalDaysAddedServiceTest {
     @Test
     fun `Ada adjudication details where mix of consec concurrent`() {
       whenever(
-        adjustmentRepository.findByPersonAndAdjustmentTypeAndStatus(
+        adjustmentRepository.findByPersonAndAdjustmentTypeAndStatusAndCurrentPeriodOfCustody(
           NOMS_ID,
           ADDITIONAL_DAYS_AWARDED,
         ),
@@ -132,7 +132,7 @@ class AdditionalDaysAddedServiceTest {
     @Test
     fun `Ada adjudication details where all awarded`() {
       whenever(
-        adjustmentRepository.findByPersonAndAdjustmentTypeAndStatus(
+        adjustmentRepository.findByPersonAndAdjustmentTypeAndStatusAndCurrentPeriodOfCustody(
           NOMS_ID,
           ADDITIONAL_DAYS_AWARDED,
         ),
@@ -196,7 +196,7 @@ class AdditionalDaysAddedServiceTest {
     @Test
     fun `Ada adjudication details prospective and selected`() {
       whenever(
-        adjustmentRepository.findByPersonAndAdjustmentTypeAndStatus(
+        adjustmentRepository.findByPersonAndAdjustmentTypeAndStatusAndCurrentPeriodOfCustody(
           NOMS_ID,
           ADDITIONAL_DAYS_AWARDED,
         ),
@@ -263,7 +263,7 @@ class AdditionalDaysAddedServiceTest {
     @Test
     fun `Ada adjudication details prospective and awarded`() {
       whenever(
-        adjustmentRepository.findByPersonAndAdjustmentTypeAndStatus(
+        adjustmentRepository.findByPersonAndAdjustmentTypeAndStatusAndCurrentPeriodOfCustody(
           NOMS_ID,
           ADDITIONAL_DAYS_AWARDED,
         ),
@@ -318,7 +318,7 @@ class AdditionalDaysAddedServiceTest {
     @Test
     fun `Ada adjudication details ADAs fall in determinate period`() {
       whenever(
-        adjustmentRepository.findByPersonAndAdjustmentTypeAndStatus(
+        adjustmentRepository.findByPersonAndAdjustmentTypeAndStatusAndCurrentPeriodOfCustody(
           NOMS_ID,
           ADDITIONAL_DAYS_AWARDED,
         ),
@@ -345,7 +345,7 @@ class AdditionalDaysAddedServiceTest {
     @Test
     fun `Ada adjudication details ADAs fall in determinate period of parallel sentences`() {
       whenever(
-        adjustmentRepository.findByPersonAndAdjustmentTypeAndStatus(
+        adjustmentRepository.findByPersonAndAdjustmentTypeAndStatusAndCurrentPeriodOfCustody(
           NOMS_ID,
           ADDITIONAL_DAYS_AWARDED,
         ),
@@ -409,7 +409,7 @@ class AdditionalDaysAddedServiceTest {
     @Test
     fun `NOMIS adjustment but no adjudication`() {
       whenever(
-        adjustmentRepository.findByPersonAndAdjustmentTypeAndStatus(
+        adjustmentRepository.findByPersonAndAdjustmentTypeAndStatusAndCurrentPeriodOfCustody(
           NOMS_ID,
           ADDITIONAL_DAYS_AWARDED,
         ),
@@ -481,7 +481,7 @@ class AdditionalDaysAddedServiceTest {
         ),
       )
       whenever(
-        adjustmentRepository.findByPersonAndAdjustmentTypeAndStatus(
+        adjustmentRepository.findByPersonAndAdjustmentTypeAndStatusAndCurrentPeriodOfCustody(
           NOMS_ID,
           ADDITIONAL_DAYS_AWARDED,
         ),
@@ -502,7 +502,7 @@ class AdditionalDaysAddedServiceTest {
         ),
       )
       whenever(
-        adjustmentRepository.findByPersonAndAdjustmentTypeAndStatus(
+        adjustmentRepository.findByPersonAndAdjustmentTypeAndStatusAndCurrentPeriodOfCustody(
           NOMS_ID,
           ADDITIONAL_DAYS_AWARDED,
         ),
@@ -524,7 +524,7 @@ class AdditionalDaysAddedServiceTest {
         ),
       )
       whenever(
-        adjustmentRepository.findByPersonAndAdjustmentTypeAndStatus(
+        adjustmentRepository.findByPersonAndAdjustmentTypeAndStatusAndCurrentPeriodOfCustody(
           NOMS_ID,
           ADDITIONAL_DAYS_AWARDED,
         ),
@@ -540,7 +540,7 @@ class AdditionalDaysAddedServiceTest {
     @Test
     fun `Should intercept if any unlinked ADAs`() {
       whenever(
-        adjustmentRepository.findByPersonAndAdjustmentTypeAndStatus(
+        adjustmentRepository.findByPersonAndAdjustmentTypeAndStatusAndCurrentPeriodOfCustody(
           NOMS_ID,
           ADDITIONAL_DAYS_AWARDED,
         ),
@@ -565,7 +565,7 @@ class AdditionalDaysAddedServiceTest {
     @Test
     fun `Should return First Time intercept if any unlinked ADAs because there is no additionalDaysAwarded object associated to the ADA`() {
       whenever(
-        adjustmentRepository.findByPersonAndAdjustmentTypeAndStatus(
+        adjustmentRepository.findByPersonAndAdjustmentTypeAndStatusAndCurrentPeriodOfCustody(
           NOMS_ID,
           ADDITIONAL_DAYS_AWARDED,
         ),
@@ -590,7 +590,7 @@ class AdditionalDaysAddedServiceTest {
     @Test
     fun `Should intercept if there is a difference between the totalDays in adjustments and adjudications`() {
       whenever(
-        adjustmentRepository.findByPersonAndAdjustmentTypeAndStatus(
+        adjustmentRepository.findByPersonAndAdjustmentTypeAndStatusAndCurrentPeriodOfCustody(
           NOMS_ID,
           ADDITIONAL_DAYS_AWARDED,
         ),
@@ -609,7 +609,7 @@ class AdditionalDaysAddedServiceTest {
     @Test
     fun `Should intercept mix of concurrent consec`() {
       whenever(
-        adjustmentRepository.findByPersonAndAdjustmentTypeAndStatus(
+        adjustmentRepository.findByPersonAndAdjustmentTypeAndStatusAndCurrentPeriodOfCustody(
           NOMS_ID,
           ADDITIONAL_DAYS_AWARDED,
         ),
@@ -626,7 +626,7 @@ class AdditionalDaysAddedServiceTest {
     @Test
     fun `Shouldnt intercept when already persisted in adjustment api`() {
       whenever(
-        adjustmentRepository.findByPersonAndAdjustmentTypeAndStatus(
+        adjustmentRepository.findByPersonAndAdjustmentTypeAndStatusAndCurrentPeriodOfCustody(
           NOMS_ID,
           ADDITIONAL_DAYS_AWARDED,
         ),
@@ -644,7 +644,7 @@ class AdditionalDaysAddedServiceTest {
     @Test
     fun `Should intercept when already persisted adjustment has different days`() {
       whenever(
-        adjustmentRepository.findByPersonAndAdjustmentTypeAndStatus(
+        adjustmentRepository.findByPersonAndAdjustmentTypeAndStatusAndCurrentPeriodOfCustody(
           NOMS_ID,
           ADDITIONAL_DAYS_AWARDED,
         ),
@@ -663,7 +663,7 @@ class AdditionalDaysAddedServiceTest {
     @Test
     fun `Should intercept if all adas quashed`() {
       whenever(
-        adjustmentRepository.findByPersonAndAdjustmentTypeAndStatus(
+        adjustmentRepository.findByPersonAndAdjustmentTypeAndStatusAndCurrentPeriodOfCustody(
           NOMS_ID,
           ADDITIONAL_DAYS_AWARDED,
         ),
@@ -691,7 +691,7 @@ class AdditionalDaysAddedServiceTest {
     @Test
     fun `Should intercept if any prospective`() {
       whenever(
-        adjustmentRepository.findByPersonAndAdjustmentTypeAndStatus(
+        adjustmentRepository.findByPersonAndAdjustmentTypeAndStatusAndCurrentPeriodOfCustody(
           NOMS_ID,
           ADDITIONAL_DAYS_AWARDED,
         ),
@@ -710,7 +710,7 @@ class AdditionalDaysAddedServiceTest {
     @Test
     fun `Shouldnt intercept if any prospective and rejected`() {
       whenever(
-        adjustmentRepository.findByPersonAndAdjustmentTypeAndStatus(
+        adjustmentRepository.findByPersonAndAdjustmentTypeAndStatusAndCurrentPeriodOfCustody(
           NOMS_ID,
           ADDITIONAL_DAYS_AWARDED,
         ),
@@ -729,7 +729,7 @@ class AdditionalDaysAddedServiceTest {
     @Test
     fun `Shouldnt intercept if any prospective and rejected multiple times`() {
       whenever(
-        adjustmentRepository.findByPersonAndAdjustmentTypeAndStatus(
+        adjustmentRepository.findByPersonAndAdjustmentTypeAndStatusAndCurrentPeriodOfCustody(
           NOMS_ID,
           ADDITIONAL_DAYS_AWARDED,
         ),
@@ -749,7 +749,7 @@ class AdditionalDaysAddedServiceTest {
     @Test
     fun `Should intercept if any prospective and rejection before latest sentence`() {
       whenever(
-        adjustmentRepository.findByPersonAndAdjustmentTypeAndStatus(
+        adjustmentRepository.findByPersonAndAdjustmentTypeAndStatusAndCurrentPeriodOfCustody(
           NOMS_ID,
           ADDITIONAL_DAYS_AWARDED,
         ),
@@ -768,7 +768,7 @@ class AdditionalDaysAddedServiceTest {
     @Test
     fun `Should intercept if any prospective and rejection different days`() {
       whenever(
-        adjustmentRepository.findByPersonAndAdjustmentTypeAndStatus(
+        adjustmentRepository.findByPersonAndAdjustmentTypeAndStatusAndCurrentPeriodOfCustody(
           NOMS_ID,
           ADDITIONAL_DAYS_AWARDED,
         ),
@@ -793,7 +793,7 @@ class AdditionalDaysAddedServiceTest {
         earliestNonRecallSentenceDate: LocalDate?,
         earliestRecallDate: LocalDate? = null,
       ) {
-        whenever(adjustmentRepository.findByPersonAndAdjustmentTypeAndStatus(NOMS_ID, ADDITIONAL_DAYS_AWARDED)).thenReturn(emptyList())
+        whenever(adjustmentRepository.findByPersonAndAdjustmentTypeAndStatusAndCurrentPeriodOfCustody(NOMS_ID, ADDITIONAL_DAYS_AWARDED)).thenReturn(emptyList())
         whenever(adjudicationApiClient.getAdjudications(NOMS_ID)).thenReturn(AdjudicationResponse(adjudications))
         whenever(prospectiveAdaRejectionRepository.findByPerson(NOMS_ID)).thenReturn(emptyList())
         whenever(prisonService.getSentencesAndStartDateDetails(NOMS_ID)).thenReturn(

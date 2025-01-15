@@ -53,7 +53,7 @@ class AdditionalDaysAwardedService(
     } else {
       sentenceDetail.earliestRecallDate ?: sentenceDetail.earliestSentenceDate!!
     }
-    val adaAdjustments = adjustmentRepository.findByPersonAndAdjustmentTypeAndStatus(nomsId, ADDITIONAL_DAYS_AWARDED)
+    val adaAdjustments = adjustmentRepository.findByPersonAndAdjustmentTypeAndStatusAndCurrentPeriodOfCustody(nomsId, ADDITIONAL_DAYS_AWARDED)
     val adas = adjudicationsLookupService.lookupAdas(nomsId, adaFilterDate)
 
     if (sentenceDetail.hasRecall && sentenceDetail.earliestRecallDate == null) {
