@@ -16,8 +16,10 @@ import uk.gov.justice.digital.hmpps.adjustments.api.entity.ProspectiveAdaRejecti
 import uk.gov.justice.digital.hmpps.adjustments.api.enums.AdaStatus
 import uk.gov.justice.digital.hmpps.adjustments.api.enums.ChargeStatus
 import uk.gov.justice.digital.hmpps.adjustments.api.enums.InterceptType.FIRST_TIME
+import uk.gov.justice.digital.hmpps.adjustments.api.enums.InterceptType.FIRST_TIME_WITH_NO_ADJUDICATION
 import uk.gov.justice.digital.hmpps.adjustments.api.enums.InterceptType.NONE
 import uk.gov.justice.digital.hmpps.adjustments.api.enums.InterceptType.PADA
+import uk.gov.justice.digital.hmpps.adjustments.api.enums.InterceptType.PADAS
 import uk.gov.justice.digital.hmpps.adjustments.api.enums.InterceptType.UPDATE
 import uk.gov.justice.digital.hmpps.adjustments.api.model.additionaldays.Ada
 import uk.gov.justice.digital.hmpps.adjustments.api.model.additionaldays.AdaAdjudicationDetails
@@ -123,7 +125,7 @@ class AdditionalDaysAddedServiceTest {
             ),
           ),
           totalAwaitingApproval = 10,
-          intercept = AdaIntercept(type = UPDATE, number = 1, anyProspective = false, messageArguments = listOf("Prisoner, Default")),
+          intercept = AdaIntercept(type = UPDATE, number = 1, anyProspective = false, messageArguments = listOf()),
           earliestNonRecallSentenceDate = sentenceDate,
         ),
       )
@@ -254,7 +256,7 @@ class AdditionalDaysAddedServiceTest {
             ),
           ),
           totalAwaitingApproval = 10,
-          intercept = AdaIntercept(type = UPDATE, number = 1, anyProspective = true, messageArguments = listOf("Prisoner, Default")),
+          intercept = AdaIntercept(type = UPDATE, number = 1, anyProspective = true, messageArguments = listOf()),
           earliestNonRecallSentenceDate = sentenceDate,
         ),
       )
@@ -399,7 +401,7 @@ class AdditionalDaysAddedServiceTest {
             ),
           ),
           totalAwaitingApproval = 10,
-          intercept = AdaIntercept(type = UPDATE, number = 1, anyProspective = false, messageArguments = listOf("Prisoner, Default")),
+          intercept = AdaIntercept(type = UPDATE, number = 1, anyProspective = false, messageArguments = listOf()),
           earliestNonRecallSentenceDate = sentenceDate,
           earliestRecallDate = recallDate,
         ),
@@ -424,7 +426,7 @@ class AdditionalDaysAddedServiceTest {
         adaAdjudicationDetails,
       ).isEqualTo(
         AdaAdjudicationDetails(
-          intercept = AdaIntercept(type = FIRST_TIME, number = 0, anyProspective = false, messageArguments = listOf()),
+          intercept = AdaIntercept(type = FIRST_TIME_WITH_NO_ADJUDICATION, number = 0, anyProspective = false, messageArguments = listOf()),
           totalExistingAdas = 10,
           showExistingAdaMessage = true,
           earliestNonRecallSentenceDate = sentenceDate,
@@ -559,7 +561,7 @@ class AdditionalDaysAddedServiceTest {
       val intercept = additionalDaysAwardedService.getAdaAdjudicationDetails(NOMS_ID).intercept
 
       assertThat(intercept).isEqualTo(AdaIntercept(FIRST_TIME, 1, false, emptyList()))
-      assertThat(intercept.message).isEqualTo("The first time you use the adjustments service, you need to check if the existing adjustment information from NOMIS is correct.")
+      assertThat(intercept.message).isEqualTo("This service has identified ADA adjustments that were created in NOMIS. You must review the adjudications with ADAs and approve them in this service.")
     }
 
     @Test
@@ -584,7 +586,7 @@ class AdditionalDaysAddedServiceTest {
       val intercept = additionalDaysAwardedService.getAdaAdjudicationDetails(NOMS_ID).intercept
 
       assertThat(intercept).isEqualTo(AdaIntercept(FIRST_TIME, 1, false, emptyList()))
-      assertThat(intercept.message).isEqualTo("The first time you use the adjustments service, you need to check if the existing adjustment information from NOMIS is correct.")
+      assertThat(intercept.message).isEqualTo("This service has identified ADA adjustments that were created in NOMIS. You must review the adjudications with ADAs and approve them in this service.")
     }
 
     @Test
@@ -705,6 +707,25 @@ class AdditionalDaysAddedServiceTest {
       val intercept = additionalDaysAwardedService.getAdaAdjudicationDetails(NOMS_ID).intercept
 
       assertPadaIntercept(intercept, 1, true)
+    }
+
+    @Test
+    fun `Should intercept if any multiple prospective`() {
+      whenever(
+        adjustmentRepository.findByPersonAndAdjustmentTypeAndStatusAndCurrentPeriodOfCustody(
+          NOMS_ID,
+          ADDITIONAL_DAYS_AWARDED,
+        ),
+      ).thenReturn(
+        emptyList(),
+      )
+      whenever(adjudicationApiClient.getAdjudications(NOMS_ID)).thenReturn(AdjudicationResponse(listOf(adjudicationOneProspective, adjudicationTwoProspective)))
+      whenever(prospectiveAdaRejectionRepository.findByPerson(NOMS_ID)).thenReturn(emptyList())
+      whenever(prisonService.getSentencesAndStartDateDetails(NOMS_ID)).thenReturn(defaultSentenceDetail)
+
+      val intercept = additionalDaysAwardedService.getAdaAdjudicationDetails(NOMS_ID).intercept
+
+      assertPadasIntercept(intercept, 2, true)
     }
 
     @Test
@@ -857,7 +878,7 @@ class AdditionalDaysAddedServiceTest {
             UPDATE,
             1,
             false,
-            messageArguments = listOf("Prisoner, Default"),
+            messageArguments = listOf(),
           ),
         )
       }
@@ -878,7 +899,7 @@ class AdditionalDaysAddedServiceTest {
             PADA,
             1,
             true,
-            messageArguments = listOf("Prisoner, Default"),
+            messageArguments = listOf("Default Prisoner"),
           ),
         )
       }
@@ -890,10 +911,10 @@ class AdditionalDaysAddedServiceTest {
           UPDATE,
           number,
           anyProspective,
-          messageArguments = listOf("Prisoner, Default"),
+          messageArguments = listOf(),
         ),
       )
-      assertThat(intercept.message).isEqualTo("Updates have been made to Prisoner, Default's adjustment information, which need to be approved.")
+      assertThat(intercept.message).isEqualTo("Updates have been made to ADA (Additional days awarded) information, which need to be approved.")
     }
 
     private fun assertPadaIntercept(intercept: AdaIntercept, number: Int, anyProspective: Boolean) {
@@ -902,10 +923,22 @@ class AdditionalDaysAddedServiceTest {
           PADA,
           number,
           anyProspective,
-          messageArguments = listOf("Prisoner, Default"),
+          messageArguments = listOf("Default Prisoner"),
         ),
       )
-      assertThat(intercept.message).isEqualTo("There is a prospective ADA recorded for Prisoner, Default")
+      assertThat(intercept.message).isEqualTo("There is a PADA (Prospective additional days awarded) recorded for Default Prisoner. Review the PADA and approve if it's relevant to the current sentence.")
+    }
+
+    private fun assertPadasIntercept(intercept: AdaIntercept, number: Int, anyProspective: Boolean) {
+      assertThat(intercept).isEqualTo(
+        AdaIntercept(
+          PADAS,
+          number,
+          anyProspective,
+          messageArguments = listOf("Default Prisoner"),
+        ),
+      )
+      assertThat(intercept.message).isEqualTo("There are PADAs (Prospective additional days awarded) recorded for Default Prisoner. Review the PADAs and approve the ones that are relevant to the current sentence.")
     }
   }
 
@@ -995,6 +1028,27 @@ class AdditionalDaysAddedServiceTest {
         Punishment(
           type = "PROSPECTIVE_DAYS",
           schedule = Schedule(10, null),
+          consecutiveChargeNumber = null,
+        ),
+      ),
+    )
+
+    val adjudicationTwoProspective = Adjudication(
+      chargeNumber = "MOR-2525916",
+      prisonerNumber = NOMS_ID,
+      status = "CHARGE_PROVED",
+      outcomes = listOf(
+        OutcomeAndHearing(
+          Hearing(
+            dateTimeOfHearing = LocalDateTime.of(2023, 9, 3, 16, 45),
+            agencyId = "MOR",
+          ),
+        ),
+      ),
+      punishments = listOf(
+        Punishment(
+          type = "PROSPECTIVE_DAYS",
+          schedule = Schedule(30, null),
           consecutiveChargeNumber = null,
         ),
       ),
