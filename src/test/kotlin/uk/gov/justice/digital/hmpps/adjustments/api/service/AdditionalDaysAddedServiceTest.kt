@@ -712,7 +712,7 @@ class AdditionalDaysAddedServiceTest {
     @Test
     fun `Should intercept if any multiple prospective`() {
       whenever(
-        adjustmentRepository.findByPersonAndAdjustmentTypeAndStatus(
+        adjustmentRepository.findByPersonAndAdjustmentTypeAndStatusAndCurrentPeriodOfCustody(
           NOMS_ID,
           ADDITIONAL_DAYS_AWARDED,
         ),
