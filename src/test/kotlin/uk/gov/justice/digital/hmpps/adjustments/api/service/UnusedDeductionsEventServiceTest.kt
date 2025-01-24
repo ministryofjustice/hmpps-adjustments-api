@@ -90,6 +90,9 @@ class UnusedDeductionsEventServiceTest {
         adjustmentType = AdjustmentType.UNUSED_DEDUCTIONS,
         days = 10,
         effectiveDays = 10,
+        fromDate = null,
+        toDate = null,
+        remand = null,
       )
       val adjustments = listOf(remand, taggedBail, unusedDeductions)
 
@@ -161,6 +164,7 @@ class UnusedDeductionsEventServiceTest {
             fromDate = null,
             days = 100,
             adjustmentType = AdjustmentType.UNUSED_DEDUCTIONS,
+            remand = null,
           ),
         ),
       )
@@ -313,6 +317,9 @@ class UnusedDeductionsEventServiceTest {
         adjustmentType = AdjustmentType.UNUSED_DEDUCTIONS,
         days = 10,
         effectiveDays = 10,
+        fromDate = null,
+        toDate = null,
+        remand = null,
       )
       val adjustments = listOf(remand, taggedBail, unusedDeductions)
 

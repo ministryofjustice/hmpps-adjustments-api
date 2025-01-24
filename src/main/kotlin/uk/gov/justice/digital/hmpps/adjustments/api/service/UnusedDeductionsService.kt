@@ -114,7 +114,7 @@ class UnusedDeductionsService(
         adjustmentService.delete(unusedDeductionsAdjustment.id!!)
       } else {
         if (unusedDeductionsAdjustment.days != unusedDeductions) {
-          adjustmentService.update(unusedDeductionsAdjustment.id!!, unusedDeductionsAdjustment.copy(days = unusedDeductions))
+          adjustmentService.update(unusedDeductionsAdjustment.id!!, unusedDeductionsAdjustment.copy(days = unusedDeductions, fromDate = null, toDate = null))
         }
       }
     } else {
@@ -128,6 +128,8 @@ class UnusedDeductionsService(
               toDate = null,
               days = unusedDeductions,
               adjustmentType = AdjustmentType.UNUSED_DEDUCTIONS,
+              taggedBail = null,
+              remand = null,
             ),
           ),
         )
