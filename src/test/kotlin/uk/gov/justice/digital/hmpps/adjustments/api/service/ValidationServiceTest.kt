@@ -413,13 +413,13 @@ class ValidationServiceTest {
     )
 
     @Test
-    fun `Special Remission valid`() {
+    fun `Time spent in custody abroad is valid`() {
       val result = validationService.validate(validTimeSpentInCustodyAbroad)
       assertThat(result).isEmpty()
     }
 
     @Test
-    fun `Special Remission with no type is not valid`() {
+    fun `Time spent in custody abroad with no documentation source is not valid`() {
       val result = validationService.validate(validTimeSpentInCustodyAbroad.copy(timeSpentInCustodyAbroad = null))
       assertThat(result).isEqualTo(listOf(ValidationMessage(TSICA_DOCUMENTATION_SOURCE_NOT_NULL)))
     }
