@@ -29,6 +29,9 @@ class ValidationService(
     if (adjustment.adjustmentType == AdjustmentType.SPECIAL_REMISSION) {
       return validateSpecialRemission(adjustment)
     }
+    if (adjustment.adjustmentType == AdjustmentType.CUSTODY_ABROAD) {
+      return validateTimeSpentInCustodyAbroad(adjustment)
+    }
     return emptyList()
   }
 
@@ -103,6 +106,15 @@ class ValidationService(
 
     if (adjustment.specialRemission?.type == null) {
       validationMessages.add(ValidationMessage(ValidationCode.SREM_TYPE_NOT_NULL))
+    }
+    return validationMessages
+  }
+
+  private fun validateTimeSpentInCustodyAbroad(adjustment: AdjustmentDto): List<ValidationMessage> {
+    val validationMessages = mutableListOf<ValidationMessage>()
+
+    if (adjustment.timeSpentInCustodyAbroad?.documentationSource == null) {
+      validationMessages.add(ValidationMessage(ValidationCode.TSICA_DOCUMENTATION_SOURCE_NOT_NULL))
     }
     return validationMessages
   }

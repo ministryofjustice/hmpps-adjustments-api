@@ -23,6 +23,7 @@ import uk.gov.justice.digital.hmpps.adjustments.api.entity.AdjustmentStatus.DELE
 import uk.gov.justice.digital.hmpps.adjustments.api.entity.AdjustmentStatus.INACTIVE
 import uk.gov.justice.digital.hmpps.adjustments.api.entity.AdjustmentStatus.INACTIVE_WHEN_DELETED
 import uk.gov.justice.digital.hmpps.adjustments.api.entity.AdjustmentType
+import uk.gov.justice.digital.hmpps.adjustments.api.entity.AdjustmentType.CUSTODY_ABROAD
 import uk.gov.justice.digital.hmpps.adjustments.api.entity.AdjustmentType.LAWFULLY_AT_LARGE
 import uk.gov.justice.digital.hmpps.adjustments.api.entity.AdjustmentType.REMAND
 import uk.gov.justice.digital.hmpps.adjustments.api.entity.AdjustmentType.SPECIAL_REMISSION
@@ -32,6 +33,7 @@ import uk.gov.justice.digital.hmpps.adjustments.api.entity.ChangeType
 import uk.gov.justice.digital.hmpps.adjustments.api.entity.LawfullyAtLarge
 import uk.gov.justice.digital.hmpps.adjustments.api.entity.SpecialRemission
 import uk.gov.justice.digital.hmpps.adjustments.api.entity.TaggedBail
+import uk.gov.justice.digital.hmpps.adjustments.api.entity.TimeSpentInCustodyAbroad
 import uk.gov.justice.digital.hmpps.adjustments.api.entity.UnlawfullyAtLarge
 import uk.gov.justice.digital.hmpps.adjustments.api.error.ApiValidationException
 import uk.gov.justice.digital.hmpps.adjustments.api.legacy.model.LegacyAdjustmentType
@@ -46,6 +48,7 @@ import uk.gov.justice.digital.hmpps.adjustments.api.model.RestoreAdjustmentsDto
 import uk.gov.justice.digital.hmpps.adjustments.api.model.SentenceInfo
 import uk.gov.justice.digital.hmpps.adjustments.api.model.SpecialRemissionDto
 import uk.gov.justice.digital.hmpps.adjustments.api.model.TaggedBailDto
+import uk.gov.justice.digital.hmpps.adjustments.api.model.TimeSpentInCustodyAbroadDto
 import uk.gov.justice.digital.hmpps.adjustments.api.model.UnlawfullyAtLargeDto
 import uk.gov.justice.digital.hmpps.adjustments.api.model.remandandsentencing.CourtCase
 import uk.gov.justice.digital.hmpps.adjustments.api.respository.AdjustmentRepository
@@ -113,6 +116,7 @@ class AdjustmentsTransactionalService(
       lawfullyAtLarge = lawfullyAtLarge(resource),
       specialRemission = specialRemission(resource),
       taggedBail = taggedBail(resource),
+      timeSpentInCustodyAbroad = timeSpentInCustodyAbroad(resource),
     )
     adjustment.adjustmentHistory = listOf(
       AdjustmentHistory(
@@ -213,6 +217,24 @@ class AdjustmentsTransactionalService(
       SpecialRemission()
     }
 
+  private fun timeSpentInCustodyAbroad(adjustmentDto: AdjustmentDto, adjustment: Adjustment? = null): TimeSpentInCustodyAbroad? =
+    if (adjustmentDto.adjustmentType == CUSTODY_ABROAD && adjustmentDto.timeSpentInCustodyAbroad != null) {
+      getTimeSpentInCustodyAbroad(adjustment).apply {
+        documentationSource = adjustmentDto.timeSpentInCustodyAbroad.documentationSource
+      }
+    } else {
+      null
+    }
+
+  private fun getTimeSpentInCustodyAbroad(adjustment: Adjustment?) =
+    if (adjustment?.timeSpentInCustodyAbroad != null) {
+      adjustment.timeSpentInCustodyAbroad!!
+    } else if (adjustment != null) {
+      TimeSpentInCustodyAbroad(adjustment = adjustment)
+    } else {
+      TimeSpentInCustodyAbroad()
+    }
+
   private fun additionalDaysAwarded(resource: AdjustmentDto, adjustment: Adjustment? = null): AdditionalDaysAwarded? {
     if (resource.adjustmentType == AdjustmentType.ADDITIONAL_DAYS_AWARDED && resource.additionalDaysAwarded != null) {
       return getAdditionalDaysAwarded(adjustment).apply {
@@ -308,6 +330,7 @@ class AdjustmentsTransactionalService(
       lawfullyAtLarge = lawfullyAtLarge(resource, this)
       specialRemission = specialRemission(resource, this)
       taggedBail = taggedBail(resource)
+      timeSpentInCustodyAbroad = timeSpentInCustodyAbroad(resource, this)
       adjustmentHistory += AdjustmentHistory(
         changeByUsername = getCurrentAuthenticationUsername(),
         changeType = ChangeType.UPDATE,
@@ -404,6 +427,7 @@ class AdjustmentsTransactionalService(
       specialRemission = specialRemissionDto(adjustment),
       remand = remandDto(adjustment, legacyData),
       taggedBail = taggedBailDto(adjustment, legacyData),
+      timeSpentInCustodyAbroad = timeSpentInCustodyAbroadDto(adjustment),
       lastUpdatedBy = latestHistory.changeByUsername,
       lastUpdatedDate = latestHistory.changeAt,
       createdDate = adjustment.adjustmentHistory.first().changeAt,
@@ -458,6 +482,12 @@ class AdjustmentsTransactionalService(
   private fun specialRemissionDto(adjustment: Adjustment): SpecialRemissionDto? =
     if (adjustment.specialRemission != null) {
       SpecialRemissionDto(type = adjustment.specialRemission!!.type)
+    } else {
+      null
+    }
+  private fun timeSpentInCustodyAbroadDto(adjustment: Adjustment): TimeSpentInCustodyAbroadDto? =
+    if (adjustment.timeSpentInCustodyAbroad != null) {
+      TimeSpentInCustodyAbroadDto(documentationSource = adjustment.timeSpentInCustodyAbroad!!.documentationSource)
     } else {
       null
     }
