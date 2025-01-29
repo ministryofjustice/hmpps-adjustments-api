@@ -15,6 +15,7 @@ import uk.gov.justice.digital.hmpps.adjustments.api.legacy.controller.LegacyCont
 import uk.gov.justice.digital.hmpps.adjustments.api.legacy.model.LegacyAdjustment
 import uk.gov.justice.digital.hmpps.adjustments.api.legacy.model.LegacyAdjustmentCreatedResponse
 import uk.gov.justice.digital.hmpps.adjustments.api.legacy.model.LegacyAdjustmentType
+import uk.gov.justice.digital.hmpps.adjustments.api.legacy.service.LegacyService
 import uk.gov.justice.digital.hmpps.adjustments.api.respository.AdjustmentRepository
 import uk.gov.justice.digital.hmpps.adjustments.api.wiremock.PrisonApiExtension
 import uk.gov.justice.hmpps.sqs.countAllMessagesOnQueue
@@ -25,6 +26,9 @@ class PrisonerListenerIntTest : SqsIntegrationTestBase() {
 
   @Autowired
   lateinit var adjustmentRepository: AdjustmentRepository
+
+  @Autowired
+  lateinit var legacyService: LegacyService
 
   @Test
   fun `handleReleased for deleted adjustment`() {
@@ -132,13 +136,33 @@ class PrisonerListenerIntTest : SqsIntegrationTestBase() {
 
   @Test
   fun handlePrisonerBookingMoved() {
-    val id = createAnAdjustment(
-      createdAdjustment.copy(),
+    val oldAdjustment = createAnAdjustment(
+      createdAdjustment.copy(
+        bookingId = PrisonApiExtension.BOOKING_MOVE_OLD_BOOKING_ID,
+        offenderNo = PrisonApiExtension.BOOKING_MOVE_OLD_PRISONER_ID,
+        currentTerm = false,
+      ),
+    )
+
+    val updatedOldAdjustment = createAnAdjustment(
+      createdAdjustment.copy(
+        bookingId = PrisonApiExtension.BOOKING_MOVE_UPDATED_OLD_BOOKING_ID,
+        offenderNo = PrisonApiExtension.BOOKING_MOVE_OLD_PRISONER_ID,
+        currentTerm = false,
+      ),
+    )
+
+    val newAdjustment = createAnAdjustment(
+      createdAdjustment.copy(
+        bookingId = PrisonApiExtension.BOOKING_MOVE_NEW_BOOKING_ID,
+        offenderNo = PrisonApiExtension.BOOKING_MOVE_NEW_PRISONER_ID,
+        currentTerm = false,
+      ),
     )
     val eventType = "prison-offender-events.prisoner.booking.moved"
-    val newPersonId = "NEWPERSON"
-    val oldPersonId = PrisonApiExtension.PRISONER_ID
-    val bookingId = PrisonApiExtension.BOOKING_ID
+    val newPersonId = PrisonApiExtension.BOOKING_MOVE_NEW_PRISONER_ID
+    val oldPersonId = PrisonApiExtension.BOOKING_MOVE_OLD_PRISONER_ID
+    val bookingId = PrisonApiExtension.BOOKING_MOVE_OLD_BOOKING_ID
 
     val payload = prisonerBookingMovedPayload(eventType, bookingId.toString(), oldPersonId, newPersonId)
 
@@ -158,10 +182,19 @@ class PrisonerListenerIntTest : SqsIntegrationTestBase() {
     }
 
     await untilAsserted {
-      val adjustment = adjustmentRepository.findById(id).get()
+      val adjustment = adjustmentRepository.findById(oldAdjustment).get()
       assertThat(adjustment.person).isEqualTo(newPersonId)
+      val adjBookingId = legacyService.getBookingIdFromLegacyData(adjustment.legacyData)
+      assertThat(adjBookingId).isEqualTo("456")
+      assertThat(adjustment.currentPeriodOfCustody).isEqualTo(true)
+
+      val adjustmentOld = adjustmentRepository.findById(updatedOldAdjustment).get()
+      val adjOldBookingId = legacyService.getBookingIdFromLegacyData(adjustmentOld.legacyData)
+      assertThat(adjOldBookingId).isEqualTo("789")
+      assertThat(adjustmentOld.currentPeriodOfCustody).isEqualTo(true)
+
       val newPersonAdjustments = adjustmentRepository.findByPerson(newPersonId)
-      assertThat(newPersonAdjustments.find { it.id == id }).isNotNull
+      assertThat(newPersonAdjustments.find { it.id == oldAdjustment }).isNotNull
     }
   }
 
