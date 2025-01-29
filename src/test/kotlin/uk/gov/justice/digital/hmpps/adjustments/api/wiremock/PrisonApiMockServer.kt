@@ -24,6 +24,13 @@ class PrisonApiExtension : BeforeAllCallback, AfterAllCallback, BeforeEachCallba
     val prisonApi = PrisonApiMockServer()
     const val BOOKING_ID = 123L
     const val PRISONER_ID = "BCDEFG"
+
+    const val BOOKING_MOVE_NEW_BOOKING_ID = 234L
+    const val BOOKING_MOVE_NEW_PRISONER_ID = "NEWPERSON"
+    const val BOOKING_MOVE_OLD_BOOKING_ID = 456L
+    const val BOOKING_MOVE_OLD_PRISONER_ID = "OLDPERSON"
+    const val BOOKING_MOVE_UPDATED_OLD_BOOKING_ID = 789L
+
     const val RECALL_BOOKING_ID = 321L
     const val RECALL_PRISONER_ID = "CDEFGH"
     const val EARLIEST_SENTENCE_DATE = "2015-03-17"
@@ -32,7 +39,9 @@ class PrisonApiExtension : BeforeAllCallback, AfterAllCallback, BeforeEachCallba
   override fun beforeAll(context: ExtensionContext) {
     prisonApi.start()
     prisonApi.stubSentencesAndOffences()
-    prisonApi.stubGetPrisonerDetails()
+    prisonApi.stubGetPrisonerDetails(PRISONER_ID, BOOKING_ID)
+    prisonApi.stubGetPrisonerDetails(BOOKING_MOVE_NEW_PRISONER_ID, BOOKING_MOVE_OLD_BOOKING_ID)
+    prisonApi.stubGetPrisonerDetails(BOOKING_MOVE_OLD_PRISONER_ID, BOOKING_MOVE_UPDATED_OLD_BOOKING_ID)
     prisonApi.stubGetUnusedDeductionsPrisonerDetails()
     prisonApi.stubGetPrison("LDS", "Leeds")
     prisonApi.stubGetPrison("MRG", "Moorgate")
@@ -100,17 +109,17 @@ class PrisonApiMockServer : WireMockServer(WIREMOCK_PORT) {
         ),
     )
   }
-  fun stubGetPrisonerDetails(): StubMapping =
+  fun stubGetPrisonerDetails(prisonId: String, bookingId: Long): StubMapping =
     stubFor(
-      get("/api/offenders/$PRISONER_ID")
+      get("/api/offenders/$prisonId")
         .willReturn(
           aResponse()
             .withHeader("Content-Type", "application/json")
             .withBody(
               """
               {
-                 "offenderNo": "$PRISONER_ID",
-                 "bookingId": $BOOKING_ID,
+                 "offenderNo": "$prisonId",
+                 "bookingId": $bookingId,
                  "firstName": "Default",
                  "lastName": "Prisoner",
                  "dateOfBirth": "1995-03-08",

@@ -264,12 +264,24 @@ class LegacyService(
   }
 
   @Transactional
+  fun fixCurrentTermForPrisoner(prisonerId: String) {
+    val currentBookingId = prisonApiClient.getPrisonerDetail(prisonerId).bookingId
+    val adjustments = adjustmentRepository.findByPerson(prisonerId)
+    adjustments.forEach { adjustment ->
+      val adjBookingId = getBookingIdFromLegacyData(adjustment.legacyData)
+      if (adjBookingId == currentBookingId.toString()) {
+        adjustment.currentPeriodOfCustody = true
+      }
+    }
+  }
+
+  @Transactional
   fun moveBooking(bookingId: String, movedFromNomsNumber: String, movedToNomsNumber: String) {
     // Find all adjustments for the old prisoner
-    val adjustments = adjustmentRepository.findByPerson(movedFromNomsNumber)
+    val adjustmentsForMovedFrom = adjustmentRepository.findByPerson(movedFromNomsNumber)
 
     // Filter adjustments by bookingId extracted from legacyData
-    val filteredAdjustments = adjustments.filter { this.getBookingIdFromLegacyData(it.legacyData) == bookingId }
+    val filteredAdjustments = adjustmentsForMovedFrom.filter { this.getBookingIdFromLegacyData(it.legacyData) == bookingId }
 
     // Update each adjustment to the new prisoner
     filteredAdjustments.forEach { adjustment ->
