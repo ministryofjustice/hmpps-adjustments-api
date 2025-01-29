@@ -29,11 +29,15 @@ class PrisonerEventService(
       event.additionalInformation.movedFromNomsNumber,
       event.additionalInformation.movedToNomsNumber,
     )
+    legacyService.fixCurrentTermForPrisoner(event.additionalInformation.movedFromNomsNumber)
+    legacyService.fixCurrentTermForPrisoner(event.additionalInformation.movedToNomsNumber)
   }
 
   fun handlePrisonerMerged(event: PrisonerMergedEvent) {
     log.info("Handling merge of ${event.additionalInformation.removedNomsNumber} to ${event.additionalInformation.nomsNumber}")
     legacyService.prisonerMerged(event.additionalInformation.nomsNumber, event.additionalInformation.removedNomsNumber)
+    legacyService.fixCurrentTermForPrisoner(event.additionalInformation.nomsNumber)
+    legacyService.fixCurrentTermForPrisoner(event.additionalInformation.removedNomsNumber)
   }
 }
 
