@@ -25,5 +25,8 @@ enum class ValidationCode(val message: String, val validationType: ValidationTyp
   LAL_LAST_DATE_CANNOT_BE_FUTURE("The last day of lawfully at large must not be in the future"),
   LAL_DATE_MUST_BE_AFTER_SENTENCE_DATE("The first day of lawfully at large must be on or after the start of the sentence, %s"),
   SREM_TYPE_NOT_NULL("You must select the type of Special Remission"),
-  TSICA_DOCUMENTATION_SOURCE_NOT_NULL("You must select the documentation source for time spent in custody abroad"),
+  TCA_DOCUMENTATION_SOURCE_NOT_NULL("You must select the documentation source for time spent in custody abroad"),
+  TSA_COURT_OF_APPEAL_REFERENCE_NOT_NULL("You must must supply a court of appeal reference number for time spent as an appeal applicant"),
+  TSA_COURT_OF_APPEAL_REFERENCE_WRONG_LENGTH("You must must supply a court of appeal reference number that is the correct length for time spent as an appeal applicant"),
+  TSA_COURT_OF_APPEAL_REFERENCE_INVALID_CHARACTERS("You must must supply a court of appeal reference number that only contains letters and numbers for time spent as an appeal applicant"),
 }

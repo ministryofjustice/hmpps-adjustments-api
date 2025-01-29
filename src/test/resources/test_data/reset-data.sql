@@ -5,5 +5,6 @@ DELETE FROM lawfully_at_large;
 DELETE FROM special_remission;
 DELETE FROM tagged_bail;
 DELETE FROM time_spent_in_custody_abroad;
+DELETE FROM time_spent_as_an_appeal_applicant;
 DELETE FROM adjustment_history;
 DELETE FROM adjustment;

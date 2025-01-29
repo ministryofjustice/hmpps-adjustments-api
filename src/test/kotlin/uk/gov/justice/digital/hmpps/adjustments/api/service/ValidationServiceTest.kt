@@ -4,6 +4,8 @@ import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
+import org.junit.jupiter.params.ParameterizedTest
+import org.junit.jupiter.params.provider.CsvSource
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.whenever
 import uk.gov.justice.digital.hmpps.adjustments.api.entity.AdjustmentStatus
@@ -15,8 +17,10 @@ import uk.gov.justice.digital.hmpps.adjustments.api.enums.UnlawfullyAtLargeType
 import uk.gov.justice.digital.hmpps.adjustments.api.model.AdjustmentDto
 import uk.gov.justice.digital.hmpps.adjustments.api.model.LawfullyAtLargeDto
 import uk.gov.justice.digital.hmpps.adjustments.api.model.SpecialRemissionDto
+import uk.gov.justice.digital.hmpps.adjustments.api.model.TimeSpentAsAnAppealApplicantDto
 import uk.gov.justice.digital.hmpps.adjustments.api.model.TimeSpentInCustodyAbroadDto
 import uk.gov.justice.digital.hmpps.adjustments.api.model.UnlawfullyAtLargeDto
+import uk.gov.justice.digital.hmpps.adjustments.api.model.ValidationCode
 import uk.gov.justice.digital.hmpps.adjustments.api.model.ValidationCode.LAL_AFFECTS_DATES_NOT_NULL
 import uk.gov.justice.digital.hmpps.adjustments.api.model.ValidationCode.LAL_DATE_MUST_BE_AFTER_SENTENCE_DATE
 import uk.gov.justice.digital.hmpps.adjustments.api.model.ValidationCode.LAL_FIRST_DATE_CANNOT_BE_FUTURE
@@ -31,7 +35,8 @@ import uk.gov.justice.digital.hmpps.adjustments.api.model.ValidationCode.RADA_DA
 import uk.gov.justice.digital.hmpps.adjustments.api.model.ValidationCode.RADA_FROM_DATE_NOT_NULL
 import uk.gov.justice.digital.hmpps.adjustments.api.model.ValidationCode.RADA_REDUCES_BY_MORE_THAN_HALF
 import uk.gov.justice.digital.hmpps.adjustments.api.model.ValidationCode.SREM_TYPE_NOT_NULL
-import uk.gov.justice.digital.hmpps.adjustments.api.model.ValidationCode.TSICA_DOCUMENTATION_SOURCE_NOT_NULL
+import uk.gov.justice.digital.hmpps.adjustments.api.model.ValidationCode.TCA_DOCUMENTATION_SOURCE_NOT_NULL
+import uk.gov.justice.digital.hmpps.adjustments.api.model.ValidationCode.TSA_COURT_OF_APPEAL_REFERENCE_NOT_NULL
 import uk.gov.justice.digital.hmpps.adjustments.api.model.ValidationCode.UAL_DATE_MUST_BE_AFTER_SENTENCE_DATE
 import uk.gov.justice.digital.hmpps.adjustments.api.model.ValidationCode.UAL_FIRST_DATE_CANNOT_BE_FUTURE
 import uk.gov.justice.digital.hmpps.adjustments.api.model.ValidationCode.UAL_FROM_DATE_AFTER_TO_DATE
@@ -70,6 +75,7 @@ class ValidationServiceTest {
     remand = null,
     taggedBail = null,
     timeSpentInCustodyAbroad = null,
+    timeSpentAsAnAppealApplicant = null,
     lastUpdatedDate = LocalDateTime.now(),
     createdDate = LocalDateTime.now(),
     lastUpdatedBy = "Person",
@@ -421,7 +427,52 @@ class ValidationServiceTest {
     @Test
     fun `Time spent in custody abroad with no documentation source is not valid`() {
       val result = validationService.validate(validTimeSpentInCustodyAbroad.copy(timeSpentInCustodyAbroad = null))
-      assertThat(result).isEqualTo(listOf(ValidationMessage(TSICA_DOCUMENTATION_SOURCE_NOT_NULL)))
+      assertThat(result).isEqualTo(listOf(ValidationMessage(TCA_DOCUMENTATION_SOURCE_NOT_NULL)))
+    }
+  }
+
+  @Nested
+  inner class TimeSpentAsAnAppealApplicant {
+
+    val validTimeSpentAsAnAppealApplicant = existingRada.copy(
+      id = null,
+      days = 9,
+      adjustmentType = AdjustmentType.APPEAL_APPLICANT,
+      timeSpentAsAnAppealApplicant = TimeSpentAsAnAppealApplicantDto("AF3459678"),
+    )
+
+    @Test
+    fun `Time spent as an appeal applicant with valid court of appeal reference number`() {
+      val result = validationService.validate(validTimeSpentAsAnAppealApplicant)
+      assertThat(result).isEmpty()
+    }
+
+    @Test
+    fun `Court of appeal reference number must not be null`() {
+      val result = validationService.validate(
+        validTimeSpentAsAnAppealApplicant.copy(timeSpentAsAnAppealApplicant = null),
+      )
+      assertThat(result).isEqualTo(listOf(ValidationMessage(TSA_COURT_OF_APPEAL_REFERENCE_NOT_NULL)))
+    }
+
+    @ParameterizedTest
+    @CsvSource(
+      "abc123, TSA_COURT_OF_APPEAL_REFERENCE_WRONG_LENGTH",
+      "1235467, TSA_COURT_OF_APPEAL_REFERENCE_WRONG_LENGTH",
+      "31CharacterStringIsNotValidHere, TSA_COURT_OF_APPEAL_REFERENCE_WRONG_LENGTH",
+      "WA132156=, TSA_COURT_OF_APPEAL_REFERENCE_INVALID_CHARACTERS",
+      "151BAC\'\"!@£$%^&*()_||\\/, TSA_COURT_OF_APPEAL_REFERENCE_INVALID_CHARACTERS",
+      "151BAC=/*-+?~|{}[], TSA_COURT_OF_APPEAL_REFERENCE_INVALID_CHARACTERS",
+    )
+    fun `test if string is a palindrome`(candidate: String, expected: ValidationCode) {
+      val result = validationService.validate(
+        validTimeSpentAsAnAppealApplicant.copy(
+          timeSpentAsAnAppealApplicant = TimeSpentAsAnAppealApplicantDto(
+            candidate,
+          ),
+        ),
+      )
+      assertThat(result).isEqualTo(listOf(ValidationMessage(expected)))
     }
   }
 }

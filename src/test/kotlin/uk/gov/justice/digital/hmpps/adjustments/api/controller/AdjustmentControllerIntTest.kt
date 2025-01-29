@@ -19,6 +19,7 @@ import uk.gov.justice.digital.hmpps.adjustments.api.entity.AdjustmentStatus
 import uk.gov.justice.digital.hmpps.adjustments.api.entity.AdjustmentStatus.ACTIVE
 import uk.gov.justice.digital.hmpps.adjustments.api.entity.AdjustmentStatus.DELETED
 import uk.gov.justice.digital.hmpps.adjustments.api.entity.AdjustmentType
+import uk.gov.justice.digital.hmpps.adjustments.api.entity.AdjustmentType.APPEAL_APPLICANT
 import uk.gov.justice.digital.hmpps.adjustments.api.entity.AdjustmentType.CUSTODY_ABROAD
 import uk.gov.justice.digital.hmpps.adjustments.api.entity.AdjustmentType.LAWFULLY_AT_LARGE
 import uk.gov.justice.digital.hmpps.adjustments.api.entity.AdjustmentType.SPECIAL_REMISSION
@@ -46,6 +47,7 @@ import uk.gov.justice.digital.hmpps.adjustments.api.model.ManualUnusedDeductions
 import uk.gov.justice.digital.hmpps.adjustments.api.model.RemandDto
 import uk.gov.justice.digital.hmpps.adjustments.api.model.SpecialRemissionDto
 import uk.gov.justice.digital.hmpps.adjustments.api.model.TaggedBailDto
+import uk.gov.justice.digital.hmpps.adjustments.api.model.TimeSpentAsAnAppealApplicantDto
 import uk.gov.justice.digital.hmpps.adjustments.api.model.TimeSpentInCustodyAbroadDto
 import uk.gov.justice.digital.hmpps.adjustments.api.model.UnlawfullyAtLargeDto
 import uk.gov.justice.digital.hmpps.adjustments.api.model.ValidationCode
@@ -863,6 +865,83 @@ class AdjustmentControllerIntTest : SqsIntegrationTestBase() {
   }
 
   @Nested
+  inner class TimeSpentAsAnAppealApplicantTests {
+    @Test
+    fun `Create a time spent as an appeal applicant adjustment, then update it`() {
+      val adjustmentId = postCreateAdjustments(
+        listOf(
+          CREATED_ADJUSTMENT.copy(
+            adjustmentType = APPEAL_APPLICANT,
+            timeSpentAsAnAppealApplicant = TimeSpentAsAnAppealApplicantDto("WF123456"),
+            lawfullyAtLarge = null,
+            unlawfullyAtLarge = null,
+            remand = null,
+          ),
+        ),
+      )[0]
+
+      val adjustment = adjustmentRepository.findById(adjustmentId).get()
+
+      assertThat(adjustment.timeSpentAsAnAppealApplicant).isNotNull
+      assertThat(adjustment.timeSpentAsAnAppealApplicant!!.courtOfAppealReferenceNumber).isEqualTo("WF123456")
+      assertThat(adjustment.timeSpentAsAnAppealApplicant!!.adjustmentId).isEqualTo(adjustmentId)
+
+      val createdAdjustment = getAdjustmentById(adjustmentId)
+
+      assertThat(createdAdjustment)
+        .usingRecursiveComparison()
+        .ignoringFieldsMatchingRegexes("lastUpdatedDate", "createdDate")
+        .isEqualTo(
+          CREATED_ADJUSTMENT.copy(
+            id = adjustmentId,
+            adjustmentType = APPEAL_APPLICANT,
+            timeSpentAsAnAppealApplicant = TimeSpentAsAnAppealApplicantDto("WF123456"),
+            remand = null,
+            effectiveDays = 4,
+            lastUpdatedBy = "Test User",
+            status = ACTIVE,
+            adjustmentTypeText = APPEAL_APPLICANT.text,
+            days = 4,
+            prisonId = "LDS",
+            prisonName = "Leeds",
+            adjustmentArithmeticType = APPEAL_APPLICANT.arithmeticType,
+            source = AdjustmentSource.DPS,
+          ),
+        )
+
+      val updateDto =
+        createdAdjustment.copy(days = null, timeSpentAsAnAppealApplicant = TimeSpentAsAnAppealApplicantDto("WF123456"))
+      putAdjustmentUpdate(adjustmentId, updateDto)
+      val updatedAdjustment = getAdjustmentById(adjustmentId)
+      assertThat(updatedAdjustment)
+        .usingRecursiveComparison()
+        .ignoringFieldsMatchingRegexes("lastUpdatedDate")
+        .isEqualTo(createdAdjustment.copy(timeSpentAsAnAppealApplicant = TimeSpentAsAnAppealApplicantDto("WF123456")))
+    }
+
+    @Test
+    fun `Check the court of appeal reference number is upper cased if submitted in lower case`() {
+      val adjustmentId = postCreateAdjustments(
+        listOf(
+          CREATED_ADJUSTMENT.copy(
+            adjustmentType = APPEAL_APPLICANT,
+            timeSpentAsAnAppealApplicant = TimeSpentAsAnAppealApplicantDto("lowercase1"),
+            lawfullyAtLarge = null,
+            unlawfullyAtLarge = null,
+            remand = null,
+          ),
+        ),
+      )[0]
+
+      val adjustment = adjustmentRepository.findById(adjustmentId).get()
+
+      assertThat(adjustment.timeSpentAsAnAppealApplicant).isNotNull
+      assertThat(adjustment.timeSpentAsAnAppealApplicant!!.courtOfAppealReferenceNumber).isEqualTo("LOWERCASE1")
+      assertThat(adjustment.timeSpentAsAnAppealApplicant!!.adjustmentId).isEqualTo(adjustmentId)
+    }
+  }
+
+  @Nested
   inner class UalTests {
 
     @Test
@@ -1199,6 +1278,7 @@ class AdjustmentControllerIntTest : SqsIntegrationTestBase() {
       lawfullyAtLarge = null,
       specialRemission = null,
       timeSpentInCustodyAbroad = null,
+      timeSpentAsAnAppealApplicant = null,
       remand = RemandDto(chargeId = listOf(9991)),
       taggedBail = null,
     )

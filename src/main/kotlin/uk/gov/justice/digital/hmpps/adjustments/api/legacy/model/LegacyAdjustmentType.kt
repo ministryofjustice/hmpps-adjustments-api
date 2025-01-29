@@ -12,4 +12,5 @@ enum class LegacyAdjustmentType {
   S240A, // tagged bail
   UR, // unused remand
   TCA, // time spent in custody abroad
+  TSA, // time spent as an appeal applicant
 }
