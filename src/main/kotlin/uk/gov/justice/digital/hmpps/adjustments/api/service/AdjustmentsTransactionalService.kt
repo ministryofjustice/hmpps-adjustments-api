@@ -9,6 +9,7 @@ import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import org.springframework.web.reactive.function.client.WebClientResponseException
 import uk.gov.justice.digital.hmpps.adjustments.api.client.PrisonApiClient
+import uk.gov.justice.digital.hmpps.adjustments.api.client.PrisonerSearchApiClient
 import uk.gov.justice.digital.hmpps.adjustments.api.client.RemandAndSentencingApiClient
 import uk.gov.justice.digital.hmpps.adjustments.api.config.AuthAwareAuthenticationToken
 import uk.gov.justice.digital.hmpps.adjustments.api.config.UserContext
@@ -66,6 +67,7 @@ class AdjustmentsTransactionalService(
   val objectMapper: ObjectMapper,
   private val prisonService: PrisonService,
   private val prisonApiClient: PrisonApiClient,
+  private val prisonerSearchApiClient: PrisonerSearchApiClient,
   private val remandAndSentencingApiClient: RemandAndSentencingApiClient,
 ) {
 
@@ -91,7 +93,7 @@ class AdjustmentsTransactionalService(
     validateTaggedBail(resource)
 
     val sentenceInfo = sentenceInfo(resource)
-    val prisoner = prisonApiClient.getPrisonerDetail(resource.person)
+    val prisoner = prisonerSearchApiClient.findByPrisonerNumber(resource.person)
     val adjustment = Adjustment(
       person = resource.person,
       effectiveDays = daysBetween ?: resource.days!!,
@@ -128,7 +130,7 @@ class AdjustmentsTransactionalService(
         changeType = ChangeType.CREATE,
         changeSource = AdjustmentSource.DPS,
         adjustment = adjustment,
-        prisonId = prisoner.agencyId,
+        prisonId = prisoner.prisonId,
       ),
     )
 
@@ -330,7 +332,7 @@ class AdjustmentsTransactionalService(
 
     validateTaggedBail(resource)
 
-    val prisoner = prisonApiClient.getPrisonerDetail(adjustment.person)
+    val prisoner = prisonerSearchApiClient.findByPrisonerNumber(adjustment.person)
     val persistedLegacyData = objectMapper.convertValue(adjustment.legacyData, LegacyData::class.java)
     val change = objectToJson(adjustment)
     val sentenceInfo = sentenceInfo(resource)
@@ -366,7 +368,7 @@ class AdjustmentsTransactionalService(
         change = change,
         changeSource = AdjustmentSource.DPS,
         adjustment = adjustment,
-        prisonId = prisoner.agencyId,
+        prisonId = prisoner.prisonId,
       )
     }
   }
@@ -418,7 +420,7 @@ class AdjustmentsTransactionalService(
       .orElseThrow {
         EntityNotFoundException("No adjustment found with id $adjustmentId")
       }
-    val prisoner = prisonApiClient.getPrisonerDetail(adjustment.person)
+    val prisoner = prisonerSearchApiClient.findByPrisonerNumber(adjustment.person)
     val change = objectToJson(adjustment)
     adjustment.apply {
       status = if (this.status == INACTIVE) INACTIVE_WHEN_DELETED else DELETED
@@ -428,7 +430,7 @@ class AdjustmentsTransactionalService(
         changeSource = AdjustmentSource.DPS,
         change = change,
         adjustment = adjustment,
-        prisonId = prisoner.agencyId,
+        prisonId = prisoner.prisonId,
       )
     }
   }

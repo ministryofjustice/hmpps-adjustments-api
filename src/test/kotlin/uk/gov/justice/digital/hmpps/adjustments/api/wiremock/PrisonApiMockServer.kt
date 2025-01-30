@@ -11,7 +11,6 @@ import org.junit.jupiter.api.extension.ExtensionContext
 import uk.gov.justice.digital.hmpps.adjustments.api.listener.UNUSED_DEDUCTIONS_ERROR_PRISONER_ID
 import uk.gov.justice.digital.hmpps.adjustments.api.listener.UNUSED_DEDUCTIONS_PRISONER_ID
 import uk.gov.justice.digital.hmpps.adjustments.api.wiremock.PrisonApiExtension.Companion.BOOKING_ID
-import uk.gov.justice.digital.hmpps.adjustments.api.wiremock.PrisonApiExtension.Companion.PRISONER_ID
 import uk.gov.justice.digital.hmpps.adjustments.api.wiremock.PrisonApiExtension.Companion.RECALL_BOOKING_ID
 import uk.gov.justice.digital.hmpps.adjustments.api.wiremock.PrisonApiExtension.Companion.RECALL_PRISONER_ID
 
@@ -22,6 +21,7 @@ class PrisonApiExtension : BeforeAllCallback, AfterAllCallback, BeforeEachCallba
   companion object {
     @JvmField
     val prisonApi = PrisonApiMockServer()
+
     const val BOOKING_ID = 123L
     const val PRISONER_ID = "BCDEFG"
 
@@ -39,9 +39,6 @@ class PrisonApiExtension : BeforeAllCallback, AfterAllCallback, BeforeEachCallba
   override fun beforeAll(context: ExtensionContext) {
     prisonApi.start()
     prisonApi.stubSentencesAndOffences()
-    prisonApi.stubGetPrisonerDetails(PRISONER_ID, BOOKING_ID)
-    prisonApi.stubGetPrisonerDetails(BOOKING_MOVE_NEW_PRISONER_ID, BOOKING_MOVE_OLD_BOOKING_ID)
-    prisonApi.stubGetPrisonerDetails(BOOKING_MOVE_OLD_PRISONER_ID, BOOKING_MOVE_UPDATED_OLD_BOOKING_ID)
     prisonApi.stubGetUnusedDeductionsPrisonerDetails()
     prisonApi.stubGetPrison("LDS", "Leeds")
     prisonApi.stubGetPrison("MRG", "Moorgate")
@@ -109,27 +106,7 @@ class PrisonApiMockServer : WireMockServer(WIREMOCK_PORT) {
         ),
     )
   }
-  fun stubGetPrisonerDetails(prisonId: String, bookingId: Long): StubMapping =
-    stubFor(
-      get("/api/offenders/$prisonId")
-        .willReturn(
-          aResponse()
-            .withHeader("Content-Type", "application/json")
-            .withBody(
-              """
-              {
-                 "offenderNo": "$prisonId",
-                 "bookingId": $bookingId,
-                 "firstName": "Default",
-                 "lastName": "Prisoner",
-                 "dateOfBirth": "1995-03-08",
-                 "agencyId": "LDS"
-              }
-              """.trimIndent(),
-            )
-            .withStatus(200),
-        ),
-    )
+
   fun stubGetUnusedDeductionsPrisonerDetails(): StubMapping =
     stubFor(
       get("/api/offenders/$UNUSED_DEDUCTIONS_PRISONER_ID")

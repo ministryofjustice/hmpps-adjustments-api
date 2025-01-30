@@ -5,28 +5,31 @@ import org.junit.jupiter.api.Test
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.whenever
 import uk.gov.justice.digital.hmpps.adjustments.api.client.PrisonApiClient
+import uk.gov.justice.digital.hmpps.adjustments.api.client.PrisonerSearchApiClient
 import uk.gov.justice.digital.hmpps.adjustments.api.model.prisonapi.CourtDateChargeAndOutcomes
 import uk.gov.justice.digital.hmpps.adjustments.api.model.prisonapi.CourtDateOutcome
 import uk.gov.justice.digital.hmpps.adjustments.api.model.prisonapi.OffenderOffence
-import uk.gov.justice.digital.hmpps.adjustments.api.model.prisonapi.PrisonerDetails
 import uk.gov.justice.digital.hmpps.adjustments.api.model.prisonapi.RECALL_COURT_EVENT
 import uk.gov.justice.digital.hmpps.adjustments.api.model.prisonapi.SentenceAndOffences
+import uk.gov.justice.digital.hmpps.adjustments.api.model.prisonersearchapi.Prisoner
 import java.time.LocalDate
 
 class PrisonServiceTest {
 
   private val prisonApiClient = mock<PrisonApiClient>()
 
+  private val prisonerSearchApiClient = mock<PrisonerSearchApiClient>()
+
   private val prisonService =
-    PrisonService(prisonApiClient)
+    PrisonService(prisonApiClient, prisonerSearchApiClient)
 
   @Test
   fun `get sentence start details when mix of recall and determinate`() {
     val person = "ABC123"
     val bookingId = 1L
-    val prisoner = PrisonerDetails(
+    val prisoner = Prisoner(
       bookingId = bookingId,
-      offenderNo = person,
+      prisonerNumber = person,
       dateOfBirth = LocalDate.of(2000, 1, 1),
     )
     val chargeId = 1L
@@ -66,7 +69,7 @@ class PrisonServiceTest {
         ),
       ),
     )
-    whenever(prisonApiClient.getPrisonerDetail(person)).thenReturn(prisoner)
+    whenever(prisonerSearchApiClient.findByPrisonerNumber(person)).thenReturn(prisoner)
     whenever(prisonApiClient.getSentencesAndOffences(bookingId)).thenReturn(sentences)
     whenever(prisonApiClient.getCourtDateResults(person)).thenReturn(courtEvents)
 

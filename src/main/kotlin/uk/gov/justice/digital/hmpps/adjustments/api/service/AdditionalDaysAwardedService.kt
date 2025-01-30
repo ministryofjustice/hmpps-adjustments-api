@@ -3,6 +3,7 @@ package uk.gov.justice.digital.hmpps.adjustments.api.service
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import uk.gov.justice.digital.hmpps.adjustments.api.client.PrisonApiClient
+import uk.gov.justice.digital.hmpps.adjustments.api.client.PrisonerSearchApiClient
 import uk.gov.justice.digital.hmpps.adjustments.api.entity.Adjustment
 import uk.gov.justice.digital.hmpps.adjustments.api.entity.AdjustmentType.ADDITIONAL_DAYS_AWARDED
 import uk.gov.justice.digital.hmpps.adjustments.api.entity.ProspectiveAdaRejection
@@ -36,6 +37,7 @@ class AdditionalDaysAwardedService(
   private val adjustmentRepository: AdjustmentRepository,
   private val prospectiveAdaRejectionRepository: ProspectiveAdaRejectionRepository,
   private val prisonApiClient: PrisonApiClient,
+  private val prisonerSearchApiClient: PrisonerSearchApiClient,
   private val adjudicationsLookupService: AdjudicationsLookupService,
 ) {
 
@@ -146,7 +148,7 @@ class AdditionalDaysAwardedService(
   }
 
   private fun getMessageParams(nomsId: String): List<String> {
-    val prisonerDetail = prisonApiClient.getPrisonerDetail(nomsId)
+    val prisonerDetail = prisonerSearchApiClient.findByPrisonerNumber(nomsId)
     return listOf("${prisonerDetail.firstName} ${prisonerDetail.lastName}".toTitleCase())
   }
 

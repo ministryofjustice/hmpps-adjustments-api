@@ -4,11 +4,13 @@ import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Service
 import uk.gov.justice.digital.hmpps.adjustments.api.client.PrisonApiClient
+import uk.gov.justice.digital.hmpps.adjustments.api.client.PrisonerSearchApiClient
 import uk.gov.justice.digital.hmpps.adjustments.api.legacy.service.LegacyService
 
 @Service
 class PrisonerEventService(
   private val prisonApiClient: PrisonApiClient,
+  private val prisonerSearchApiClient: PrisonerSearchApiClient,
   private val legacyService: LegacyService,
 ) {
 
@@ -18,7 +20,7 @@ class PrisonerEventService(
 
   fun handleReceived(event: PrisonerEvent) {
     log.info("Handling admission of ${event.additionalInformation.nomsNumber}")
-    val prisoner = prisonApiClient.getPrisonerDetail(event.additionalInformation.nomsNumber)
+    val prisoner = prisonerSearchApiClient.findByPrisonerNumber(event.additionalInformation.nomsNumber)
     legacyService.setAdmission(prisoner)
   }
 

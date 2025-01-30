@@ -2,6 +2,7 @@ package uk.gov.justice.digital.hmpps.adjustments.api.service
 
 import org.springframework.stereotype.Service
 import uk.gov.justice.digital.hmpps.adjustments.api.client.PrisonApiClient
+import uk.gov.justice.digital.hmpps.adjustments.api.client.PrisonerSearchApiClient
 import uk.gov.justice.digital.hmpps.adjustments.api.error.NoActiveSentencesException
 import uk.gov.justice.digital.hmpps.adjustments.api.model.SentenceInfo.Companion.isRecall
 import uk.gov.justice.digital.hmpps.adjustments.api.model.prisonapi.RECALL_COURT_EVENT
@@ -11,6 +12,7 @@ import java.time.LocalDate
 @Service
 class PrisonService(
   private val prisonApiClient: PrisonApiClient,
+  private val prisonerSearchApiClient: PrisonerSearchApiClient,
 ) {
 
   fun getStartOfSentenceEnvelope(bookingId: Long): LocalDate {
@@ -27,7 +29,7 @@ class PrisonService(
   }
 
   fun getSentencesAndStartDateDetails(personId: String): SentenceAndStartDateDetails {
-    val bookingId = prisonApiClient.getPrisonerDetail(personId).bookingId
+    val bookingId = prisonerSearchApiClient.findByPrisonerNumber(personId).bookingId
     val sentences = getSentencesAndOffences(bookingId)
     val hasRecall = sentences.any { isRecall(it) }
     val earliestRecallDate = if (hasRecall) {
