@@ -15,6 +15,7 @@ generic-service:
     CALCULATERELEASEDATES_API_URL: https://calculate-release-dates-api-dev.hmpps.service.justice.gov.uk
     ADJUDICATIONS_API_URL: https://manage-adjudications-api-dev.hmpps.service.justice.gov.uk
     REMANDANDSENTENCING_API_URL: https://remand-and-sentencing-api-dev.hmpps.service.justice.gov.uk
+    PRISONER_SEARCH_API_URL: https://prisoner-search-dev.prison.service.justice.gov.uk
 
   # Switches off the allow list in the DEV env only.
   allowlist: null

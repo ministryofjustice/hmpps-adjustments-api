@@ -60,6 +60,12 @@ remand-and-sentencing:
   api:
     url: http://localhost:8335
 
+prisoner:
+  search:
+    api:
+      timeout-seconds: 89
+      url: http://localhost:8336/prisoner-search-api
+
 hmpps.sqs:
   reactiveApi: true
   provider: localstack

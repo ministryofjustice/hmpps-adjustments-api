@@ -7,6 +7,7 @@ import jakarta.persistence.EntityNotFoundException
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import uk.gov.justice.digital.hmpps.adjustments.api.client.PrisonApiClient
+import uk.gov.justice.digital.hmpps.adjustments.api.client.PrisonerSearchApiClient
 import uk.gov.justice.digital.hmpps.adjustments.api.entity.Adjustment
 import uk.gov.justice.digital.hmpps.adjustments.api.entity.AdjustmentHistory
 import uk.gov.justice.digital.hmpps.adjustments.api.entity.AdjustmentSource
@@ -21,7 +22,7 @@ import uk.gov.justice.digital.hmpps.adjustments.api.legacy.model.LegacyAdjustmen
 import uk.gov.justice.digital.hmpps.adjustments.api.legacy.model.LegacyAdjustmentType
 import uk.gov.justice.digital.hmpps.adjustments.api.legacy.model.LegacyAdjustmentUpdatedResponse
 import uk.gov.justice.digital.hmpps.adjustments.api.legacy.model.LegacyData
-import uk.gov.justice.digital.hmpps.adjustments.api.model.prisonapi.PrisonerDetails
+import uk.gov.justice.digital.hmpps.adjustments.api.model.prisonersearchapi.Prisoner
 import uk.gov.justice.digital.hmpps.adjustments.api.respository.AdjustmentRepository
 import java.util.UUID
 
@@ -31,6 +32,7 @@ class LegacyService(
   private val adjustmentRepository: AdjustmentRepository,
   private val objectMapper: ObjectMapper,
   private val prisonApiClient: PrisonApiClient,
+  private val prisonerSearchApiClient: PrisonerSearchApiClient,
 ) {
 
   fun getBookingIdFromLegacyData(legacyData: JsonNode?): String {
@@ -137,7 +139,7 @@ class LegacyService(
 
   @Transactional
   fun updateAllAdjustmentsToHaveEffectiveDaysAsDpsDays(person: String, bookingId: Long, apiPrisonId: String? = null) {
-    val prisonId = apiPrisonId ?: prisonApiClient.getPrisonerDetail(person).agencyId
+    val prisonId = apiPrisonId ?: prisonerSearchApiClient.findByPrisonerNumber(person).prisonId
     val adjustments = adjustmentRepository.findByPersonAndStatus(person, ACTIVE)
     adjustments
       .filter {
@@ -177,7 +179,7 @@ class LegacyService(
       .orElseThrow {
         EntityNotFoundException("No adjustment found with id $adjustmentId")
       }!!
-    val prisonId = prisonApiClient.getPrisonerDetail(adjustment.person).agencyId
+    val prisonId = prisonerSearchApiClient.findByPrisonerNumber(adjustment.person).prisonId
     val change = objectToJson(adjustment)
     adjustment.apply {
       status = if (this.status == INACTIVE) INACTIVE_WHEN_DELETED else DELETED
@@ -229,8 +231,8 @@ class LegacyService(
   }
 
   @Transactional
-  fun setAdmission(prisoner: PrisonerDetails) {
-    val adjustments = adjustmentRepository.findByPerson(prisoner.offenderNo)
+  fun setAdmission(prisoner: Prisoner) {
+    val adjustments = adjustmentRepository.findByPerson(prisoner.prisonerNumber)
 
     adjustments.forEach {
       val persistedLegacyData = objectMapper.convertValue(it.legacyData, LegacyData::class.java)
@@ -244,7 +246,7 @@ class LegacyService(
           changeType = ChangeType.ADMISSION,
           changeSource = AdjustmentSource.NOMIS,
           adjustment = it,
-          prisonId = prisoner.agencyId,
+          prisonId = prisoner.prisonId,
         )
       }
     }
@@ -267,7 +269,7 @@ class LegacyService(
 
   @Transactional
   fun fixCurrentTermForPrisoner(prisonerId: String) {
-    val currentBookingId = prisonApiClient.getPrisonerDetail(prisonerId).bookingId
+    val currentBookingId = prisonerSearchApiClient.findByPrisonerNumber(prisonerId).bookingId
     val adjustments = adjustmentRepository.findByPerson(prisonerId)
     adjustments.forEach { adjustment ->
       val adjBookingId = getBookingIdFromLegacyData(adjustment.legacyData)

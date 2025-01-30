@@ -12,6 +12,7 @@ generic-service:
     CALCULATERELEASEDATES_API_URL: https://calculate-release-dates-api.hmpps.service.justice.gov.uk
     ADJUDICATIONS_API_URL: https://manage-adjudications-api.hmpps.service.justice.gov.uk
     REMANDANDSENTENCING_API_URL: https://remand-and-sentencing-api.hmpps.service.justice.gov.uk
+    PRISONER_SEARCH_API_URL: https://prisoner-search.prison.service.justice.gov.uk
 
   postgresDatabaseRestore:
     enabled: true

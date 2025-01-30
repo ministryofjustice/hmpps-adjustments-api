@@ -8,6 +8,7 @@ import org.mockito.kotlin.mock
 import org.mockito.kotlin.whenever
 import uk.gov.justice.digital.hmpps.adjustments.api.client.AdjudicationApiClient
 import uk.gov.justice.digital.hmpps.adjustments.api.client.PrisonApiClient
+import uk.gov.justice.digital.hmpps.adjustments.api.client.PrisonerSearchApiClient
 import uk.gov.justice.digital.hmpps.adjustments.api.entity.AdditionalDaysAwarded
 import uk.gov.justice.digital.hmpps.adjustments.api.entity.AdjudicationCharges
 import uk.gov.justice.digital.hmpps.adjustments.api.entity.Adjustment
@@ -32,8 +33,8 @@ import uk.gov.justice.digital.hmpps.adjustments.api.model.adjudications.OutcomeA
 import uk.gov.justice.digital.hmpps.adjustments.api.model.adjudications.Punishment
 import uk.gov.justice.digital.hmpps.adjustments.api.model.adjudications.Schedule
 import uk.gov.justice.digital.hmpps.adjustments.api.model.prisonapi.Prison
-import uk.gov.justice.digital.hmpps.adjustments.api.model.prisonapi.PrisonerDetails
 import uk.gov.justice.digital.hmpps.adjustments.api.model.prisonapi.SentenceAndOffences
+import uk.gov.justice.digital.hmpps.adjustments.api.model.prisonersearchapi.Prisoner
 import uk.gov.justice.digital.hmpps.adjustments.api.respository.AdjustmentRepository
 import uk.gov.justice.digital.hmpps.adjustments.api.respository.ProspectiveAdaRejectionRepository
 import java.time.LocalDate
@@ -44,19 +45,20 @@ class AdditionalDaysAddedServiceTest {
   private val prisonService = mock<PrisonService>()
   private val adjustmentRepository = mock<AdjustmentRepository>()
   private val prisonApiClient = mock<PrisonApiClient>()
+  private val prisonerSearchApiClient = mock<PrisonerSearchApiClient>()
   private val prospectiveAdaRejectionRepository = mock<ProspectiveAdaRejectionRepository>()
   private val adjudicationApiClient = mock<AdjudicationApiClient>()
   private val adjudicationsLookupService = AdjudicationsLookupService(adjudicationApiClient, prisonApiClient)
 
   private val additionalDaysAwardedService =
-    AdditionalDaysAwardedService(prisonService, adjustmentRepository, prospectiveAdaRejectionRepository, prisonApiClient, adjudicationsLookupService)
+    AdditionalDaysAwardedService(prisonService, adjustmentRepository, prospectiveAdaRejectionRepository, prisonApiClient, prisonerSearchApiClient, adjudicationsLookupService)
 
   @BeforeEach
   fun setup() {
-    whenever(prisonApiClient.getPrisonerDetail(NOMS_ID)).thenReturn(
-      PrisonerDetails(
+    whenever(prisonerSearchApiClient.findByPrisonerNumber(NOMS_ID)).thenReturn(
+      Prisoner(
         bookingId = 123,
-        offenderNo = NOMS_ID,
+        prisonerNumber = NOMS_ID,
         firstName = "DEFAULT",
         lastName = "PRISONER",
         dateOfBirth = LocalDate.parse("1995-03-08"),
