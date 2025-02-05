@@ -415,7 +415,7 @@ class ValidationServiceTest {
       id = null,
       days = 9,
       adjustmentType = AdjustmentType.CUSTODY_ABROAD,
-      timeSpentInCustodyAbroad = TimeSpentInCustodyAbroadDto(TimeSpentInCustodyAbroadDocumentationSource.COURT_WARRANT),
+      timeSpentInCustodyAbroad = TimeSpentInCustodyAbroadDto(TimeSpentInCustodyAbroadDocumentationSource.COURT_WARRANT, listOf(42)),
     )
 
     @Test
@@ -438,7 +438,7 @@ class ValidationServiceTest {
       id = null,
       days = 9,
       adjustmentType = AdjustmentType.APPEAL_APPLICANT,
-      timeSpentAsAnAppealApplicant = TimeSpentAsAnAppealApplicantDto("AF3459678"),
+      timeSpentAsAnAppealApplicant = TimeSpentAsAnAppealApplicantDto("AF3459678", listOf(2453)),
     )
 
     @Test
@@ -467,9 +467,7 @@ class ValidationServiceTest {
     fun `test if string is a palindrome`(candidate: String, expected: ValidationCode) {
       val result = validationService.validate(
         validTimeSpentAsAnAppealApplicant.copy(
-          timeSpentAsAnAppealApplicant = TimeSpentAsAnAppealApplicantDto(
-            candidate,
-          ),
+          timeSpentAsAnAppealApplicant = TimeSpentAsAnAppealApplicantDto(candidate, listOf(2453456)),
         ),
       )
       assertThat(result).isEqualTo(listOf(ValidationMessage(expected)))

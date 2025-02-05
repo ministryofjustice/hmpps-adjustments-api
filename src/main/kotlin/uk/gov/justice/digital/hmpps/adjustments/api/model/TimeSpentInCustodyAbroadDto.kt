@@ -7,4 +7,6 @@ import uk.gov.justice.digital.hmpps.adjustments.api.enums.TimeSpentInCustodyAbro
 data class TimeSpentInCustodyAbroadDto(
   @Schema(description = "The source document for the time spent in custody abroad information")
   val documentationSource: TimeSpentInCustodyAbroadDocumentationSource? = null,
+  @Schema(description = "The id of the charges for this time spent in custody abroad adjustment")
+  val chargeIds: List<Long>,
 )

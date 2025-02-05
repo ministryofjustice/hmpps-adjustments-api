@@ -54,6 +54,7 @@ import uk.gov.justice.digital.hmpps.adjustments.api.model.TaggedBailDto
 import uk.gov.justice.digital.hmpps.adjustments.api.model.TimeSpentAsAnAppealApplicantDto
 import uk.gov.justice.digital.hmpps.adjustments.api.model.TimeSpentInCustodyAbroadDto
 import uk.gov.justice.digital.hmpps.adjustments.api.model.UnlawfullyAtLargeDto
+import uk.gov.justice.digital.hmpps.adjustments.api.model.prisonapi.SentenceAndOffences
 import uk.gov.justice.digital.hmpps.adjustments.api.model.remandandsentencing.CourtCase
 import uk.gov.justice.digital.hmpps.adjustments.api.respository.AdjustmentRepository
 import java.time.LocalDate
@@ -112,7 +113,7 @@ class AdjustmentsTransactionalService(
           LocalDate.now(),
           null,
           legacyType(resource.adjustmentType, sentenceInfo),
-          chargeIds = resource.remand?.chargeId ?: emptyList(),
+          chargeIds = getChargeIds(resource),
           caseSequence = resource.taggedBail?.caseSequence,
         ),
       ),
@@ -135,6 +136,18 @@ class AdjustmentsTransactionalService(
     )
 
     return adjustmentRepository.save(adjustment).id
+  }
+
+  fun getChargeIds(resource: AdjustmentDto): List<Long> {
+    return if (resource.adjustmentType == REMAND && resource.remand != null) {
+      resource.remand.chargeId
+    } else if (resource.adjustmentType == CUSTODY_ABROAD && resource.timeSpentInCustodyAbroad != null) {
+      resource.timeSpentInCustodyAbroad.chargeIds
+    } else if (resource.adjustmentType == APPEAL_APPLICANT && resource.timeSpentAsAnAppealApplicant != null) {
+      resource.timeSpentAsAnAppealApplicant.chargeIds
+    } else {
+      emptyList()
+    }
   }
 
   @Transactional
@@ -317,6 +330,7 @@ class AdjustmentsTransactionalService(
       }!!
     return update(adjustment, resource)
   }
+
   private fun update(adjustment: Adjustment, resource: AdjustmentDto) {
     if (adjustment.adjustmentType != resource.adjustmentType) {
       throw ApiValidationException("The provided adjustment type ${resource.adjustmentType} doesn't match the persisted type ${adjustment.adjustmentType}")
@@ -352,7 +366,7 @@ class AdjustmentsTransactionalService(
           persistedLegacyData.postedDate,
           persistedLegacyData.comment,
           legacyType(resource.adjustmentType, sentenceInfo),
-          chargeIds = resource.remand?.chargeId ?: emptyList(),
+          chargeIds = getChargeIds(resource),
           caseSequence = resource.taggedBail?.caseSequence,
         ),
       )
@@ -389,12 +403,11 @@ class AdjustmentsTransactionalService(
     if (resource.adjustmentType.isSentenceType()) {
       val sentences = prisonService.getSentencesAndOffences(resource.bookingId)
       return if (resource.remand != null && resource.adjustmentType == REMAND) {
-        val matchingSentences =
-          sentences.filter { it.offences.any { off -> resource.remand.chargeId.contains(off.offenderChargeId) } }
-        if (matchingSentences.isEmpty()) {
-          throw ApiValidationException("No matching sentences for charge ids ${resource.remand.chargeId.joinToString()}")
-        }
-        SentenceInfo(matchingSentences.maxBy { it.sentenceDate })
+        getSentenceInfo(resource.remand.chargeId, sentences)
+      } else if (resource.timeSpentInCustodyAbroad != null && resource.adjustmentType == CUSTODY_ABROAD) {
+        getSentenceInfo(resource.timeSpentInCustodyAbroad.chargeIds, sentences)
+      } else if (resource.timeSpentAsAnAppealApplicant != null && resource.adjustmentType == APPEAL_APPLICANT) {
+        getSentenceInfo(resource.timeSpentAsAnAppealApplicant.chargeIds, sentences)
       } else if (resource.taggedBail != null && resource.adjustmentType == TAGGED_BAIL) {
         if (resource.taggedBail.caseSequence != null) {
           val matchingSentences = sentences.filter { it.caseSequence == resource.taggedBail.caseSequence }
@@ -412,6 +425,15 @@ class AdjustmentsTransactionalService(
       }
     }
     return null
+  }
+
+  fun getSentenceInfo(chargeIds: List<Long>, sentences: List<SentenceAndOffences>): SentenceInfo? {
+    val matchingSentences =
+      sentences.filter { it.offences.any { off -> chargeIds.contains(off.offenderChargeId) } }
+    if (matchingSentences.isEmpty()) {
+      throw ApiValidationException("No matching sentences for charge ids ${chargeIds.joinToString()}")
+    }
+    return SentenceInfo(matchingSentences.maxBy { it.sentenceDate })
   }
 
   @Transactional
@@ -458,8 +480,8 @@ class AdjustmentsTransactionalService(
       specialRemission = specialRemissionDto(adjustment),
       remand = remandDto(adjustment, legacyData),
       taggedBail = taggedBailDto(adjustment, legacyData),
-      timeSpentInCustodyAbroad = timeSpentInCustodyAbroadDto(adjustment),
-      timeSpentAsAnAppealApplicant = timeSpentAsAnAppealApplicantDto(adjustment),
+      timeSpentInCustodyAbroad = timeSpentInCustodyAbroadDto(adjustment, legacyData),
+      timeSpentAsAnAppealApplicant = timeSpentAsAnAppealApplicantDto(adjustment, legacyData),
       lastUpdatedBy = latestHistory.changeByUsername,
       lastUpdatedDate = latestHistory.changeAt,
       createdDate = adjustment.adjustmentHistory.first().changeAt,
@@ -518,16 +540,28 @@ class AdjustmentsTransactionalService(
       null
     }
 
-  private fun timeSpentInCustodyAbroadDto(adjustment: Adjustment): TimeSpentInCustodyAbroadDto? =
-    if (adjustment.timeSpentInCustodyAbroad != null) {
-      TimeSpentInCustodyAbroadDto(documentationSource = adjustment.timeSpentInCustodyAbroad!!.documentationSource)
+  private fun timeSpentInCustodyAbroadDto(
+    adjustment: Adjustment,
+    legacyData: LegacyData,
+  ): TimeSpentInCustodyAbroadDto? =
+    if (adjustment.timeSpentInCustodyAbroad != null && legacyData.chargeIds.isNotEmpty()) {
+      TimeSpentInCustodyAbroadDto(
+        documentationSource = adjustment.timeSpentInCustodyAbroad!!.documentationSource,
+        chargeIds = legacyData.chargeIds,
+      )
     } else {
       null
     }
 
-  private fun timeSpentAsAnAppealApplicantDto(adjustment: Adjustment): TimeSpentAsAnAppealApplicantDto? =
-    if (adjustment.timeSpentAsAnAppealApplicant != null) {
-      TimeSpentAsAnAppealApplicantDto(courtOfAppealReferenceNumber = adjustment.timeSpentAsAnAppealApplicant!!.courtOfAppealReferenceNumber)
+  private fun timeSpentAsAnAppealApplicantDto(
+    adjustment: Adjustment,
+    legacyData: LegacyData,
+  ): TimeSpentAsAnAppealApplicantDto? =
+    if (adjustment.timeSpentAsAnAppealApplicant != null && legacyData.chargeIds.isNotEmpty()) {
+      TimeSpentAsAnAppealApplicantDto(
+        courtOfAppealReferenceNumber = adjustment.timeSpentAsAnAppealApplicant!!.courtOfAppealReferenceNumber,
+        chargeIds = legacyData.chargeIds,
+      )
     } else {
       null
     }

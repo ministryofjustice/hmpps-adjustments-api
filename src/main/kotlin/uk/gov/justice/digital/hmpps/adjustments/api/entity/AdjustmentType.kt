@@ -16,6 +16,6 @@ enum class AdjustmentType(val text: String, val arithmeticType: ArithmeticType) 
   ;
 
   fun isSentenceType(): Boolean {
-    return this == REMAND || this == TAGGED_BAIL || this == UNUSED_DEDUCTIONS
+    return this == REMAND || this == TAGGED_BAIL || this == UNUSED_DEDUCTIONS || this == CUSTODY_ABROAD || this == APPEAL_APPLICANT
   }
 }
