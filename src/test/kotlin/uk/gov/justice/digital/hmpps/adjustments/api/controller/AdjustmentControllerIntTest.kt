@@ -30,6 +30,7 @@ import uk.gov.justice.digital.hmpps.adjustments.api.enums.LawfullyAtLargeAffects
 import uk.gov.justice.digital.hmpps.adjustments.api.enums.LawfullyAtLargeAffectsDates.YES
 import uk.gov.justice.digital.hmpps.adjustments.api.enums.SpecialRemissionType.RELEASE_DATE_CALCULATED_TOO_EARLY
 import uk.gov.justice.digital.hmpps.adjustments.api.enums.SpecialRemissionType.RELEASE_IN_ERROR
+import uk.gov.justice.digital.hmpps.adjustments.api.enums.TimeSpentInCustodyAbroadDocumentationSource.COURT_WARRANT
 import uk.gov.justice.digital.hmpps.adjustments.api.enums.TimeSpentInCustodyAbroadDocumentationSource.PPCS_LETTER
 import uk.gov.justice.digital.hmpps.adjustments.api.enums.UnlawfullyAtLargeType.ESCAPE
 import uk.gov.justice.digital.hmpps.adjustments.api.enums.UnlawfullyAtLargeType.RECALL
@@ -816,7 +817,7 @@ class AdjustmentControllerIntTest : SqsIntegrationTestBase() {
         listOf(
           CREATED_ADJUSTMENT.copy(
             adjustmentType = CUSTODY_ABROAD,
-            timeSpentInCustodyAbroad = TimeSpentInCustodyAbroadDto(PPCS_LETTER),
+            timeSpentInCustodyAbroad = TimeSpentInCustodyAbroadDto(PPCS_LETTER, listOf(9991)),
             lawfullyAtLarge = null,
             unlawfullyAtLarge = null,
             remand = null,
@@ -839,11 +840,12 @@ class AdjustmentControllerIntTest : SqsIntegrationTestBase() {
           CREATED_ADJUSTMENT.copy(
             id = adjustmentId,
             adjustmentType = CUSTODY_ABROAD,
-            timeSpentInCustodyAbroad = TimeSpentInCustodyAbroadDto(PPCS_LETTER),
+            timeSpentInCustodyAbroad = TimeSpentInCustodyAbroadDto(PPCS_LETTER, listOf(9991L)),
             remand = null,
             effectiveDays = 4,
             lastUpdatedBy = "Test User",
             status = ACTIVE,
+            sentenceSequence = 1,
             adjustmentTypeText = CUSTODY_ABROAD.text,
             days = 4,
             prisonId = "LDS",
@@ -853,14 +855,26 @@ class AdjustmentControllerIntTest : SqsIntegrationTestBase() {
           ),
         )
 
+      val legacyData = objectMapper.convertValue(adjustment.legacyData, LegacyData::class.java)
+      assertThat(legacyData).isEqualTo(
+        LegacyData(
+          bookingId = PrisonApiExtension.BOOKING_ID,
+          sentenceSequence = 1,
+          postedDate = LocalDate.now(),
+          comment = null,
+          type = null,
+          chargeIds = listOf(9991),
+        ),
+      )
+
       val updateDto =
-        createdAdjustment.copy(days = null, timeSpentInCustodyAbroad = TimeSpentInCustodyAbroadDto(PPCS_LETTER))
+        createdAdjustment.copy(days = null, timeSpentInCustodyAbroad = TimeSpentInCustodyAbroadDto(COURT_WARRANT, listOf(9991L)))
       putAdjustmentUpdate(adjustmentId, updateDto)
       val updatedAdjustment = getAdjustmentById(adjustmentId)
       assertThat(updatedAdjustment)
         .usingRecursiveComparison()
         .ignoringFieldsMatchingRegexes("lastUpdatedDate")
-        .isEqualTo(createdAdjustment.copy(timeSpentInCustodyAbroad = TimeSpentInCustodyAbroadDto(PPCS_LETTER)))
+        .isEqualTo(createdAdjustment.copy(timeSpentInCustodyAbroad = TimeSpentInCustodyAbroadDto(COURT_WARRANT, listOf(9991L))))
     }
   }
 
@@ -872,7 +886,7 @@ class AdjustmentControllerIntTest : SqsIntegrationTestBase() {
         listOf(
           CREATED_ADJUSTMENT.copy(
             adjustmentType = APPEAL_APPLICANT,
-            timeSpentAsAnAppealApplicant = TimeSpentAsAnAppealApplicantDto("WF123456"),
+            timeSpentAsAnAppealApplicant = TimeSpentAsAnAppealApplicantDto("WF123456", listOf(9991)),
             lawfullyAtLarge = null,
             unlawfullyAtLarge = null,
             remand = null,
@@ -895,9 +909,10 @@ class AdjustmentControllerIntTest : SqsIntegrationTestBase() {
           CREATED_ADJUSTMENT.copy(
             id = adjustmentId,
             adjustmentType = APPEAL_APPLICANT,
-            timeSpentAsAnAppealApplicant = TimeSpentAsAnAppealApplicantDto("WF123456"),
+            timeSpentAsAnAppealApplicant = TimeSpentAsAnAppealApplicantDto("WF123456", listOf(9991)),
             remand = null,
             effectiveDays = 4,
+            sentenceSequence = 1,
             lastUpdatedBy = "Test User",
             status = ACTIVE,
             adjustmentTypeText = APPEAL_APPLICANT.text,
@@ -909,14 +924,26 @@ class AdjustmentControllerIntTest : SqsIntegrationTestBase() {
           ),
         )
 
+      val legacyData = objectMapper.convertValue(adjustment.legacyData, LegacyData::class.java)
+      assertThat(legacyData).isEqualTo(
+        LegacyData(
+          bookingId = PrisonApiExtension.BOOKING_ID,
+          sentenceSequence = 1,
+          postedDate = LocalDate.now(),
+          comment = null,
+          type = null,
+          chargeIds = listOf(9991),
+        ),
+      )
+
       val updateDto =
-        createdAdjustment.copy(days = null, timeSpentAsAnAppealApplicant = TimeSpentAsAnAppealApplicantDto("WF123456"))
+        createdAdjustment.copy(days = null, timeSpentAsAnAppealApplicant = TimeSpentAsAnAppealApplicantDto("WF123456", listOf(9991)))
       putAdjustmentUpdate(adjustmentId, updateDto)
       val updatedAdjustment = getAdjustmentById(adjustmentId)
       assertThat(updatedAdjustment)
         .usingRecursiveComparison()
         .ignoringFieldsMatchingRegexes("lastUpdatedDate")
-        .isEqualTo(createdAdjustment.copy(timeSpentAsAnAppealApplicant = TimeSpentAsAnAppealApplicantDto("WF123456")))
+        .isEqualTo(createdAdjustment.copy(timeSpentAsAnAppealApplicant = TimeSpentAsAnAppealApplicantDto("WF123456", listOf(9991))))
     }
 
     @Test
@@ -925,7 +952,7 @@ class AdjustmentControllerIntTest : SqsIntegrationTestBase() {
         listOf(
           CREATED_ADJUSTMENT.copy(
             adjustmentType = APPEAL_APPLICANT,
-            timeSpentAsAnAppealApplicant = TimeSpentAsAnAppealApplicantDto("lowercase1"),
+            timeSpentAsAnAppealApplicant = TimeSpentAsAnAppealApplicantDto("lowercase1", listOf(9991)),
             lawfullyAtLarge = null,
             unlawfullyAtLarge = null,
             remand = null,
