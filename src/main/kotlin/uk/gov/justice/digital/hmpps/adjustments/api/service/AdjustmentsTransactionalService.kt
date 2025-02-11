@@ -403,11 +403,11 @@ class AdjustmentsTransactionalService(
     if (resource.adjustmentType.isSentenceType()) {
       val sentences = prisonService.getSentencesAndOffences(resource.bookingId)
       return if (resource.remand != null && resource.adjustmentType == REMAND) {
-        getSentenceInfo(resource.remand.chargeId, sentences)
+        getSentenceInfoFromChargeIds(resource.remand.chargeId, sentences)
       } else if (resource.timeSpentInCustodyAbroad != null && resource.adjustmentType == CUSTODY_ABROAD) {
-        getSentenceInfo(resource.timeSpentInCustodyAbroad.chargeIds, sentences)
+        getSentenceInfoFromChargeIds(resource.timeSpentInCustodyAbroad.chargeIds, sentences)
       } else if (resource.timeSpentAsAnAppealApplicant != null && resource.adjustmentType == APPEAL_APPLICANT) {
-        getSentenceInfo(resource.timeSpentAsAnAppealApplicant.chargeIds, sentences)
+        getSentenceInfoFromChargeIds(resource.timeSpentAsAnAppealApplicant.chargeIds, sentences)
       } else if (resource.taggedBail != null && resource.adjustmentType == TAGGED_BAIL) {
         if (resource.taggedBail.caseSequence != null) {
           val matchingSentences = sentences.filter { it.caseSequence == resource.taggedBail.caseSequence }
@@ -427,7 +427,7 @@ class AdjustmentsTransactionalService(
     return null
   }
 
-  fun getSentenceInfo(chargeIds: List<Long>, sentences: List<SentenceAndOffences>): SentenceInfo? {
+  fun getSentenceInfoFromChargeIds(chargeIds: List<Long>, sentences: List<SentenceAndOffences>): SentenceInfo? {
     val matchingSentences =
       sentences.filter { it.offences.any { off -> chargeIds.contains(off.offenderChargeId) } }
     if (matchingSentences.isEmpty()) {
