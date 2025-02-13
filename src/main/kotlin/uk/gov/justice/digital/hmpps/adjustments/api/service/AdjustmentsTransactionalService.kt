@@ -142,7 +142,7 @@ class AdjustmentsTransactionalService(
     return if (resource.adjustmentType == REMAND && resource.remand != null) {
       resource.remand.chargeId
     } else if (resource.adjustmentType == CUSTODY_ABROAD && resource.timeSpentInCustodyAbroad != null) {
-      resource.timeSpentInCustodyAbroad.chargeIds
+      resource.timeSpentInCustodyAbroad.chargeIds ?: emptyList()
     } else if (resource.adjustmentType == APPEAL_APPLICANT && resource.timeSpentAsAnAppealApplicant != null) {
       resource.timeSpentAsAnAppealApplicant.chargeIds
     } else {
@@ -544,7 +544,7 @@ class AdjustmentsTransactionalService(
     adjustment: Adjustment,
     legacyData: LegacyData,
   ): TimeSpentInCustodyAbroadDto? =
-    if (adjustment.timeSpentInCustodyAbroad != null && legacyData.chargeIds.isNotEmpty()) {
+    if (adjustment.timeSpentInCustodyAbroad != null) {
       TimeSpentInCustodyAbroadDto(
         documentationSource = adjustment.timeSpentInCustodyAbroad!!.documentationSource,
         chargeIds = legacyData.chargeIds,
@@ -557,7 +557,7 @@ class AdjustmentsTransactionalService(
     adjustment: Adjustment,
     legacyData: LegacyData,
   ): TimeSpentAsAnAppealApplicantDto? =
-    if (adjustment.timeSpentAsAnAppealApplicant != null && legacyData.chargeIds.isNotEmpty()) {
+    if (adjustment.timeSpentAsAnAppealApplicant != null) {
       TimeSpentAsAnAppealApplicantDto(
         courtOfAppealReferenceNumber = adjustment.timeSpentAsAnAppealApplicant!!.courtOfAppealReferenceNumber,
         chargeIds = legacyData.chargeIds,
