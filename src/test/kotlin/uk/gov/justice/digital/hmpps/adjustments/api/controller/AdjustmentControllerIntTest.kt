@@ -1166,7 +1166,7 @@ class AdjustmentControllerIntTest : SqsIntegrationTestBase() {
   @Test
   @Sql(
     "classpath:test_data/reset-data.sql",
-    "classpath:test_data/insert-adjustments-spanning-sentence-envelope.sql",
+    "classpath:test_data/insert-adjustment-with-recall-id.sql",
   )
   fun `Get adjustments by person filter for recallId`() {
     val person = "BCDEFG"
