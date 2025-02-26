@@ -1173,7 +1173,9 @@ class AdjustmentControllerIntTest : SqsIntegrationTestBase() {
     val recallId = UUID.fromString("2ea3ae97-c469-491e-ae93-bdcda9d8ac91")
     val result = getAdjustmentsByPerson(person, recallId = recallId)
 
+    assertThat(result.size).isEqualTo(1)
     assertThat(result.map { it.recallId })
+      .first()
       .isEqualTo(recallId)
   }
 

@@ -92,7 +92,7 @@ class AdjustmentsController(
       description = "The recall ID to filter adjustments by.",
     )
     @RequestParam("recallId")
-    recallId: UUID?,
+    recallId: UUID? = null,
   ): List<AdjustmentDto> {
     return adjustmentsService.findCurrentAdjustments(person, status ?: AdjustmentStatus.ACTIVE, currentPeriodOfCustody ?: true, sentenceEnvelopeDate, recallId)
   }
