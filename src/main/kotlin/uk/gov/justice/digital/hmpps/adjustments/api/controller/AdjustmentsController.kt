@@ -87,8 +87,14 @@ class AdjustmentsController(
     )
     @RequestParam("sentenceEnvelopeDate")
     sentenceEnvelopeDate: LocalDate?,
+    @Parameter(
+      required = false,
+      description = "The recall ID to filter adjustments by.",
+    )
+    @RequestParam("recallId")
+    recallId: UUID?,
   ): List<AdjustmentDto> {
-    return adjustmentsService.findCurrentAdjustments(person, status ?: AdjustmentStatus.ACTIVE, currentPeriodOfCustody ?: true, sentenceEnvelopeDate)
+    return adjustmentsService.findCurrentAdjustments(person, status ?: AdjustmentStatus.ACTIVE, currentPeriodOfCustody ?: true, sentenceEnvelopeDate, recallId)
   }
 
   @GetMapping("/{adjustmentId}")

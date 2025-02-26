@@ -63,6 +63,7 @@ class UnusedDeductionsEventServiceTest {
     effectiveDays = 90,
     sentenceSequence = 1,
     source = AdjustmentSource.DPS,
+    recallId = null,
   )
   private val sentenceDate = LocalDate.of(2023, 1, 1)
   private val sentences = listOf(SentenceAndOffences(sentenceDate = sentenceDate, bookingId = 1, sentenceSequence = 1, sentenceCalculationType = "ADIMP", sentenceStatus = "A"))

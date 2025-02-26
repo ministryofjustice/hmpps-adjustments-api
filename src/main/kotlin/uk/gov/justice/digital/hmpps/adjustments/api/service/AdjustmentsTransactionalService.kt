@@ -313,12 +313,39 @@ class AdjustmentsTransactionalService(
     status: AdjustmentStatus,
     currentPeriodOfCustody: Boolean,
     startOfSentenceEnvelope: LocalDate?,
+    recallId: UUID?,
   ): List<AdjustmentDto> {
     return if (startOfSentenceEnvelope != null) {
+      findAdjustmentsWithinSentenceEnvelope(person, status, currentPeriodOfCustody, startOfSentenceEnvelope, recallId)
+    } else {
+      findAdjustmentsWithNoSentenceEnvelope(person, status, currentPeriodOfCustody, recallId)
+    }.map { mapToDto(it) }
+  }
+
+  fun findAdjustmentsWithinSentenceEnvelope(
+    person: String,
+    status: AdjustmentStatus,
+    currentPeriodOfCustody: Boolean,
+    startOfSentenceEnvelope: LocalDate,
+    recallId: UUID?,
+  ): List<Adjustment> {
+    return if (recallId != null) {
+      adjustmentRepository.findAdjustmentsByPersonAndRecallIdWithinSentenceEnvelope(person, startOfSentenceEnvelope, status, currentPeriodOfCustody, recallId)
+    } else {
       adjustmentRepository.findAdjustmentsByPersonWithinSentenceEnvelope(person, startOfSentenceEnvelope, status, currentPeriodOfCustody)
+    }
+  }
+  fun findAdjustmentsWithNoSentenceEnvelope(
+    person: String,
+    status: AdjustmentStatus,
+    currentPeriodOfCustody: Boolean,
+    recallId: UUID?,
+  ): List<Adjustment> {
+    return if (recallId != null) {
+      adjustmentRepository.findByPersonAndStatusAndCurrentPeriodOfCustodyAndRecallId(person, status, currentPeriodOfCustody, recallId)
     } else {
       adjustmentRepository.findByPersonAndStatusAndCurrentPeriodOfCustody(person, status, currentPeriodOfCustody)
-    }.map { mapToDto(it) }
+    }
   }
 
   @Transactional
@@ -492,6 +519,7 @@ class AdjustmentsTransactionalService(
       days = getDtoDays(adjustment),
       adjustmentArithmeticType = adjustment.adjustmentType.arithmeticType,
       source = adjustment.source,
+      recallId = adjustment.recallId,
     )
   }
 

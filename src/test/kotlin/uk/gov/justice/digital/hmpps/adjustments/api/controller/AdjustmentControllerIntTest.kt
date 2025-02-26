@@ -1308,6 +1308,7 @@ class AdjustmentControllerIntTest : SqsIntegrationTestBase() {
       timeSpentAsAnAppealApplicant = null,
       remand = RemandDto(chargeId = listOf(9991)),
       taggedBail = null,
+      recallId = null,
     )
   }
 }
