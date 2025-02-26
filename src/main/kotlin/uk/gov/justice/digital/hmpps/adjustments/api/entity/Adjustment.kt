@@ -94,6 +94,8 @@ data class Adjustment(
   @PrimaryKeyJoinColumn
   var timeSpentAsAnAppealApplicant: TimeSpentAsAnAppealApplicant? = null,
 
+  var recallId: UUID? = null,
+
 ) {
   init {
     adjustmentHistory.forEach { it.adjustment = this }

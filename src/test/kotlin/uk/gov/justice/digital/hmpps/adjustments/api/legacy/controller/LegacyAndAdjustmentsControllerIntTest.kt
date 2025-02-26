@@ -462,6 +462,7 @@ class LegacyAndAdjustmentsControllerIntTest : SqsIntegrationTestBase() {
       effectiveDays = 8,
       lastUpdatedBy = "Person",
       status = AdjustmentStatus.ACTIVE,
+      recallId = null,
     )
   }
 }

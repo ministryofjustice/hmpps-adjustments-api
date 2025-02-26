@@ -80,6 +80,7 @@ class ValidationServiceTest {
     createdDate = LocalDateTime.now(),
     lastUpdatedBy = "Person",
     status = AdjustmentStatus.ACTIVE,
+    recallId = null,
   )
 
   private val existingRada = existingAda.copy(

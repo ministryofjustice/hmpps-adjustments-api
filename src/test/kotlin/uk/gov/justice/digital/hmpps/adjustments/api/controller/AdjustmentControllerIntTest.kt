@@ -1163,14 +1163,31 @@ class AdjustmentControllerIntTest : SqsIntegrationTestBase() {
     }
   }
 
+  @Test
+  @Sql(
+    "classpath:test_data/reset-data.sql",
+    "classpath:test_data/insert-adjustment-with-recall-id.sql",
+  )
+  fun `Get adjustments by person filter for recallId`() {
+    val person = "BCDEFG"
+    val recallId = UUID.fromString("2ea3ae97-c469-491e-ae93-bdcda9d8ac91")
+    val result = getAdjustmentsByPerson(person, recallId = recallId)
+
+    assertThat(result.size).isEqualTo(1)
+    assertThat(result.map { it.recallId })
+      .first()
+      .isEqualTo(recallId)
+  }
+
   private fun getAdjustmentsByPerson(
     person: String,
     status: AdjustmentStatus? = null,
     startOfSentenceEnvelope: LocalDate? = null,
+    recallId: UUID? = null,
   ): List<AdjustmentDto> =
     webTestClient
       .get()
-      .uri("/adjustments?person=$person${if (status != null) "&status=$status" else ""}${if (startOfSentenceEnvelope != null) "&sentenceEnvelopeDate=$startOfSentenceEnvelope" else ""}")
+      .uri("/adjustments?person=$person${if (status != null) "&status=$status" else ""}${if (startOfSentenceEnvelope != null) "&sentenceEnvelopeDate=$startOfSentenceEnvelope" else ""}${if (recallId != null) "&recallId=$recallId" else ""}")
       .headers(setAdjustmentsRWAuth())
       .exchange()
       .expectStatus().isOk
@@ -1308,6 +1325,7 @@ class AdjustmentControllerIntTest : SqsIntegrationTestBase() {
       timeSpentAsAnAppealApplicant = null,
       remand = RemandDto(chargeId = listOf(9991)),
       taggedBail = null,
+      recallId = null,
     )
   }
 }
