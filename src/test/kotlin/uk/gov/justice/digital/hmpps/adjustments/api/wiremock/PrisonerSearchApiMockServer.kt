@@ -4,6 +4,7 @@ import com.github.tomakehurst.wiremock.WireMockServer
 import com.github.tomakehurst.wiremock.client.WireMock.aResponse
 import com.github.tomakehurst.wiremock.client.WireMock.get
 import com.github.tomakehurst.wiremock.client.WireMock.urlMatching
+import com.github.tomakehurst.wiremock.stubbing.Scenario
 import com.github.tomakehurst.wiremock.stubbing.StubMapping
 import org.junit.jupiter.api.extension.AfterAllCallback
 import org.junit.jupiter.api.extension.BeforeAllCallback
@@ -24,8 +25,15 @@ class PrisonerSearchApiExtension : BeforeAllCallback, AfterAllCallback, BeforeEa
     prisonerSearchApi.stubGetPrisonerDetails(".*", PrisonApiExtension.BOOKING_ID)
     prisonerSearchApi.stubGetPrisonerDetails("G4946VC", 777831)
     prisonerSearchApi.stubGetPrisonerDetails(PrisonApiExtension.PRISONER_ID, PrisonApiExtension.BOOKING_ID)
-    prisonerSearchApi.stubGetPrisonerDetails(PrisonApiExtension.BOOKING_MOVE_NEW_PRISONER_ID, PrisonApiExtension.BOOKING_MOVE_OLD_BOOKING_ID)
-    prisonerSearchApi.stubGetPrisonerDetails(PrisonApiExtension.BOOKING_MOVE_OLD_PRISONER_ID, PrisonApiExtension.BOOKING_MOVE_UPDATED_OLD_BOOKING_ID)
+    prisonerSearchApi.stubGetPrisonerDetails(
+      PrisonApiExtension.BOOKING_MOVE_NEW_PRISONER_ID,
+      PrisonApiExtension.BOOKING_MOVE_OLD_BOOKING_ID,
+    )
+    prisonerSearchApi.stubGetPrisonerDetails(
+      PrisonApiExtension.BOOKING_MOVE_OLD_PRISONER_ID,
+      PrisonApiExtension.BOOKING_MOVE_UPDATED_OLD_BOOKING_ID,
+    )
+    prisonerSearchApi.stubGetPrisonerDetailsDoesNotExist()
   }
 
   override fun beforeEach(context: ExtensionContext) {
@@ -63,4 +71,30 @@ class PrisonerSearchApiMockServer : WireMockServer(WIREMOCK_PORT) {
             .withStatus(200),
         ),
     )
+
+  fun stubGetPrisonerDetailsDoesNotExist(): StubMapping {
+    stubFor(
+      get(urlMatching("/prisoner-search-api/prisoner/DELETED")).inScenario("Prisoner Details")
+        .whenScenarioStateIs(Scenario.STARTED).willReturn(
+          aResponse().withHeader("Content-Type", "application/json").withBody(
+            """
+            {
+               "prisonerNumber": "DELETED",
+               "bookingId": 123,
+               "firstName": "Default",
+               "lastName": "Prisoner",
+               "dateOfBirth": "1995-03-08",
+               "prisonId": "LDS"
+            }
+            """.trimIndent(),
+          ).withStatus(200),
+        ).willSetStateTo("Not Found"),
+    )
+    return stubFor(
+      get(urlMatching("/prisoner-search-api/prisoner/DELETED")).inScenario("Prisoner Details")
+        .whenScenarioStateIs("Not Found").willReturn(
+          aResponse().withHeader("Content-Type", "application/json").withStatus(404),
+        ),
+    )
+  }
 }
