@@ -232,6 +232,41 @@ class PrisonerListenerIntTest : SqsIntegrationTestBase() {
     assertThat(adjustment.adjustmentHistory.last().changeType == ChangeType.MERGE)
   }
 
+  @Test
+  @Transactional
+  fun handlePrisonerMergedWithDeletedOldPrisoner() {
+    val id = createAnAdjustment(
+      createdAdjustment.copy(offenderNo = "DELETED"),
+    )
+    val eventType = "prison-offender-events.prisoner.merged"
+    val newPersonId = "NEWPERSON"
+    val deletedId = "DELETED"
+    domainEventsTopicSnsClient.publish(
+      PublishRequest.builder().topicArn(domainEventsTopicArn)
+        .message(prisonerMergedPayload(newPersonId, deletedId))
+        .messageAttributes(
+          mapOf(
+            "eventType" to MessageAttributeValue.builder().dataType("String")
+              .stringValue(eventType).build(),
+          ),
+        ).build(),
+    ).get()
+
+    await untilAsserted {
+      assertThat(prisonerListenerQueue.sqsClient.countAllMessagesOnQueue(prisonerListenerQueueUrl).get()).isEqualTo(0)
+    }
+
+    await untilAsserted {
+      val adjustment = adjustmentRepository.findById(id).get()
+      assertThat(adjustment.person).isEqualTo(newPersonId)
+      assertThat(adjustmentRepository.findByPerson(deletedId)).isEmpty()
+      assertThat(adjustmentRepository.findByPerson(newPersonId).find { it.id == id }).isNotNull
+    }
+
+    val adjustment = adjustmentRepository.findById(id).get()
+    assertThat(adjustment.adjustmentHistory.last().changeType == ChangeType.MERGE)
+  }
+
   private fun prisonerAdmissionPayload(nomsNumber: String, eventType: String) =
     """{"eventType":"$eventType", "additionalInformation": {"nomsNumber":"$nomsNumber", "reason": "NEW_ADMISSION"}}"""
 

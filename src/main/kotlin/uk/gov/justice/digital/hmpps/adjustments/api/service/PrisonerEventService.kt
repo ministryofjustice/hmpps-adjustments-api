@@ -3,6 +3,7 @@ package uk.gov.justice.digital.hmpps.adjustments.api.service
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Service
+import org.springframework.web.reactive.function.client.WebClientResponseException
 import uk.gov.justice.digital.hmpps.adjustments.api.client.PrisonApiClient
 import uk.gov.justice.digital.hmpps.adjustments.api.client.PrisonerSearchApiClient
 import uk.gov.justice.digital.hmpps.adjustments.api.legacy.service.LegacyService
@@ -39,7 +40,11 @@ class PrisonerEventService(
     log.info("Handling merge of ${event.additionalInformation.removedNomsNumber} to ${event.additionalInformation.nomsNumber}")
     legacyService.prisonerMerged(event.additionalInformation.nomsNumber, event.additionalInformation.removedNomsNumber)
     legacyService.fixCurrentTermForPrisoner(event.additionalInformation.nomsNumber)
-    legacyService.fixCurrentTermForPrisoner(event.additionalInformation.removedNomsNumber)
+    try {
+      legacyService.fixCurrentTermForPrisoner(event.additionalInformation.removedNomsNumber)
+    } catch (e: WebClientResponseException.NotFound) {
+      log.info("Failed to fix current term for removed prisoner: ${event.additionalInformation.removedNomsNumber}")
+    }
   }
 }
 
