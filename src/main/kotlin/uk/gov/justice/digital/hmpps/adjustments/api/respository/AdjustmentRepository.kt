@@ -24,7 +24,7 @@ interface AdjustmentRepository : JpaRepository<Adjustment, UUID> {
       " AND a.currentPeriodOfCustody = :currentPeriodOfCustody" +
       " AND (:recallId IS NULL OR a.recallId = :recallId)" +
       " AND (" +
-      " :sentenceEnvelopeFilter IS NULL" +
+      " cast(:sentenceEnvelopeFilter as timestamp) IS NULL" +
       " OR a.fromDate IS NULL" +
       " OR a.fromDate >= :sentenceEnvelopeFilter" +
       " OR a.adjustmentType IN (:adjustmentTypes)" +
