@@ -9,71 +9,39 @@ import uk.gov.justice.digital.hmpps.adjustments.api.entity.AdjustmentStatus.ACTI
 import uk.gov.justice.digital.hmpps.adjustments.api.entity.AdjustmentType
 import uk.gov.justice.digital.hmpps.adjustments.api.entity.AdjustmentType.REMAND
 import uk.gov.justice.digital.hmpps.adjustments.api.entity.AdjustmentType.TAGGED_BAIL
-import uk.gov.justice.digital.hmpps.adjustments.api.entity.AdjustmentType.UNLAWFULLY_AT_LARGE
 import uk.gov.justice.digital.hmpps.adjustments.api.entity.AdjustmentType.UNUSED_DEDUCTIONS
 import java.time.LocalDate
 import java.util.UUID
 
 @Repository
 interface AdjustmentRepository : JpaRepository<Adjustment, UUID> {
+
   @Query(
     "SELECT a FROM Adjustment a" +
       " LEFT JOIN a.additionalDaysAwarded ada" +
       " WHERE a.person = :person" +
-      " AND a.status = :status" +
+      " AND a.status IN :status" +
       " AND a.currentPeriodOfCustody = :currentPeriodOfCustody" +
+      " AND (:recallId IS NULL OR a.recallId = :recallId)" +
       " AND (" +
-      " a.fromDate IS NULL" +
-      " OR a.fromDate >= :fromDate" +
+      " :sentenceEnvelopeFilter IS NULL" +
+      " OR a.fromDate IS NULL" +
+      " OR a.fromDate >= :sentenceEnvelopeFilter" +
       " OR a.adjustmentType IN (:adjustmentTypes)" +
       " OR ada.prospective" +
+      " OR (a.adjustmentType = 'ADDITIONAL_DAYS_AWARDED' AND ada IS NULL)" +
       ")",
   )
   fun findAdjustmentsByPersonWithinSentenceEnvelope(
     person: String,
-    fromDate: LocalDate,
-    status: AdjustmentStatus,
+    status: List<AdjustmentStatus>,
     currentPeriodOfCustody: Boolean,
+    sentenceEnvelopeFilter: LocalDate?,
+    recallId: UUID?,
     adjustmentTypes: List<AdjustmentType>? = listOf(REMAND, TAGGED_BAIL, UNUSED_DEDUCTIONS),
   ): List<Adjustment>
 
-  @Query(
-    "SELECT a FROM Adjustment a" +
-      " LEFT JOIN a.additionalDaysAwarded ada" +
-      " WHERE a.person = :person" +
-      " AND a.status = :status" +
-      " AND a.currentPeriodOfCustody = :currentPeriodOfCustody" +
-      " AND a.recallId = :recallId" +
-      " AND (" +
-      " a.fromDate IS NULL" +
-      " OR a.fromDate >= :fromDate" +
-      " OR a.adjustmentType IN (:adjustmentTypes)" +
-      " OR ada.prospective" +
-      ")",
-  )
-  fun findAdjustmentsByPersonAndRecallIdWithinSentenceEnvelope(
-    person: String,
-    fromDate: LocalDate,
-    status: AdjustmentStatus,
-    currentPeriodOfCustody: Boolean,
-    recallId: UUID,
-    adjustmentTypes: List<AdjustmentType>? = listOf(UNLAWFULLY_AT_LARGE),
-  ): List<Adjustment>
-
   fun findByPerson(person: String): List<Adjustment>
-
-  fun findByPersonAndStatusAndCurrentPeriodOfCustody(
-    person: String,
-    status: AdjustmentStatus,
-    currentPeriodOfCustody: Boolean,
-  ): List<Adjustment>
-
-  fun findByPersonAndStatusAndCurrentPeriodOfCustodyAndRecallId(
-    person: String,
-    status: AdjustmentStatus,
-    currentPeriodOfCustody: Boolean,
-    recallId: UUID,
-  ): List<Adjustment>
 
   fun findByPersonAndStatus(
     person: String,

@@ -77,7 +77,7 @@ class AdjustmentsController(
     person: String,
     @Parameter(required = false, description = "The status of adjustments. Defaults to ACTIVE")
     @RequestParam("status")
-    status: AdjustmentStatus?,
+    status: List<AdjustmentStatus>?,
     @Parameter(required = false, description = "Only get the adjustments linked to the current period of custody. Defaults to true")
     @RequestParam("currentPeriodOfCustody")
     currentPeriodOfCustody: Boolean?,
@@ -94,7 +94,7 @@ class AdjustmentsController(
     @RequestParam("recallId")
     recallId: UUID? = null,
   ): List<AdjustmentDto> {
-    return adjustmentsService.findCurrentAdjustments(person, status ?: AdjustmentStatus.ACTIVE, currentPeriodOfCustody ?: true, sentenceEnvelopeDate, recallId)
+    return adjustmentsService.findCurrentAdjustments(person, status ?: listOf(AdjustmentStatus.ACTIVE), currentPeriodOfCustody ?: true, sentenceEnvelopeDate, recallId)
   }
 
   @GetMapping("/{adjustmentId}")
