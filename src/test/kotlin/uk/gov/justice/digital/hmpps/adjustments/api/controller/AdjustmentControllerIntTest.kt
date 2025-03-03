@@ -19,7 +19,6 @@ import uk.gov.justice.digital.hmpps.adjustments.api.entity.AdjustmentStatus
 import uk.gov.justice.digital.hmpps.adjustments.api.entity.AdjustmentStatus.ACTIVE
 import uk.gov.justice.digital.hmpps.adjustments.api.entity.AdjustmentStatus.DELETED
 import uk.gov.justice.digital.hmpps.adjustments.api.entity.AdjustmentType
-import uk.gov.justice.digital.hmpps.adjustments.api.entity.AdjustmentType.ADDITIONAL_DAYS_AWARDED
 import uk.gov.justice.digital.hmpps.adjustments.api.entity.AdjustmentType.APPEAL_APPLICANT
 import uk.gov.justice.digital.hmpps.adjustments.api.entity.AdjustmentType.CUSTODY_ABROAD
 import uk.gov.justice.digital.hmpps.adjustments.api.entity.AdjustmentType.LAWFULLY_AT_LARGE
@@ -36,8 +35,6 @@ import uk.gov.justice.digital.hmpps.adjustments.api.enums.TimeSpentInCustodyAbro
 import uk.gov.justice.digital.hmpps.adjustments.api.enums.UnlawfullyAtLargeType.ESCAPE
 import uk.gov.justice.digital.hmpps.adjustments.api.enums.UnlawfullyAtLargeType.RECALL
 import uk.gov.justice.digital.hmpps.adjustments.api.integration.SqsIntegrationTestBase
-import uk.gov.justice.digital.hmpps.adjustments.api.legacy.controller.LegacyController
-import uk.gov.justice.digital.hmpps.adjustments.api.legacy.model.LegacyAdjustment
 import uk.gov.justice.digital.hmpps.adjustments.api.legacy.model.LegacyData
 import uk.gov.justice.digital.hmpps.adjustments.api.listener.REMAND_ID
 import uk.gov.justice.digital.hmpps.adjustments.api.listener.TAGGED_BAIL_ID
@@ -405,186 +402,6 @@ class AdjustmentControllerIntTest : SqsIntegrationTestBase() {
         )
 
       awaitAtMost30Secs untilCallTo { getNumberOfMessagesCurrentlyOnQueue() } matches { it == 0 }
-    }
-
-    @Test
-    @Sql(
-      "classpath:test_data/reset-data.sql",
-    )
-    fun findByPersonAndStatus() {
-      val id = createAnAdjustment()
-      val legacy = getLegacyAdjustment(id)
-      updateLegacyAdjustment(id, legacy.copy(active = false))
-      createAnAdjustment()
-
-      val result = webTestClient
-        .get()
-        .uri("/adjustments?person=${PrisonApiExtension.PRISONER_ID}&status=INACTIVE")
-        .headers(
-          setAdjustmentsRWAuth(),
-        )
-        .exchange()
-        .expectStatus().isOk
-        .expectBodyList<AdjustmentDto>()
-        .returnResult()
-        .responseBody!!
-
-      assertThat(result.size).isEqualTo(1)
-    }
-
-    @Test
-    @Sql(
-      "classpath:test_data/reset-data.sql",
-    )
-    fun findByPersonAndStatuses() {
-      val id = createAnAdjustment()
-      val legacy = getLegacyAdjustment(id)
-      updateLegacyAdjustment(id, legacy.copy(active = false))
-      createAnAdjustment()
-
-      val result = webTestClient
-        .get()
-        .uri("/adjustments?person=${PrisonApiExtension.PRISONER_ID}&status=INACTIVE&status=ACTIVE")
-        .headers(
-          setAdjustmentsRWAuth(),
-        )
-        .exchange()
-        .expectStatus().isOk
-        .expectBodyList<AdjustmentDto>()
-        .returnResult()
-        .responseBody!!
-
-      assertThat(result.size).isEqualTo(2)
-    }
-
-    @Test
-    @Sql(
-      "classpath:test_data/reset-data.sql",
-    )
-    fun findByPersonAdaWithoutCharge() {
-      val id = createAnAdjustment(
-        CREATED_ADJUSTMENT.copy(
-          adjustmentType = ADDITIONAL_DAYS_AWARDED,
-        ),
-      )
-
-      val result = webTestClient
-        .get()
-        .uri(
-          "/adjustments?person=${PrisonApiExtension.PRISONER_ID}&sentenceEnvelopeDate=${
-            CREATED_ADJUSTMENT.fromDate!!.minusDays(
-              1,
-            )
-          }",
-        )
-        .headers(
-          setAdjustmentsRWAuth(),
-        )
-        .exchange()
-        .expectStatus().isOk
-        .expectBodyList<AdjustmentDto>()
-        .returnResult()
-        .responseBody!!
-
-      assertThat(result.size).isEqualTo(1)
-    }
-
-    @Test
-    @Sql(
-      "classpath:test_data/reset-data.sql",
-      "classpath:test_data/insert-adjustments-spanning-sentence-envelope.sql",
-    )
-    fun `Get adjustments by person where some have been deleted, and some fall outside of the sentence envelope`() {
-      val person = "BCDEFG"
-      val result = getAdjustmentsByPerson(person, startOfSentenceEnvelope = LocalDate.of(2015, 3, 17))
-
-      assertThat(result.map { it.lastUpdatedBy })
-        .usingRecursiveComparison()
-        .ignoringCollectionOrder()
-        .isEqualTo(listOf("current-ual", "current-lal", "current-rada", "tagged-bail-no-dates", "remand-before-sentence"))
-    }
-
-    @Test
-    @Sql(
-      "classpath:test_data/reset-data.sql",
-      "classpath:test_data/insert-adjustments-spanning-sentence-envelope.sql",
-    )
-    fun `Get adjustments by person filter for adjustments before sentence envelope`() {
-      val person = "BCDEFG"
-      val result = getAdjustmentsByPerson(person, startOfSentenceEnvelope = LocalDate.of(2000, 1, 1))
-
-      assertThat(result.map { it.lastUpdatedBy })
-        .usingRecursiveComparison()
-        .ignoringCollectionOrder()
-        .isEqualTo(
-          listOf(
-            "current-ual",
-            "current-lal",
-            "current-rada",
-            "tagged-bail-no-dates",
-            "remand-before-sentence",
-            "expired-ual",
-            "expired-lal",
-            "expired-rada",
-          ),
-        )
-    }
-
-    @Test
-    @Sql(
-      "classpath:test_data/reset-data.sql",
-      "classpath:test_data/insert-adjustments-spanning-sentence-envelope.sql",
-    )
-    fun `Get adjustments by person filter for adjustments without envelope filter`() {
-      val person = "BCDEFG"
-      val result = getAdjustmentsByPerson(person)
-
-      assertThat(result.map { it.lastUpdatedBy })
-        .usingRecursiveComparison()
-        .ignoringCollectionOrder()
-        .isEqualTo(
-          listOf(
-            "current-ual",
-            "current-lal",
-            "current-rada",
-            "tagged-bail-no-dates",
-            "remand-before-sentence",
-            "expired-ual",
-            "expired-lal",
-            "expired-rada",
-          ),
-        )
-    }
-
-    @Test
-    @Sql(
-      "classpath:test_data/reset-data.sql",
-      "classpath:test_data/insert-adjustments-spanning-sentence-envelope.sql",
-    )
-    fun `Get adjustments by person filter for deleted adjustments`() {
-      val person = "BCDEFG"
-      val result = getAdjustmentsByPerson(person, status = DELETED, startOfSentenceEnvelope = LocalDate.of(2015, 3, 17))
-
-      assertThat(result.map { it.lastUpdatedBy })
-        .usingRecursiveComparison()
-        .ignoringCollectionOrder()
-        .isEqualTo(listOf("deleted-ual"))
-    }
-
-    @Test
-    @Sql(
-      "classpath:test_data/reset-data.sql",
-      "classpath:test_data/insert-adjustment-with-recall-id.sql",
-    )
-    fun `Get adjustments by person filter for recallId`() {
-      val person = "BCDEFG"
-      val recallId = UUID.fromString("2ea3ae97-c469-491e-ae93-bdcda9d8ac91")
-      val result = getAdjustmentsByPerson(person, recallId = recallId)
-
-      assertThat(result.size).isEqualTo(1)
-      assertThat(result.map { it.recallId })
-        .first()
-        .isEqualTo(recallId)
     }
   }
 
@@ -1261,6 +1078,107 @@ class AdjustmentControllerIntTest : SqsIntegrationTestBase() {
     }
   }
 
+  @Nested
+  inner class SentenceEnvelopeTests {
+    @Test
+    @Sql(
+      "classpath:test_data/reset-data.sql",
+      "classpath:test_data/insert-adjustments-spanning-sentence-envelope.sql",
+    )
+    fun `Get adjustments by person where some have been deleted, and some fall outside of the sentence envelope`() {
+      val person = "BCDEFG"
+      val result = getAdjustmentsByPerson(person, startOfSentenceEnvelope = LocalDate.of(2015, 3, 17))
+
+      assertThat(result.map { it.lastUpdatedBy })
+        .usingRecursiveComparison()
+        .ignoringCollectionOrder()
+        .isEqualTo(listOf("current-ual", "current-lal", "current-rada", "tagged-bail-no-dates", "remand-before-sentence"))
+    }
+
+    @Test
+    @Sql(
+      "classpath:test_data/reset-data.sql",
+      "classpath:test_data/insert-adjustments-spanning-sentence-envelope.sql",
+    )
+    fun `Get adjustments by person filter for adjustments before sentence envelope`() {
+      val person = "BCDEFG"
+      val result = getAdjustmentsByPerson(person, startOfSentenceEnvelope = LocalDate.of(2000, 1, 1))
+
+      assertThat(result.map { it.lastUpdatedBy })
+        .usingRecursiveComparison()
+        .ignoringCollectionOrder()
+        .isEqualTo(
+          listOf(
+            "current-ual",
+            "current-lal",
+            "current-rada",
+            "tagged-bail-no-dates",
+            "remand-before-sentence",
+            "expired-ual",
+            "expired-lal",
+            "expired-rada",
+          ),
+        )
+    }
+
+    @Test
+    @Sql(
+      "classpath:test_data/reset-data.sql",
+      "classpath:test_data/insert-adjustments-spanning-sentence-envelope.sql",
+    )
+    fun `Get adjustments by person filter for adjustments without envelope filter`() {
+      val person = "BCDEFG"
+      val result = getAdjustmentsByPerson(person)
+
+      assertThat(result.map { it.lastUpdatedBy })
+        .usingRecursiveComparison()
+        .ignoringCollectionOrder()
+        .isEqualTo(
+          listOf(
+            "current-ual",
+            "current-lal",
+            "current-rada",
+            "tagged-bail-no-dates",
+            "remand-before-sentence",
+            "expired-ual",
+            "expired-lal",
+            "expired-rada",
+          ),
+        )
+    }
+
+    @Test
+    @Sql(
+      "classpath:test_data/reset-data.sql",
+      "classpath:test_data/insert-adjustments-spanning-sentence-envelope.sql",
+    )
+    fun `Get adjustments by person filter for deleted adjustments`() {
+      val person = "BCDEFG"
+      val result = getAdjustmentsByPerson(person, status = DELETED, startOfSentenceEnvelope = LocalDate.of(2015, 3, 17))
+
+      assertThat(result.map { it.lastUpdatedBy })
+        .usingRecursiveComparison()
+        .ignoringCollectionOrder()
+        .isEqualTo(listOf("deleted-ual"))
+    }
+  }
+
+  @Test
+  @Sql(
+    "classpath:test_data/reset-data.sql",
+    "classpath:test_data/insert-adjustment-with-recall-id.sql",
+  )
+  fun `Get adjustments by person filter for recallId`() {
+    val person = "BCDEFG"
+    val recallId = UUID.fromString("2ea3ae97-c469-491e-ae93-bdcda9d8ac91")
+    val result = getAdjustmentsByPerson(person, recallId = recallId)
+
+    assertThat(result.size).isEqualTo(1)
+    assertThat(result.map { it.recallId })
+      .first()
+      .isEqualTo(recallId)
+  }
+
   private fun getAdjustmentsByPerson(
     person: String,
     status: AdjustmentStatus? = null,
@@ -1297,7 +1215,7 @@ class AdjustmentControllerIntTest : SqsIntegrationTestBase() {
     .returnResult(AdjustmentDto::class.java)
     .responseBody.blockFirst()!!
 
-  private fun createAnAdjustment(adjustment: AdjustmentDto = CREATED_ADJUSTMENT.copy()): UUID {
+  private fun createAnAdjustment(): UUID {
     return webTestClient
       .post()
       .uri("/adjustments")
@@ -1305,7 +1223,7 @@ class AdjustmentControllerIntTest : SqsIntegrationTestBase() {
         setAdjustmentsRWAuth(),
       )
       .contentType(MediaType.APPLICATION_JSON)
-      .bodyValue(listOf(adjustment))
+      .bodyValue(listOf(CREATED_ADJUSTMENT.copy()))
       .exchange()
       .expectStatus().isCreated
       .returnResult(CreateResponseDto::class.java)
@@ -1389,29 +1307,6 @@ class AdjustmentControllerIntTest : SqsIntegrationTestBase() {
       .exchange()
       .expectStatus().isOk
   }
-
-  private fun getLegacyAdjustment(id: UUID) = webTestClient
-    .get()
-    .uri("/legacy/adjustments/$id")
-    .headers(
-      setAdjustmentsROAuth(),
-    )
-    .header("Content-Type", LegacyController.LEGACY_CONTENT_TYPE)
-    .exchange()
-    .expectStatus().isOk
-    .returnResult(LegacyAdjustment::class.java)
-    .responseBody.blockFirst()!!
-
-  private fun updateLegacyAdjustment(id: UUID, legacyAdjustment: LegacyAdjustment) = webTestClient
-    .put()
-    .uri("/legacy/adjustments/$id")
-    .headers(
-      setLegacySynchronisationAuth(),
-    )
-    .header("Content-Type", LegacyController.LEGACY_CONTENT_TYPE)
-    .bodyValue(legacyAdjustment)
-    .exchange()
-    .expectStatus().isOk
 
   companion object {
     private val CREATED_ADJUSTMENT = AdjustmentDto(

@@ -34,7 +34,7 @@ class AdjustmentsService(
 
   fun findCurrentAdjustments(
     person: String,
-    status: List<AdjustmentStatus>,
+    status: AdjustmentStatus,
     currentPeriodOfCustody: Boolean,
     startOfSentenceEnvelope: LocalDate?,
     recallId: UUID? = null,
