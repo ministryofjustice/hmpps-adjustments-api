@@ -310,15 +310,18 @@ class AdjustmentsTransactionalService(
 
   fun findCurrentAdjustments(
     person: String,
-    status: AdjustmentStatus,
+    status: List<AdjustmentStatus>,
     currentPeriodOfCustody: Boolean,
     startOfSentenceEnvelope: LocalDate?,
+    recallId: UUID?,
   ): List<AdjustmentDto> {
-    return if (startOfSentenceEnvelope != null) {
-      adjustmentRepository.findAdjustmentsByPersonWithinSentenceEnvelope(person, startOfSentenceEnvelope, status, currentPeriodOfCustody)
-    } else {
-      adjustmentRepository.findByPersonAndStatusAndCurrentPeriodOfCustody(person, status, currentPeriodOfCustody)
-    }.map { mapToDto(it) }
+    return adjustmentRepository.findAdjustmentsByPersonWithinSentenceEnvelope(
+      person,
+      status,
+      currentPeriodOfCustody,
+      startOfSentenceEnvelope,
+      recallId,
+    ).map { mapToDto(it) }
   }
 
   @Transactional
@@ -492,6 +495,7 @@ class AdjustmentsTransactionalService(
       days = getDtoDays(adjustment),
       adjustmentArithmeticType = adjustment.adjustmentType.arithmeticType,
       source = adjustment.source,
+      recallId = adjustment.recallId,
     )
   }
 

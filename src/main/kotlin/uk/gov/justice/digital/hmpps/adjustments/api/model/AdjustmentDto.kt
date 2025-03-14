@@ -43,6 +43,8 @@ data class AdjustmentDto(
   val timeSpentAsAnAppealApplicant: TimeSpentAsAnAppealApplicantDto?,
   @Schema(description = "The NOMIS sentence sequence of the adjustment")
   val sentenceSequence: Int? = null,
+  @Schema(description = "The ID of a recall that may be associated to the adjustment")
+  val recallId: UUID?,
 
   // View only fields
   @Schema(description = "Human readable text for type of adjustment", readOnly = true)

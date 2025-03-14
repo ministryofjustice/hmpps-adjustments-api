@@ -15,34 +15,33 @@ import java.util.UUID
 
 @Repository
 interface AdjustmentRepository : JpaRepository<Adjustment, UUID> {
+
   @Query(
     "SELECT a FROM Adjustment a" +
       " LEFT JOIN a.additionalDaysAwarded ada" +
       " WHERE a.person = :person" +
-      " AND a.status = :status" +
+      " AND a.status IN :status" +
       " AND a.currentPeriodOfCustody = :currentPeriodOfCustody" +
+      " AND (:recallId IS NULL OR a.recallId = :recallId)" +
       " AND (" +
-      " a.fromDate IS NULL" +
-      " OR a.fromDate >= :fromDate" +
+      " cast(:sentenceEnvelopeFilter as timestamp) IS NULL" +
+      " OR a.fromDate IS NULL" +
+      " OR a.fromDate >= :sentenceEnvelopeFilter" +
       " OR a.adjustmentType IN (:adjustmentTypes)" +
       " OR ada.prospective" +
+      " OR (a.adjustmentType = 'ADDITIONAL_DAYS_AWARDED' AND ada IS NULL)" +
       ")",
   )
   fun findAdjustmentsByPersonWithinSentenceEnvelope(
     person: String,
-    fromDate: LocalDate,
-    status: AdjustmentStatus,
+    status: List<AdjustmentStatus>,
     currentPeriodOfCustody: Boolean,
+    sentenceEnvelopeFilter: LocalDate?,
+    recallId: UUID?,
     adjustmentTypes: List<AdjustmentType>? = listOf(REMAND, TAGGED_BAIL, UNUSED_DEDUCTIONS),
   ): List<Adjustment>
 
   fun findByPerson(person: String): List<Adjustment>
-
-  fun findByPersonAndStatusAndCurrentPeriodOfCustody(
-    person: String,
-    status: AdjustmentStatus,
-    currentPeriodOfCustody: Boolean,
-  ): List<Adjustment>
 
   fun findByPersonAndStatus(
     person: String,

@@ -63,6 +63,7 @@ class UnusedDeductionsEventServiceTest {
     effectiveDays = 90,
     sentenceSequence = 1,
     source = AdjustmentSource.DPS,
+    recallId = null,
   )
   private val sentenceDate = LocalDate.of(2023, 1, 1)
   private val sentences = listOf(SentenceAndOffences(sentenceDate = sentenceDate, bookingId = 1, sentenceSequence = 1, sentenceCalculationType = "ADIMP", sentenceStatus = "A"))
@@ -99,7 +100,7 @@ class UnusedDeductionsEventServiceTest {
       val adjustments = listOf(remand, taggedBail, unusedDeductions)
 
       whenever(prisonService.getSentencesAndStartDateDetails(person)).thenReturn(defaultSentenceDetail)
-      whenever(adjustmentService.findCurrentAdjustments(person, AdjustmentStatus.ACTIVE, true, sentenceDate)).thenReturn(adjustments)
+      whenever(adjustmentService.findCurrentAdjustments(person, listOf(AdjustmentStatus.ACTIVE), true, sentenceDate)).thenReturn(adjustments)
       whenever(calculateReleaseDatesApiClient.calculateUnusedDeductions(adjustments, person)).thenReturn(
         UnusedDeductionCalculationResponse(
           100,
@@ -137,7 +138,7 @@ class UnusedDeductionsEventServiceTest {
       val adjustments = listOf(remand, taggedBail)
 
       whenever(prisonService.getSentencesAndStartDateDetails(person)).thenReturn(defaultSentenceDetail)
-      whenever(adjustmentService.findCurrentAdjustments(person, AdjustmentStatus.ACTIVE, true, sentenceDate)).thenReturn(adjustments)
+      whenever(adjustmentService.findCurrentAdjustments(person, listOf(AdjustmentStatus.ACTIVE), true, sentenceDate)).thenReturn(adjustments)
       whenever(calculateReleaseDatesApiClient.calculateUnusedDeductions(adjustments, person)).thenReturn(
         UnusedDeductionCalculationResponse(
           100,
@@ -194,7 +195,7 @@ class UnusedDeductionsEventServiceTest {
       val adjustments = listOf(remand, taggedBail, unusedDeductions)
 
       whenever(prisonService.getSentencesAndStartDateDetails(person)).thenReturn(defaultSentenceDetail)
-      whenever(adjustmentService.findCurrentAdjustments(person, AdjustmentStatus.ACTIVE, true, sentenceDate)).thenReturn(adjustments)
+      whenever(adjustmentService.findCurrentAdjustments(person, listOf(AdjustmentStatus.ACTIVE), true, sentenceDate)).thenReturn(adjustments)
       whenever(calculateReleaseDatesApiClient.calculateUnusedDeductions(adjustments, person)).thenReturn(
         UnusedDeductionCalculationResponse(0, emptyList()),
 
@@ -226,7 +227,7 @@ class UnusedDeductionsEventServiceTest {
       val adjustments = listOf(unusedDeductions)
 
       whenever(prisonService.getSentencesAndStartDateDetails(person)).thenReturn(defaultSentenceDetail)
-      whenever(adjustmentService.findCurrentAdjustments(person, AdjustmentStatus.ACTIVE, true, sentenceDate)).thenReturn(adjustments)
+      whenever(adjustmentService.findCurrentAdjustments(person, listOf(AdjustmentStatus.ACTIVE), true, sentenceDate)).thenReturn(adjustments)
       whenever(calculateReleaseDatesApiClient.calculateUnusedDeductions(adjustments, person)).thenReturn(
         UnusedDeductionCalculationResponse(0, emptyList()),
       )
@@ -284,7 +285,7 @@ class UnusedDeductionsEventServiceTest {
       val adjustments = listOf(remand, taggedBail, unusedDeductions)
 
       whenever(prisonService.getSentencesAndStartDateDetails(person)).thenReturn(defaultSentenceDetail)
-      whenever(adjustmentService.findCurrentAdjustments(person, AdjustmentStatus.ACTIVE, true, sentenceDate)).thenReturn(adjustments)
+      whenever(adjustmentService.findCurrentAdjustments(person, listOf(AdjustmentStatus.ACTIVE), true, sentenceDate)).thenReturn(adjustments)
 
       eventService.handleAdjustmentMessage(
         AdjustmentEvent(
@@ -297,7 +298,7 @@ class UnusedDeductionsEventServiceTest {
         ),
       )
 
-      verify(adjustmentService).findCurrentAdjustments(person, AdjustmentStatus.ACTIVE, true, sentenceDate)
+      verify(adjustmentService).findCurrentAdjustments(person, listOf(AdjustmentStatus.ACTIVE), true, sentenceDate)
       verifyNoMoreInteractions(adjustmentService)
     }
   }
@@ -326,7 +327,7 @@ class UnusedDeductionsEventServiceTest {
       val adjustments = listOf(remand, taggedBail, unusedDeductions)
 
       whenever(prisonService.getSentencesAndStartDateDetails(person)).thenReturn(defaultSentenceDetail)
-      whenever(adjustmentService.findCurrentAdjustments(person, AdjustmentStatus.ACTIVE, true, sentenceDate)).thenReturn(adjustments)
+      whenever(adjustmentService.findCurrentAdjustments(person, listOf(AdjustmentStatus.ACTIVE), true, sentenceDate)).thenReturn(adjustments)
       whenever(calculateReleaseDatesApiClient.calculateUnusedDeductions(adjustments, person)).thenReturn(
         UnusedDeductionCalculationResponse(100, listOf(expectedValidationMessage)),
       )
@@ -373,7 +374,7 @@ class UnusedDeductionsEventServiceTest {
       val adjustments = listOf(remand)
 
       whenever(prisonService.getSentencesAndStartDateDetails(person)).thenReturn(defaultSentenceDetail)
-      whenever(adjustmentService.findCurrentAdjustments(person, AdjustmentStatus.ACTIVE, true, sentenceDate)).thenReturn(adjustments)
+      whenever(adjustmentService.findCurrentAdjustments(person, listOf(AdjustmentStatus.ACTIVE), true, sentenceDate)).thenReturn(adjustments)
       whenever(unusedDeductionsCalculationResultRepository.findFirstByPerson(person)).thenReturn(
         UnusedDeductionsCalculationResult(status = UnusedDeductionsCalculationStatus.CALCULATED),
       )
@@ -387,7 +388,7 @@ class UnusedDeductionsEventServiceTest {
         ),
       )
 
-      verify(adjustmentService).findCurrentAdjustments(person, AdjustmentStatus.ACTIVE, true, sentenceDate)
+      verify(adjustmentService).findCurrentAdjustments(person, listOf(AdjustmentStatus.ACTIVE), true, sentenceDate)
       verifyNoMoreInteractions(adjustmentService)
       verify(unusedDeductionsCalculationResultRepository).save(argWhere { it.status == UnusedDeductionsCalculationStatus.NOMIS_ADJUSTMENT })
     }
@@ -403,7 +404,7 @@ class UnusedDeductionsEventServiceTest {
       val adjustments = listOf(remand, remandNomis)
 
       whenever(prisonService.getSentencesAndStartDateDetails(person)).thenReturn(defaultSentenceDetail)
-      whenever(adjustmentService.findCurrentAdjustments(person, AdjustmentStatus.ACTIVE, true, sentenceDate)).thenReturn(adjustments)
+      whenever(adjustmentService.findCurrentAdjustments(person, listOf(AdjustmentStatus.ACTIVE), true, sentenceDate)).thenReturn(adjustments)
 
       eventService.handlePrisonerSearchEvent(
         PrisonerSearchEvent(
@@ -414,7 +415,7 @@ class UnusedDeductionsEventServiceTest {
         ),
       )
 
-      verify(adjustmentService).findCurrentAdjustments(person, AdjustmentStatus.ACTIVE, true, sentenceDate)
+      verify(adjustmentService).findCurrentAdjustments(person, listOf(AdjustmentStatus.ACTIVE), true, sentenceDate)
       verifyNoMoreInteractions(adjustmentService)
       verify(unusedDeductionsCalculationResultRepository).save(argWhere { it.status == UnusedDeductionsCalculationStatus.NOMIS_ADJUSTMENT })
     }
@@ -426,7 +427,7 @@ class UnusedDeductionsEventServiceTest {
       val adjustments = listOf(remand)
 
       whenever(prisonService.getSentencesAndStartDateDetails(person)).thenReturn(defaultSentenceDetail)
-      whenever(adjustmentService.findCurrentAdjustments(person, AdjustmentStatus.ACTIVE, true, sentenceDate)).thenReturn(adjustments)
+      whenever(adjustmentService.findCurrentAdjustments(person, listOf(AdjustmentStatus.ACTIVE), true, sentenceDate)).thenReturn(adjustments)
       whenever(calculateReleaseDatesApiClient.calculateUnusedDeductions(adjustments, person)).thenReturn(
         UnusedDeductionCalculationResponse(null, listOf(CrdsValidationMessage("CODE", "Message", "UNSUPPORTED", emptyList()))),
       )
@@ -440,7 +441,7 @@ class UnusedDeductionsEventServiceTest {
         ),
       )
 
-      verify(adjustmentService).findCurrentAdjustments(person, AdjustmentStatus.ACTIVE, true, sentenceDate)
+      verify(adjustmentService).findCurrentAdjustments(person, listOf(AdjustmentStatus.ACTIVE), true, sentenceDate)
       verifyNoMoreInteractions(adjustmentService)
       verify(unusedDeductionsCalculationResultRepository).save(argWhere { it.status == UnusedDeductionsCalculationStatus.UNSUPPORTED })
     }
@@ -452,7 +453,7 @@ class UnusedDeductionsEventServiceTest {
       val adjustments = listOf(remand)
 
       whenever(prisonService.getSentencesAndStartDateDetails(person)).thenReturn(defaultSentenceDetail)
-      whenever(adjustmentService.findCurrentAdjustments(person, AdjustmentStatus.ACTIVE, true, sentenceDate)).thenReturn(adjustments)
+      whenever(adjustmentService.findCurrentAdjustments(person, listOf(AdjustmentStatus.ACTIVE), true, sentenceDate)).thenReturn(adjustments)
       whenever(calculateReleaseDatesApiClient.calculateUnusedDeductions(adjustments, person)).thenReturn(
         UnusedDeductionCalculationResponse(null, listOf(CrdsValidationMessage("CODE", "Message", "VALIDATION", emptyList()))),
       )
@@ -466,7 +467,7 @@ class UnusedDeductionsEventServiceTest {
         ),
       )
 
-      verify(adjustmentService).findCurrentAdjustments(person, AdjustmentStatus.ACTIVE, true, sentenceDate)
+      verify(adjustmentService).findCurrentAdjustments(person, listOf(AdjustmentStatus.ACTIVE), true, sentenceDate)
       verifyNoMoreInteractions(adjustmentService)
       verify(unusedDeductionsCalculationResultRepository).save(argWhere { it.status == UnusedDeductionsCalculationStatus.VALIDATION })
     }
@@ -478,7 +479,7 @@ class UnusedDeductionsEventServiceTest {
       val adjustments = listOf(remand)
 
       whenever(prisonService.getSentencesAndStartDateDetails(person)).thenReturn(defaultSentenceDetail.copy(hasRecall = true))
-      whenever(adjustmentService.findCurrentAdjustments(person, AdjustmentStatus.ACTIVE, true, sentenceDate)).thenReturn(adjustments)
+      whenever(adjustmentService.findCurrentAdjustments(person, listOf(AdjustmentStatus.ACTIVE), true, sentenceDate)).thenReturn(adjustments)
       whenever(calculateReleaseDatesApiClient.calculateUnusedDeductions(adjustments, person)).thenReturn(
         UnusedDeductionCalculationResponse(null, listOf(CrdsValidationMessage("CODE", "Message", "VALIDATION", emptyList()))),
       )
@@ -492,7 +493,7 @@ class UnusedDeductionsEventServiceTest {
         ),
       )
 
-      verify(adjustmentService).findCurrentAdjustments(person, AdjustmentStatus.ACTIVE, true, sentenceDate)
+      verify(adjustmentService).findCurrentAdjustments(person, listOf(AdjustmentStatus.ACTIVE), true, sentenceDate)
       verifyNoMoreInteractions(adjustmentService)
       verify(unusedDeductionsCalculationResultRepository).save(argWhere { it.status == UnusedDeductionsCalculationStatus.RECALL })
     }
