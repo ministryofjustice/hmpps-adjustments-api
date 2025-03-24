@@ -388,6 +388,7 @@ class AdjustmentsTransactionalService(
         adjustment = adjustment,
         prisonId = prisoner.prisonId,
       )
+      recallId = resource.recallId
     }
   }
 
