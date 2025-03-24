@@ -124,6 +124,7 @@ class AdjustmentsTransactionalService(
       taggedBail = taggedBail(resource),
       timeSpentInCustodyAbroad = timeSpentInCustodyAbroad(resource),
       timeSpentAsAnAppealApplicant = timeSpentAsAnAppealApplicant(resource),
+      recallId = resource.recallId,
     )
     adjustment.adjustmentHistory = listOf(
       AdjustmentHistory(
@@ -387,6 +388,7 @@ class AdjustmentsTransactionalService(
         adjustment = adjustment,
         prisonId = prisoner.prisonId,
       )
+      recallId = resource.recallId
     }
   }
 
