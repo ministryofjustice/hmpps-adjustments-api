@@ -313,14 +313,12 @@ class AdjustmentsTransactionalService(
     person: String,
     status: List<AdjustmentStatus>,
     currentPeriodOfCustody: Boolean,
-    startOfSentenceEnvelope: LocalDate?,
     recallId: UUID?,
   ): List<AdjustmentDto> {
     return adjustmentRepository.findAdjustmentsByPersonWithinSentenceEnvelope(
       person,
       status,
       currentPeriodOfCustody,
-      startOfSentenceEnvelope,
       recallId,
     ).map { mapToDto(it) }
   }

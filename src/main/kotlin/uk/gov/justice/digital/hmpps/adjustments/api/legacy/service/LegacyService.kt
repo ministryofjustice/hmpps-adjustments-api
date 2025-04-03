@@ -83,23 +83,12 @@ class LegacyService(
       adjustmentType = transform(adjustment.adjustmentType, legacyData),
       sentenceSequence = legacyData.sentenceSequence,
       bookingId = legacyData.bookingId,
-      active = legacyData.adjustmentActive && !shouldSetAdjustmentToInactiveBecauseOfUnusedDeductions(adjustment),
+      active = legacyData.adjustmentActive,
       bookingReleased = false,
       comment = legacyData.comment,
       agencyId = null,
       currentTerm = adjustment.currentPeriodOfCustody,
     )
-  }
-
-  /*
-   * If the unused deductions' calculation results in this adjustment being ENTIRELY unused. It will then have no bearing
-   * on a release date calculation. Usually the users would then not create this adjustment in NOMIS. However, we record
-   * all deductions, therefore make this adjustment inactive in NOMIS.
-   */
-  private fun shouldSetAdjustmentToInactiveBecauseOfUnusedDeductions(adjustment: Adjustment): Boolean {
-    val dpsDays = (adjustment.days ?: adjustment.daysCalculated)
-    val adjustmentHasDifferentEffectiveDays = dpsDays != null && dpsDays != adjustment.effectiveDays
-    return adjustmentHasDifferentEffectiveDays && adjustment.effectiveDays == 0
   }
 
   @Transactional
@@ -163,10 +152,6 @@ class LegacyService(
               adjustment = it,
               prisonId = prisonId,
             )
-
-            if (it.effectiveDays == 0) {
-              status = INACTIVE
-            }
           }
         }
       }
@@ -298,19 +283,6 @@ class LegacyService(
           adjustment = this,
         )
       }
-    }
-  }
-
-  @Transactional
-  fun patchCurrentTerm(adjustmentId: UUID, resource: LegacyAdjustment) {
-    val adjustment = adjustmentRepository.findById(adjustmentId)
-      .map { if (it.status.isDeleted()) null else it }
-      .orElseThrow {
-        EntityNotFoundException("No adjustment found with id $adjustmentId")
-      }!!
-
-    adjustment.apply {
-      currentPeriodOfCustody = resource.currentTerm
     }
   }
 }

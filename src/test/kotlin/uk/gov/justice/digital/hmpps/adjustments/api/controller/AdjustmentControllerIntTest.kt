@@ -460,82 +460,9 @@ class AdjustmentControllerIntTest : SqsIntegrationTestBase() {
     @Test
     @Sql(
       "classpath:test_data/reset-data.sql",
+      "classpath:test_data/insert-adjustments-for-find-by-tests.sql",
     )
-    fun findByPersonAdaWithoutCharge() {
-      val id = createAnAdjustment(
-        CREATED_ADJUSTMENT.copy(
-          adjustmentType = ADDITIONAL_DAYS_AWARDED,
-        ),
-      )
-
-      val result = webTestClient
-        .get()
-        .uri(
-          "/adjustments?person=${PrisonApiExtension.PRISONER_ID}&sentenceEnvelopeDate=${
-            CREATED_ADJUSTMENT.fromDate!!.minusDays(
-              1,
-            )
-          }",
-        )
-        .headers(
-          setAdjustmentsRWAuth(),
-        )
-        .exchange()
-        .expectStatus().isOk
-        .expectBodyList<AdjustmentDto>()
-        .returnResult()
-        .responseBody!!
-
-      assertThat(result.size).isEqualTo(1)
-    }
-
-    @Test
-    @Sql(
-      "classpath:test_data/reset-data.sql",
-      "classpath:test_data/insert-adjustments-spanning-sentence-envelope.sql",
-    )
-    fun `Get adjustments by person where some have been deleted, and some fall outside of the sentence envelope`() {
-      val person = "BCDEFG"
-      val result = getAdjustmentsByPerson(person, startOfSentenceEnvelope = LocalDate.of(2015, 3, 17))
-
-      assertThat(result.map { it.lastUpdatedBy })
-        .usingRecursiveComparison()
-        .ignoringCollectionOrder()
-        .isEqualTo(listOf("current-ual", "current-lal", "current-rada", "tagged-bail-no-dates", "remand-before-sentence"))
-    }
-
-    @Test
-    @Sql(
-      "classpath:test_data/reset-data.sql",
-      "classpath:test_data/insert-adjustments-spanning-sentence-envelope.sql",
-    )
-    fun `Get adjustments by person filter for adjustments before sentence envelope`() {
-      val person = "BCDEFG"
-      val result = getAdjustmentsByPerson(person, startOfSentenceEnvelope = LocalDate.of(2000, 1, 1))
-
-      assertThat(result.map { it.lastUpdatedBy })
-        .usingRecursiveComparison()
-        .ignoringCollectionOrder()
-        .isEqualTo(
-          listOf(
-            "current-ual",
-            "current-lal",
-            "current-rada",
-            "tagged-bail-no-dates",
-            "remand-before-sentence",
-            "expired-ual",
-            "expired-lal",
-            "expired-rada",
-          ),
-        )
-    }
-
-    @Test
-    @Sql(
-      "classpath:test_data/reset-data.sql",
-      "classpath:test_data/insert-adjustments-spanning-sentence-envelope.sql",
-    )
-    fun `Get adjustments by person filter for adjustments without envelope filter`() {
+    fun `Get adjustments by person filter for adjustments`() {
       val person = "BCDEFG"
       val result = getAdjustmentsByPerson(person)
 
@@ -559,11 +486,11 @@ class AdjustmentControllerIntTest : SqsIntegrationTestBase() {
     @Test
     @Sql(
       "classpath:test_data/reset-data.sql",
-      "classpath:test_data/insert-adjustments-spanning-sentence-envelope.sql",
+      "classpath:test_data/insert-adjustments-for-find-by-tests.sql",
     )
     fun `Get adjustments by person filter for deleted adjustments`() {
       val person = "BCDEFG"
-      val result = getAdjustmentsByPerson(person, status = DELETED, startOfSentenceEnvelope = LocalDate.of(2015, 3, 17))
+      val result = getAdjustmentsByPerson(person, status = DELETED)
 
       assertThat(result.map { it.lastUpdatedBy })
         .usingRecursiveComparison()
@@ -643,10 +570,6 @@ class AdjustmentControllerIntTest : SqsIntegrationTestBase() {
 
       adjustmentDto = getAdjustmentById(adjustmentId)
       assertThat(adjustmentDto.additionalDaysAwarded).isEqualTo(AdditionalDaysAwardedDto(listOf("32415555"), false))
-
-      // Assert that non-prospective adas before the earliest sentence date are not included.
-      adjustments = getAdjustmentsByPerson(PrisonApiExtension.PRISONER_ID, startOfSentenceEnvelope = earliestSentenceDate)
-      assertThat(adjustments.contains(adjustmentDto)).isFalse
 
       entityManager.refresh(adjustment)
       assertThat(adjustment.additionalDaysAwarded!!.adjudicationCharges).containsAll(listOf(AdjudicationCharges("32415555")))
@@ -1264,12 +1187,11 @@ class AdjustmentControllerIntTest : SqsIntegrationTestBase() {
   private fun getAdjustmentsByPerson(
     person: String,
     status: AdjustmentStatus? = null,
-    startOfSentenceEnvelope: LocalDate? = null,
     recallId: UUID? = null,
   ): List<AdjustmentDto> =
     webTestClient
       .get()
-      .uri("/adjustments?person=$person${if (status != null) "&status=$status" else ""}${if (startOfSentenceEnvelope != null) "&sentenceEnvelopeDate=$startOfSentenceEnvelope" else ""}${if (recallId != null) "&recallId=$recallId" else ""}")
+      .uri("/adjustments?person=$person${if (status != null) "&status=$status" else ""}${if (recallId != null) "&recallId=$recallId" else ""}")
       .headers(setAdjustmentsRWAuth())
       .exchange()
       .expectStatus().isOk

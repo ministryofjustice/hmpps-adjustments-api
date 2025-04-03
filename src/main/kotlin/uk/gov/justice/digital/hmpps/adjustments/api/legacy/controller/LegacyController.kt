@@ -10,7 +10,6 @@ import org.springframework.http.MediaType
 import org.springframework.security.access.prepost.PreAuthorize
 import org.springframework.web.bind.annotation.DeleteMapping
 import org.springframework.web.bind.annotation.GetMapping
-import org.springframework.web.bind.annotation.PatchMapping
 import org.springframework.web.bind.annotation.PathVariable
 import org.springframework.web.bind.annotation.PostMapping
 import org.springframework.web.bind.annotation.PutMapping
@@ -142,28 +141,6 @@ class LegacyController(
       eventService.delete(adjustmentId, it.offenderNo, AdjustmentSource.NOMIS)
       legacyService.updateAllAdjustmentsToHaveEffectiveDaysAsDpsDays(it.offenderNo, it.bookingId)
     }
-  }
-
-  @PatchMapping("/{adjustmentId}/current-term")
-  @Operation(
-    summary = "Set the current term of an adjustment",
-    description = "Temporary endpoint to migrate the current term value of an adjustment.",
-  )
-  @ApiResponses(
-    value = [
-      ApiResponse(responseCode = "200", description = "Adjustment updated"),
-      ApiResponse(responseCode = "401", description = "Unauthorised, requires a valid Oauth2 token"),
-      ApiResponse(responseCode = "404", description = "Adjustment not found"),
-    ],
-  )
-  @PreAuthorize("hasRole('SENTENCE_ADJUSTMENTS_SYNCHRONISATION')")
-  fun setCurrentTerm(
-    @Parameter(required = true, description = "The adjustment UUID")
-    @PathVariable("adjustmentId")
-    adjustmentId: UUID,
-    @RequestBody adjustment: LegacyAdjustment,
-  ) {
-    legacyService.patchCurrentTerm(adjustmentId, adjustment)
   }
 
   companion object {

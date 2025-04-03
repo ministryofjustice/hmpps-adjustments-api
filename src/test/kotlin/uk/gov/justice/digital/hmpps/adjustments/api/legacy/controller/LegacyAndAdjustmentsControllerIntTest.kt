@@ -237,7 +237,7 @@ class LegacyAndAdjustmentsControllerIntTest : SqsIntegrationTestBase() {
     adjustmentOne = getAdjustmentById(idOne)
     adjustmentTwo = getAdjustmentById(idTwo)
     assertThat(adjustmentOne.days).isEqualTo(4)
-    assertThat(adjustmentTwo.status).isEqualTo(AdjustmentStatus.INACTIVE)
+    assertThat(adjustmentTwo.days).isEqualTo(0)
     assertThat(adjustmentOne.source).isEqualTo(AdjustmentSource.NOMIS)
     assertThat(adjustmentTwo.source).isEqualTo(AdjustmentSource.NOMIS)
     await untilAsserted {
@@ -302,25 +302,6 @@ class LegacyAndAdjustmentsControllerIntTest : SqsIntegrationTestBase() {
     }
   }
 
-  @Test
-  fun `legacy get where the effective days are zero but there were days entered in DPS`() {
-    val adjustment = ADJUSTMENT.copy()
-    val id = postCreateAdjustments(listOf(adjustment))[0]
-
-    // Assert adjustment is active after creating.
-    var legacyAdjustment = getLegacyAdjustment(id)
-    assertThat(legacyAdjustment.active).isEqualTo(true)
-
-    // Assert adjustment is inactive when effective days are zero
-    postAdjustmentEffectiveDaysUpdate(id, AdjustmentEffectiveDaysDto(id, 0, adjustment.person))
-    legacyAdjustment = getLegacyAdjustment(id)
-    assertThat(legacyAdjustment.active).isEqualTo(false)
-
-    // Assert adjustment is active again when effective days are non-zero
-    postAdjustmentEffectiveDaysUpdate(id, AdjustmentEffectiveDaysDto(id, 1, adjustment.person))
-    legacyAdjustment = getLegacyAdjustment(id)
-    assertThat(legacyAdjustment.active).isEqualTo(true)
-  }
   private fun getAdjustmentById(adjustmentId: UUID) = webTestClient
     .get()
     .uri("/adjustments/$adjustmentId")
