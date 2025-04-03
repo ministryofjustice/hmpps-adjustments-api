@@ -46,8 +46,7 @@ class UnusedDeductionsService(
 
   @Transactional
   fun recalculateUnusedDeductions(offenderNo: String) {
-    val sentences = prisonService.getSentencesAndStartDateDetails(offenderNo)
-    val adjustments = adjustmentService.findCurrentAdjustments(offenderNo, listOf(AdjustmentStatus.ACTIVE), true, sentences.earliestSentenceDate)
+    val adjustments = adjustmentService.findCurrentAdjustments(offenderNo, listOf(AdjustmentStatus.ACTIVE), true)
     val anyDpsAdjustments = adjustments.any { it.source == AdjustmentSource.DPS }
     if (anyDpsAdjustments) {
       log.info("Recalculating unused deductions from $offenderNo")
@@ -64,6 +63,7 @@ class UnusedDeductionsService(
       if (anyNomisDeductions) {
         setUnusedDeductionsResult(offenderNo, UnusedDeductionsCalculationStatus.NOMIS_ADJUSTMENT)
       } else {
+        val sentences = prisonService.getSentencesAndStartDateDetails(offenderNo)
         val unusedDeductionsResponse =
           calculateReleaseDatesApiClient.calculateUnusedDeductions(adjustments, offenderNo)
         if (unusedDeductionsResponse.validationMessages.any { it.type != "VALIDATION" }) {

@@ -7,7 +7,6 @@ import uk.gov.justice.digital.hmpps.adjustments.api.model.AdjustmentDto
 import uk.gov.justice.digital.hmpps.adjustments.api.model.AdjustmentEffectiveDaysDto
 import uk.gov.justice.digital.hmpps.adjustments.api.model.CreateResponseDto
 import uk.gov.justice.digital.hmpps.adjustments.api.model.RestoreAdjustmentsDto
-import java.time.LocalDate
 import java.util.UUID
 
 @Service
@@ -36,10 +35,9 @@ class AdjustmentsService(
     person: String,
     status: List<AdjustmentStatus>,
     currentPeriodOfCustody: Boolean,
-    startOfSentenceEnvelope: LocalDate?,
     recallId: UUID? = null,
   ): List<AdjustmentDto> {
-    return adjustmentsTransactionalService.findCurrentAdjustments(person, status, currentPeriodOfCustody, startOfSentenceEnvelope, recallId)
+    return adjustmentsTransactionalService.findCurrentAdjustments(person, status, currentPeriodOfCustody, recallId)
   }
 
   fun update(adjustmentId: UUID, adjustment: AdjustmentDto) {

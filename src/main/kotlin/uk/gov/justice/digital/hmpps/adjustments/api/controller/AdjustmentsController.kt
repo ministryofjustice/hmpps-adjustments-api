@@ -29,7 +29,6 @@ import uk.gov.justice.digital.hmpps.adjustments.api.model.ValidationMessage
 import uk.gov.justice.digital.hmpps.adjustments.api.service.AdjustmentsService
 import uk.gov.justice.digital.hmpps.adjustments.api.service.UnusedDeductionsService
 import uk.gov.justice.digital.hmpps.adjustments.api.service.ValidationService
-import java.time.LocalDate
 import java.util.UUID
 
 @RestController
@@ -83,18 +82,12 @@ class AdjustmentsController(
     currentPeriodOfCustody: Boolean?,
     @Parameter(
       required = false,
-      description = "The earliest sentence date to filter adjustments by. Defaults to earliest active sentence date",
-    )
-    @RequestParam("sentenceEnvelopeDate")
-    sentenceEnvelopeDate: LocalDate?,
-    @Parameter(
-      required = false,
       description = "The recall ID to filter adjustments by.",
     )
     @RequestParam("recallId")
     recallId: UUID? = null,
   ): List<AdjustmentDto> {
-    return adjustmentsService.findCurrentAdjustments(person, status ?: listOf(AdjustmentStatus.ACTIVE), currentPeriodOfCustody ?: true, sentenceEnvelopeDate, recallId)
+    return adjustmentsService.findCurrentAdjustments(person, status ?: listOf(AdjustmentStatus.ACTIVE), currentPeriodOfCustody ?: true, recallId)
   }
 
   @GetMapping("/{adjustmentId}")
