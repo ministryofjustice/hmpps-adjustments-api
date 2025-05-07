@@ -200,8 +200,18 @@ class AdjustmentControllerIntTest : SqsIntegrationTestBase() {
       assertThat(adjustment.fromDate).isEqualTo(newFromDate)
       assertThat(adjustment.toDate).isEqualTo(newToDate)
       assertThat(adjustment.days).isNull()
-      assertThat(adjustment.daysCalculated).isEqualTo(AdjustmentsTransactionalService.daysBetween(newFromDate, newToDate))
-      assertThat(adjustment.effectiveDays).isEqualTo(AdjustmentsTransactionalService.daysBetween(newFromDate, newToDate))
+      assertThat(adjustment.daysCalculated).isEqualTo(
+        AdjustmentsTransactionalService.daysBetween(
+          newFromDate,
+          newToDate,
+        ),
+      )
+      assertThat(adjustment.effectiveDays).isEqualTo(
+        AdjustmentsTransactionalService.daysBetween(
+          newFromDate,
+          newToDate,
+        ),
+      )
 
       val legacyData = objectMapper.convertValue(adjustment.legacyData, LegacyData::class.java)
       assertThat(legacyData).isEqualTo(
@@ -520,7 +530,8 @@ class AdjustmentControllerIntTest : SqsIntegrationTestBase() {
     @Test
     @Transactional
     fun adaAdjustments() {
-      val earliestSentenceDate = LocalDate.parse(PrisonApiExtension.EARLIEST_SENTENCE_DATE, DateTimeFormatter.ISO_LOCAL_DATE)
+      val earliestSentenceDate =
+        LocalDate.parse(PrisonApiExtension.EARLIEST_SENTENCE_DATE, DateTimeFormatter.ISO_LOCAL_DATE)
       val beforeEarliestSentence = earliestSentenceDate.minusDays(1)
       val createDto = CREATED_ADJUSTMENT.copy(
         fromDate = beforeEarliestSentence,
@@ -878,7 +889,10 @@ class AdjustmentControllerIntTest : SqsIntegrationTestBase() {
           ),
         )
 
-      val updateDto = createdAdjustment.copy(days = null, specialRemission = SpecialRemissionDto(type = RELEASE_DATE_CALCULATED_TOO_EARLY))
+      val updateDto = createdAdjustment.copy(
+        days = null,
+        specialRemission = SpecialRemissionDto(type = RELEASE_DATE_CALCULATED_TOO_EARLY),
+      )
       putAdjustmentUpdate(adjustmentId, updateDto)
       val updatedAdjustment = getAdjustmentById(adjustmentId)
       assertThat(updatedAdjustment)
@@ -974,13 +988,23 @@ class AdjustmentControllerIntTest : SqsIntegrationTestBase() {
       )
 
       val updateDto =
-        createdAdjustment.copy(days = null, timeSpentInCustodyAbroad = TimeSpentInCustodyAbroadDto(COURT_WARRANT, listOf(9991L)))
+        createdAdjustment.copy(
+          days = null,
+          timeSpentInCustodyAbroad = TimeSpentInCustodyAbroadDto(COURT_WARRANT, listOf(9991L)),
+        )
       putAdjustmentUpdate(adjustmentId, updateDto)
       val updatedAdjustment = getAdjustmentById(adjustmentId)
       assertThat(updatedAdjustment)
         .usingRecursiveComparison()
         .ignoringFieldsMatchingRegexes("lastUpdatedDate")
-        .isEqualTo(createdAdjustment.copy(timeSpentInCustodyAbroad = TimeSpentInCustodyAbroadDto(COURT_WARRANT, listOf(9991L))))
+        .isEqualTo(
+          createdAdjustment.copy(
+            timeSpentInCustodyAbroad = TimeSpentInCustodyAbroadDto(
+              COURT_WARRANT,
+              listOf(9991L),
+            ),
+          ),
+        )
     }
   }
 
@@ -1043,13 +1067,23 @@ class AdjustmentControllerIntTest : SqsIntegrationTestBase() {
       )
 
       val updateDto =
-        createdAdjustment.copy(days = null, timeSpentAsAnAppealApplicant = TimeSpentAsAnAppealApplicantDto("WF123456", listOf(9991)))
+        createdAdjustment.copy(
+          days = null,
+          timeSpentAsAnAppealApplicant = TimeSpentAsAnAppealApplicantDto("WF123456", listOf(9991)),
+        )
       putAdjustmentUpdate(adjustmentId, updateDto)
       val updatedAdjustment = getAdjustmentById(adjustmentId)
       assertThat(updatedAdjustment)
         .usingRecursiveComparison()
         .ignoringFieldsMatchingRegexes("lastUpdatedDate")
-        .isEqualTo(createdAdjustment.copy(timeSpentAsAnAppealApplicant = TimeSpentAsAnAppealApplicantDto("WF123456", listOf(9991))))
+        .isEqualTo(
+          createdAdjustment.copy(
+            timeSpentAsAnAppealApplicant = TimeSpentAsAnAppealApplicantDto(
+              "WF123456",
+              listOf(9991),
+            ),
+          ),
+        )
     }
 
     @Test
@@ -1188,16 +1222,15 @@ class AdjustmentControllerIntTest : SqsIntegrationTestBase() {
     person: String,
     status: AdjustmentStatus? = null,
     recallId: UUID? = null,
-  ): List<AdjustmentDto> =
-    webTestClient
-      .get()
-      .uri("/adjustments?person=$person${if (status != null) "&status=$status" else ""}${if (recallId != null) "&recallId=$recallId" else ""}")
-      .headers(setAdjustmentsRWAuth())
-      .exchange()
-      .expectStatus().isOk
-      .expectBodyList<AdjustmentDto>()
-      .returnResult()
-      .responseBody
+  ): List<AdjustmentDto> = webTestClient
+    .get()
+    .uri("/adjustments?person=$person${if (status != null) "&status=$status" else ""}${if (recallId != null) "&recallId=$recallId" else ""}")
+    .headers(setAdjustmentsRWAuth())
+    .exchange()
+    .expectStatus().isOk
+    .expectBodyList<AdjustmentDto>()
+    .returnResult()
+    .responseBody
 
   private fun postCreateAdjustments(adjustmentDtos: List<AdjustmentDto>) = webTestClient
     .post()
@@ -1219,20 +1252,18 @@ class AdjustmentControllerIntTest : SqsIntegrationTestBase() {
     .returnResult(AdjustmentDto::class.java)
     .responseBody.blockFirst()!!
 
-  private fun createAnAdjustment(adjustment: AdjustmentDto = CREATED_ADJUSTMENT.copy()): UUID {
-    return webTestClient
-      .post()
-      .uri("/adjustments")
-      .headers(
-        setAdjustmentsRWAuth(),
-      )
-      .contentType(MediaType.APPLICATION_JSON)
-      .bodyValue(listOf(adjustment))
-      .exchange()
-      .expectStatus().isCreated
-      .returnResult(CreateResponseDto::class.java)
-      .responseBody.blockFirst()!!.adjustmentIds[0]
-  }
+  private fun createAnAdjustment(adjustment: AdjustmentDto = CREATED_ADJUSTMENT.copy()) = webTestClient
+    .post()
+    .uri("/adjustments")
+    .headers(
+      setAdjustmentsRWAuth(),
+    )
+    .contentType(MediaType.APPLICATION_JSON)
+    .bodyValue(listOf(adjustment))
+    .exchange()
+    .expectStatus().isCreated
+    .returnResult(CreateResponseDto::class.java)
+    .responseBody.blockFirst()!!.adjustmentIds[0]
 
   @Test
   fun validate() {
@@ -1295,6 +1326,7 @@ class AdjustmentControllerIntTest : SqsIntegrationTestBase() {
       .exchange()
       .expectStatus().isOk
   }
+
   private fun postSetManualUnusedDeductions(
     person: String,
     days: ManualUnusedDeductionsDto,

@@ -33,44 +33,36 @@ class WebClientConfiguration(
 ) {
 
   @Bean
-  fun prisonerSearchApiWebClient(authorizedClientManager: OAuth2AuthorizedClientManager, builder: WebClient.Builder): WebClient {
-    return builder.authorisedWebClient(
-      authorizedClientManager = authorizedClientManager,
-      registrationId = "hmpps-api",
-      url = prisonerSearchApiUrl,
-      timeout = Duration.ofSeconds(prisonerSearchApiTimeoutSeconds),
-    )
-  }
+  fun prisonerSearchApiWebClient(authorizedClientManager: OAuth2AuthorizedClientManager, builder: WebClient.Builder): WebClient = builder.authorisedWebClient(
+    authorizedClientManager = authorizedClientManager,
+    registrationId = "hmpps-api",
+    url = prisonerSearchApiUrl,
+    timeout = Duration.ofSeconds(prisonerSearchApiTimeoutSeconds),
+  )
 
   @Bean
-  fun prisonApiWebClient(authorizedClientManager: OAuth2AuthorizedClientManager, builder: WebClient.Builder): WebClient {
-    return builder.authorisedWebClient(
-      authorizedClientManager = authorizedClientManager,
-      registrationId = "hmpps-api",
-      url = prisonApiUri,
-      timeout = Duration.ofSeconds(prisonApiTimeoutSeconds),
-    )
-  }
+  fun prisonApiWebClient(authorizedClientManager: OAuth2AuthorizedClientManager, builder: WebClient.Builder): WebClient = builder.authorisedWebClient(
+    authorizedClientManager = authorizedClientManager,
+    registrationId = "hmpps-api",
+    url = prisonApiUri,
+    timeout = Duration.ofSeconds(prisonApiTimeoutSeconds),
+  )
 
   @Bean
-  fun calculateReleaseDatesApiWebClient(authorizedClientManager: OAuth2AuthorizedClientManager, builder: WebClient.Builder): WebClient {
-    return builder.authorisedWebClient(
-      authorizedClientManager = authorizedClientManager,
-      registrationId = "hmpps-api",
-      url = calculateReleaseDatesApiUrl,
-      timeout = Duration.ofSeconds(calculateReleaseDatesApiTimeoutSeconds),
-    )
-  }
+  fun calculateReleaseDatesApiWebClient(authorizedClientManager: OAuth2AuthorizedClientManager, builder: WebClient.Builder): WebClient = builder.authorisedWebClient(
+    authorizedClientManager = authorizedClientManager,
+    registrationId = "hmpps-api",
+    url = calculateReleaseDatesApiUrl,
+    timeout = Duration.ofSeconds(calculateReleaseDatesApiTimeoutSeconds),
+  )
 
   @Bean
-  fun remandAndSentencingApiWebClient(authorizedClientManager: OAuth2AuthorizedClientManager, builder: WebClient.Builder): WebClient {
-    return builder.authorisedWebClient(
-      authorizedClientManager = authorizedClientManager,
-      registrationId = "hmpps-api",
-      url = remandAndSentencingApiUrl,
-      timeout = Duration.ofSeconds(remandAndSentencingApiTimeoutSeconds),
-    )
-  }
+  fun remandAndSentencingApiWebClient(authorizedClientManager: OAuth2AuthorizedClientManager, builder: WebClient.Builder): WebClient = builder.authorisedWebClient(
+    authorizedClientManager = authorizedClientManager,
+    registrationId = "hmpps-api",
+    url = remandAndSentencingApiUrl,
+    timeout = Duration.ofSeconds(remandAndSentencingApiTimeoutSeconds),
+  )
 
   @Bean
   fun adjudicationApiWebClient(authorizedClientManager: OAuth2AuthorizedClientManager, builder: WebClient.Builder): WebClient {
@@ -88,13 +80,11 @@ class WebClientConfiguration(
       )
   }
 
-  private fun addAuthHeaderFilterFunction(): ExchangeFilterFunction {
-    return ExchangeFilterFunction { request: ClientRequest, next: ExchangeFunction ->
-      val filtered = ClientRequest.from(request)
-        .header(HttpHeaders.AUTHORIZATION, UserContext.getAuthToken())
-        .build()
-      next.exchange(filtered)
-    }
+  private fun addAuthHeaderFilterFunction(): ExchangeFilterFunction = ExchangeFilterFunction { request: ClientRequest, next: ExchangeFunction ->
+    val filtered = ClientRequest.from(request)
+      .header(HttpHeaders.AUTHORIZATION, UserContext.getAuthToken())
+      .build()
+    next.exchange(filtered)
   }
 
   @Bean
@@ -109,7 +99,5 @@ class WebClientConfiguration(
   }
 
   @Bean
-  fun oauthApiHealthWebClient(): WebClient {
-    return WebClient.builder().baseUrl(oauthApiUrl).build()
-  }
+  fun oauthApiHealthWebClient(): WebClient = WebClient.builder().baseUrl(oauthApiUrl).build()
 }

@@ -146,15 +146,13 @@ class UnusedDeductionsService(
   }
 
   @Transactional(readOnly = true)
-  fun getUnusedDeductionsResult(person: String): UnusedDeductionsCalculationResultDto {
-    return unusedDeductionsCalculationResultRepository.findFirstByPerson(person)?.let {
-      UnusedDeductionsCalculationResultDto(
-        it.person,
-        it.calculationAt,
-        it.status,
-      )
-    } ?: UnusedDeductionsCalculationResultDto(person, calculationAt = LocalDateTime.now(), status = UnusedDeductionsCalculationStatus.UNKNOWN)
-  }
+  fun getUnusedDeductionsResult(person: String): UnusedDeductionsCalculationResultDto = unusedDeductionsCalculationResultRepository.findFirstByPerson(person)?.let {
+    UnusedDeductionsCalculationResultDto(
+      it.person,
+      it.calculationAt,
+      it.status,
+    )
+  } ?: UnusedDeductionsCalculationResultDto(person, calculationAt = LocalDateTime.now(), status = UnusedDeductionsCalculationStatus.UNKNOWN)
 
   private fun setUnusedDeductionsResult(person: String, status: UnusedDeductionsCalculationStatus) {
     val result = unusedDeductionsCalculationResultRepository.findFirstByPerson(person)

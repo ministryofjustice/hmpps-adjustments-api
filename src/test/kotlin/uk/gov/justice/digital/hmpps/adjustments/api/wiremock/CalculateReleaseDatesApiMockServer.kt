@@ -13,7 +13,10 @@ import uk.gov.justice.digital.hmpps.adjustments.api.listener.UNUSED_DEDUCTIONS_P
 /*
     This class mocks the calculate release dates api.
  */
-class CalculateReleaseDatesApiExtension : BeforeAllCallback, AfterAllCallback, BeforeEachCallback {
+class CalculateReleaseDatesApiExtension :
+  BeforeAllCallback,
+  AfterAllCallback,
+  BeforeEachCallback {
   companion object {
     @JvmField
     val calculateReleaseDatesApi = CalculateReleaseDatesApiMockServer()

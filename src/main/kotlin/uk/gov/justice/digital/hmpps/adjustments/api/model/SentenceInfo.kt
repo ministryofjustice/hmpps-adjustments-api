@@ -9,9 +9,7 @@ data class SentenceInfo(
   constructor(sentence: SentenceAndOffences) : this(sentence.sentenceSequence, isRecall(sentence))
 
   companion object {
-    fun isRecall(sentence: SentenceAndOffences): Boolean {
-      return recallTypes.contains(sentence.sentenceCalculationType)
-    }
+    fun isRecall(sentence: SentenceAndOffences): Boolean = recallTypes.contains(sentence.sentenceCalculationType)
 
     private val recallTypes = listOf(
       "LR",

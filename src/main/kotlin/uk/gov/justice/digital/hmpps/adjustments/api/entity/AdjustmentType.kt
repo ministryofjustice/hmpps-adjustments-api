@@ -15,7 +15,5 @@ enum class AdjustmentType(val text: String, val arithmeticType: ArithmeticType) 
   APPEAL_APPLICANT("Time spent as an appeal applicant", ArithmeticType.ADDITION),
   ;
 
-  fun isSentenceType(): Boolean {
-    return this == REMAND || this == TAGGED_BAIL || this == UNUSED_DEDUCTIONS || this == CUSTODY_ABROAD || this == APPEAL_APPLICANT
-  }
+  fun isSentenceType(): Boolean = this == REMAND || this == TAGGED_BAIL || this == UNUSED_DEDUCTIONS || this == CUSTODY_ABROAD || this == APPEAL_APPLICANT
 }

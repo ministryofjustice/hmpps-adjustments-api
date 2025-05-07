@@ -179,40 +179,34 @@ class LegacyService(
     }
   }
 
-  fun objectToJson(subject: Any): JsonNode {
-    return JacksonUtil.toJsonNode(objectMapper.writeValueAsString(subject))
+  fun objectToJson(subject: Any): JsonNode = JacksonUtil.toJsonNode(objectMapper.writeValueAsString(subject))
+
+  fun transform(type: AdjustmentType, legacyData: LegacyData): LegacyAdjustmentType = when (type) {
+    AdjustmentType.UNLAWFULLY_AT_LARGE -> LegacyAdjustmentType.UAL
+    AdjustmentType.REMAND -> legacyData.type ?: LegacyAdjustmentType.RX
+    AdjustmentType.TAGGED_BAIL -> legacyData.type ?: LegacyAdjustmentType.S240A
+    AdjustmentType.LAWFULLY_AT_LARGE -> LegacyAdjustmentType.LAL
+    AdjustmentType.ADDITIONAL_DAYS_AWARDED -> LegacyAdjustmentType.ADA
+    AdjustmentType.RESTORATION_OF_ADDITIONAL_DAYS_AWARDED -> LegacyAdjustmentType.RADA
+    AdjustmentType.SPECIAL_REMISSION -> LegacyAdjustmentType.SREM
+    AdjustmentType.UNUSED_DEDUCTIONS -> LegacyAdjustmentType.UR
+    AdjustmentType.CUSTODY_ABROAD -> LegacyAdjustmentType.TCA
+    AdjustmentType.APPEAL_APPLICANT -> LegacyAdjustmentType.TSA
   }
 
-  fun transform(type: AdjustmentType, legacyData: LegacyData): LegacyAdjustmentType {
-    return when (type) {
-      AdjustmentType.UNLAWFULLY_AT_LARGE -> LegacyAdjustmentType.UAL
-      AdjustmentType.REMAND -> legacyData.type ?: LegacyAdjustmentType.RX
-      AdjustmentType.TAGGED_BAIL -> legacyData.type ?: LegacyAdjustmentType.S240A
-      AdjustmentType.LAWFULLY_AT_LARGE -> LegacyAdjustmentType.LAL
-      AdjustmentType.ADDITIONAL_DAYS_AWARDED -> LegacyAdjustmentType.ADA
-      AdjustmentType.RESTORATION_OF_ADDITIONAL_DAYS_AWARDED -> LegacyAdjustmentType.RADA
-      AdjustmentType.SPECIAL_REMISSION -> LegacyAdjustmentType.SREM
-      AdjustmentType.UNUSED_DEDUCTIONS -> LegacyAdjustmentType.UR
-      AdjustmentType.CUSTODY_ABROAD -> LegacyAdjustmentType.TCA
-      AdjustmentType.APPEAL_APPLICANT -> LegacyAdjustmentType.TSA
-    }
-  }
-
-  fun transform(type: LegacyAdjustmentType): AdjustmentType {
-    return when (type) {
-      LegacyAdjustmentType.ADA -> AdjustmentType.ADDITIONAL_DAYS_AWARDED
-      LegacyAdjustmentType.RADA -> AdjustmentType.RESTORATION_OF_ADDITIONAL_DAYS_AWARDED
-      LegacyAdjustmentType.UAL -> AdjustmentType.UNLAWFULLY_AT_LARGE
-      LegacyAdjustmentType.RSR -> AdjustmentType.REMAND
-      LegacyAdjustmentType.RST -> AdjustmentType.TAGGED_BAIL
-      LegacyAdjustmentType.RX -> AdjustmentType.REMAND
-      LegacyAdjustmentType.S240A -> AdjustmentType.TAGGED_BAIL
-      LegacyAdjustmentType.UR -> AdjustmentType.UNUSED_DEDUCTIONS
-      LegacyAdjustmentType.LAL -> AdjustmentType.LAWFULLY_AT_LARGE
-      LegacyAdjustmentType.SREM -> AdjustmentType.SPECIAL_REMISSION
-      LegacyAdjustmentType.TCA -> AdjustmentType.CUSTODY_ABROAD
-      LegacyAdjustmentType.TSA -> AdjustmentType.APPEAL_APPLICANT
-    }
+  fun transform(type: LegacyAdjustmentType): AdjustmentType = when (type) {
+    LegacyAdjustmentType.ADA -> AdjustmentType.ADDITIONAL_DAYS_AWARDED
+    LegacyAdjustmentType.RADA -> AdjustmentType.RESTORATION_OF_ADDITIONAL_DAYS_AWARDED
+    LegacyAdjustmentType.UAL -> AdjustmentType.UNLAWFULLY_AT_LARGE
+    LegacyAdjustmentType.RSR -> AdjustmentType.REMAND
+    LegacyAdjustmentType.RST -> AdjustmentType.TAGGED_BAIL
+    LegacyAdjustmentType.RX -> AdjustmentType.REMAND
+    LegacyAdjustmentType.S240A -> AdjustmentType.TAGGED_BAIL
+    LegacyAdjustmentType.UR -> AdjustmentType.UNUSED_DEDUCTIONS
+    LegacyAdjustmentType.LAL -> AdjustmentType.LAWFULLY_AT_LARGE
+    LegacyAdjustmentType.SREM -> AdjustmentType.SPECIAL_REMISSION
+    LegacyAdjustmentType.TCA -> AdjustmentType.CUSTODY_ABROAD
+    LegacyAdjustmentType.TSA -> AdjustmentType.APPEAL_APPLICANT
   }
 
   @Transactional

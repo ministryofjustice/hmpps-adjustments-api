@@ -44,9 +44,7 @@ class AdaAdjudicationController(
     @Parameter(required = false, example = "2022-01-10,2022-02-11", description = "The dates of selected prospective adas")
     @RequestParam("selectedProspectiveAdaDates")
     selectedProspectiveAdaDates: List<String>?,
-  ): AdaAdjudicationDetails {
-    return additionalDaysAwardedService.getAdaAdjudicationDetails(person, selectedProspectiveAdaDates ?: listOf())
-  }
+  ): AdaAdjudicationDetails = additionalDaysAwardedService.getAdaAdjudicationDetails(person, selectedProspectiveAdaDates ?: listOf())
 
   @PostMapping("/{person}/reject-prospective-ada")
   @Operation(

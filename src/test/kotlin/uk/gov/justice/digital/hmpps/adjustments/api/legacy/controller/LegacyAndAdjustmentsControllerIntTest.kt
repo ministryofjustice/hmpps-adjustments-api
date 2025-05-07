@@ -93,7 +93,17 @@ class LegacyAndAdjustmentsControllerIntTest : SqsIntegrationTestBase() {
     assertThat(adjustment.effectiveDays).isEqualTo(8)
 
     val legacyData = objectMapper.convertValue(adjustment.legacyData, LegacyData::class.java)
-    assertThat(legacyData).isEqualTo(LegacyData(bookingId = 123, sentenceSequence = 1, postedDate = LocalDate.now(), comment = "Created", type = null, migration = false, chargeIds = listOf(9991)))
+    assertThat(legacyData).isEqualTo(
+      LegacyData(
+        bookingId = 123,
+        sentenceSequence = 1,
+        postedDate = LocalDate.now(),
+        comment = "Created",
+        type = null,
+        migration = false,
+        chargeIds = listOf(9991),
+      ),
+    )
   }
 
   @Test
@@ -182,7 +192,8 @@ class LegacyAndAdjustmentsControllerIntTest : SqsIntegrationTestBase() {
     deleteLegacyAdjustment(id)
 
     // User comes to DPS and is shown inactive deleted adjustments
-    val adjustments = getAdjustmentsByPerson(PrisonApiExtension.RECALL_PRISONER_ID, AdjustmentStatus.INACTIVE_WHEN_DELETED)
+    val adjustments =
+      getAdjustmentsByPerson(PrisonApiExtension.RECALL_PRISONER_ID, AdjustmentStatus.INACTIVE_WHEN_DELETED)
     assertThat(adjustments.size).isEqualTo(1)
     assertThat(adjustments[0].id).isEqualTo(id)
 
@@ -195,7 +206,13 @@ class LegacyAndAdjustmentsControllerIntTest : SqsIntegrationTestBase() {
   @Test
   fun `Update an adjustment in NOMIS without changing number of days`() {
     // Create an adjustment int DPS with different calculated + effective days.
-    unusedDeductionsCalculationResultRepository.save(UnusedDeductionsCalculationResult(person = ADJUSTMENT.person, status = UnusedDeductionsCalculationStatus.CALCULATED, calculationAt = LocalDateTime.now()))
+    unusedDeductionsCalculationResultRepository.save(
+      UnusedDeductionsCalculationResult(
+        person = ADJUSTMENT.person,
+        status = UnusedDeductionsCalculationStatus.CALCULATED,
+        calculationAt = LocalDateTime.now(),
+      ),
+    )
     var adjustment = ADJUSTMENT.copy()
     val id = postCreateAdjustments(listOf(adjustment))[0]
     val totalDays = (ChronoUnit.DAYS.between(adjustment.fromDate, adjustment.toDate) + 1).toInt()
@@ -222,7 +239,13 @@ class LegacyAndAdjustmentsControllerIntTest : SqsIntegrationTestBase() {
   @Test
   fun `Update a DPS adjustment in NOMIS when DPS unused days is shared over multiple adjustments`() {
     // Create two adjustments with a used and unused part.
-    unusedDeductionsCalculationResultRepository.save(UnusedDeductionsCalculationResult(person = ADJUSTMENT.person, status = UnusedDeductionsCalculationStatus.CALCULATED, calculationAt = LocalDateTime.now()))
+    unusedDeductionsCalculationResultRepository.save(
+      UnusedDeductionsCalculationResult(
+        person = ADJUSTMENT.person,
+        status = UnusedDeductionsCalculationStatus.CALCULATED,
+        calculationAt = LocalDateTime.now(),
+      ),
+    )
     var adjustmentOne = ADJUSTMENT.copy()
     var adjustmentTwo = ADJUSTMENT.copy()
     val (idOne, idTwo) = postCreateAdjustments(listOf(adjustmentOne, adjustmentTwo))
@@ -251,7 +274,13 @@ class LegacyAndAdjustmentsControllerIntTest : SqsIntegrationTestBase() {
   @Test
   fun `Create an adjustment in NOMIS when DPS unused days exists`() {
     // Create an DPS adjustment with used and unused part.
-    unusedDeductionsCalculationResultRepository.save(UnusedDeductionsCalculationResult(person = ADJUSTMENT.person, status = UnusedDeductionsCalculationStatus.CALCULATED, calculationAt = LocalDateTime.now()))
+    unusedDeductionsCalculationResultRepository.save(
+      UnusedDeductionsCalculationResult(
+        person = ADJUSTMENT.person,
+        status = UnusedDeductionsCalculationStatus.CALCULATED,
+        calculationAt = LocalDateTime.now(),
+      ),
+    )
     var adjustment = ADJUSTMENT.copy()
     val id = postCreateAdjustments(listOf(adjustment))[0]
     val totalDays = (ChronoUnit.DAYS.between(adjustment.fromDate, adjustment.toDate) + 1).toInt()
@@ -276,7 +305,13 @@ class LegacyAndAdjustmentsControllerIntTest : SqsIntegrationTestBase() {
   @Test
   fun `Delete an adjustment in NOMIS when DPS unused days exists`() {
     // Create two adjustments with a used and unused part.
-    unusedDeductionsCalculationResultRepository.save(UnusedDeductionsCalculationResult(person = ADJUSTMENT.person, status = UnusedDeductionsCalculationStatus.CALCULATED, calculationAt = LocalDateTime.now()))
+    unusedDeductionsCalculationResultRepository.save(
+      UnusedDeductionsCalculationResult(
+        person = ADJUSTMENT.person,
+        status = UnusedDeductionsCalculationStatus.CALCULATED,
+        calculationAt = LocalDateTime.now(),
+      ),
+    )
     var adjustmentOne = ADJUSTMENT.copy()
     var adjustmentTwo = ADJUSTMENT.copy()
     val (idOne, idTwo) = postCreateAdjustments(listOf(adjustmentOne, adjustmentTwo))
@@ -337,16 +372,19 @@ class LegacyAndAdjustmentsControllerIntTest : SqsIntegrationTestBase() {
     .exchange()
     .expectStatus().isOk
 
-  private fun getAdjustmentsByPerson(person: String, status: AdjustmentStatus? = null, startOfSentenceEnvelope: LocalDate? = null): List<AdjustmentDto> =
-    webTestClient
-      .get()
-      .uri("/adjustments?person=$person${if (status != null) "&status=$status" else ""}${if (startOfSentenceEnvelope != null) "&sentenceEnvelopeDate=$startOfSentenceEnvelope" else ""}")
-      .headers(setAdjustmentsRWAuth())
-      .exchange()
-      .expectStatus().isOk
-      .expectBodyList<AdjustmentDto>()
-      .returnResult()
-      .responseBody
+  private fun getAdjustmentsByPerson(
+    person: String,
+    status: AdjustmentStatus? = null,
+    startOfSentenceEnvelope: LocalDate? = null,
+  ): List<AdjustmentDto> = webTestClient
+    .get()
+    .uri("/adjustments?person=$person${if (status != null) "&status=$status" else ""}${if (startOfSentenceEnvelope != null) "&sentenceEnvelopeDate=$startOfSentenceEnvelope" else ""}")
+    .headers(setAdjustmentsRWAuth())
+    .exchange()
+    .expectStatus().isOk
+    .expectBodyList<AdjustmentDto>()
+    .returnResult()
+    .responseBody
 
   private fun deleteLegacyAdjustment(id: UUID) = webTestClient
     .delete()
@@ -369,20 +407,18 @@ class LegacyAndAdjustmentsControllerIntTest : SqsIntegrationTestBase() {
     .returnResult(CreateResponseDto::class.java)
     .responseBody.blockFirst()!!.adjustmentIds
 
-  private fun postCreateLegacyAdjustment(legacyAdjustment: LegacyAdjustment): LegacyAdjustmentCreatedResponse {
-    return webTestClient
-      .post()
-      .uri("/legacy/adjustments")
-      .headers(
-        setLegacySynchronisationAuth(),
-      )
-      .header("Content-Type", LegacyController.LEGACY_CONTENT_TYPE)
-      .bodyValue(legacyAdjustment)
-      .exchange()
-      .expectStatus().isCreated
-      .returnResult(LegacyAdjustmentCreatedResponse::class.java)
-      .responseBody.blockFirst()!!
-  }
+  private fun postCreateLegacyAdjustment(legacyAdjustment: LegacyAdjustment): LegacyAdjustmentCreatedResponse = webTestClient
+    .post()
+    .uri("/legacy/adjustments")
+    .headers(
+      setLegacySynchronisationAuth(),
+    )
+    .header("Content-Type", LegacyController.LEGACY_CONTENT_TYPE)
+    .bodyValue(legacyAdjustment)
+    .exchange()
+    .expectStatus().isCreated
+    .returnResult(LegacyAdjustmentCreatedResponse::class.java)
+    .responseBody.blockFirst()!!
   private fun getLegacyAdjustment(id: UUID) = webTestClient
     .get()
     .uri("/legacy/adjustments/$id")
