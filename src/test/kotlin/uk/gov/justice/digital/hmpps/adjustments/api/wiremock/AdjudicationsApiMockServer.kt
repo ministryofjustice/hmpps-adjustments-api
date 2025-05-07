@@ -12,7 +12,10 @@ import uk.gov.justice.digital.hmpps.adjustments.api.wiremock.PrisonApiExtension.
 /*
     This class mocks the adjudication-api.
  */
-class AdjudicationApiExtension : BeforeAllCallback, AfterAllCallback, BeforeEachCallback {
+class AdjudicationApiExtension :
+  BeforeAllCallback,
+  AfterAllCallback,
+  BeforeEachCallback {
   companion object {
     @JvmField
     val adjudicationApi = AdjudicationsApiMockServer()

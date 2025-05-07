@@ -11,7 +11,10 @@ import org.junit.jupiter.api.extension.ExtensionContext
 /*
     This class mocks the remand and sentencing api.
  */
-class RemandAndSentencingApiExtension : BeforeAllCallback, AfterAllCallback, BeforeEachCallback {
+class RemandAndSentencingApiExtension :
+  BeforeAllCallback,
+  AfterAllCallback,
+  BeforeEachCallback {
   companion object {
     @JvmField
     val remandAndSentencingApi = RemandAndSentencingApiMockServer()

@@ -14,7 +14,10 @@ import org.junit.jupiter.api.extension.ExtensionContext
 /*
     This class mocks the prisoner-search-api.
  */
-class PrisonerSearchApiExtension : BeforeAllCallback, AfterAllCallback, BeforeEachCallback {
+class PrisonerSearchApiExtension :
+  BeforeAllCallback,
+  AfterAllCallback,
+  BeforeEachCallback {
   companion object {
     @JvmField
     val prisonerSearchApi = PrisonerSearchApiMockServer()
@@ -50,14 +53,13 @@ class PrisonerSearchApiMockServer : WireMockServer(WIREMOCK_PORT) {
     private const val WIREMOCK_PORT = 8336
   }
 
-  fun stubGetPrisonerDetails(prisonerId: String, bookingId: Long): StubMapping =
-    stubFor(
-      get(urlMatching("/prisoner-search-api/prisoner/$prisonerId"))
-        .willReturn(
-          aResponse()
-            .withHeader("Content-Type", "application/json")
-            .withBody(
-              """
+  fun stubGetPrisonerDetails(prisonerId: String, bookingId: Long): StubMapping = stubFor(
+    get(urlMatching("/prisoner-search-api/prisoner/$prisonerId"))
+      .willReturn(
+        aResponse()
+          .withHeader("Content-Type", "application/json")
+          .withBody(
+            """
               {
                  "prisonerNumber": "$prisonerId",
                  "bookingId": $bookingId,
@@ -66,11 +68,11 @@ class PrisonerSearchApiMockServer : WireMockServer(WIREMOCK_PORT) {
                  "dateOfBirth": "1995-03-08",
                  "prisonId": "LDS"
               }
-              """.trimIndent(),
-            )
-            .withStatus(200),
-        ),
-    )
+            """.trimIndent(),
+          )
+          .withStatus(200),
+      ),
+  )
 
   fun stubGetPrisonerDetailsDoesNotExist(): StubMapping {
     stubFor(

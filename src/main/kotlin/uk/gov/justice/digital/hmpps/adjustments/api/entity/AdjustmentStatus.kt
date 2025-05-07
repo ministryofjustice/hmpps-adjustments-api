@@ -7,7 +7,5 @@ enum class AdjustmentStatus {
   INACTIVE_WHEN_DELETED,
   ;
 
-  fun isDeleted(): Boolean {
-    return listOf(DELETED, INACTIVE_WHEN_DELETED).contains(this)
-  }
+  fun isDeleted(): Boolean = listOf(DELETED, INACTIVE_WHEN_DELETED).contains(this)
 }

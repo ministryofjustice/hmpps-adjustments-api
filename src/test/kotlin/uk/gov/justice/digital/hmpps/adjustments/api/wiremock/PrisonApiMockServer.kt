@@ -17,7 +17,10 @@ import uk.gov.justice.digital.hmpps.adjustments.api.wiremock.PrisonApiExtension.
 /*
     This class mocks the prison-api.
  */
-class PrisonApiExtension : BeforeAllCallback, AfterAllCallback, BeforeEachCallback {
+class PrisonApiExtension :
+  BeforeAllCallback,
+  AfterAllCallback,
+  BeforeEachCallback {
   companion object {
     @JvmField
     val prisonApi = PrisonApiMockServer()
@@ -68,12 +71,9 @@ class PrisonApiMockServer : WireMockServer(WIREMOCK_PORT) {
 
   fun stubSentencesAndOffences() {
     stubFor(
-      get("/api/offender-sentences/booking/${PrisonApiExtension.BOOKING_ID}/sentences-and-offences")
-        .willReturn(
-          aResponse()
-            .withHeader("Content-Type", "application/json")
-            .withBody(
-              """
+      get("/api/offender-sentences/booking/${PrisonApiExtension.BOOKING_ID}/sentences-and-offences").willReturn(
+        aResponse().withHeader("Content-Type", "application/json").withBody(
+          """
                 [
                   {
                     "bookingId": 123,
@@ -100,21 +100,16 @@ class PrisonApiMockServer : WireMockServer(WIREMOCK_PORT) {
                     ]
                   }
                 ]
-              """.trimIndent(),
-            )
-            .withStatus(200),
-        ),
+          """.trimIndent(),
+        ).withStatus(200),
+      ),
     )
   }
 
-  fun stubGetUnusedDeductionsPrisonerDetails(): StubMapping =
-    stubFor(
-      get("/api/offenders/$UNUSED_DEDUCTIONS_PRISONER_ID")
-        .willReturn(
-          aResponse()
-            .withHeader("Content-Type", "application/json")
-            .withBody(
-              """
+  fun stubGetUnusedDeductionsPrisonerDetails(): StubMapping = stubFor(
+    get("/api/offenders/$UNUSED_DEDUCTIONS_PRISONER_ID").willReturn(
+      aResponse().withHeader("Content-Type", "application/json").withBody(
+        """
               {
                  "offenderNo": "$UNUSED_DEDUCTIONS_PRISONER_ID",
                  "bookingId": $BOOKING_ID,
@@ -123,19 +118,15 @@ class PrisonApiMockServer : WireMockServer(WIREMOCK_PORT) {
                  "dateOfBirth": "1995-03-08",
                  "agencyId": "LDS"
               }
-              """.trimIndent(),
-            )
-            .withStatus(200),
-        ),
-    )
-  fun stubGetUnusedDeductionsErrorPrisonerDetails(): StubMapping =
-    stubFor(
-      get("/api/offenders/$UNUSED_DEDUCTIONS_ERROR_PRISONER_ID")
-        .willReturn(
-          aResponse()
-            .withHeader("Content-Type", "application/json")
-            .withBody(
-              """
+        """.trimIndent(),
+      ).withStatus(200),
+    ),
+  )
+
+  fun stubGetUnusedDeductionsErrorPrisonerDetails(): StubMapping = stubFor(
+    get("/api/offenders/$UNUSED_DEDUCTIONS_ERROR_PRISONER_ID").willReturn(
+      aResponse().withHeader("Content-Type", "application/json").withBody(
+        """
               {
                  "offenderNo": "$UNUSED_DEDUCTIONS_ERROR_PRISONER_ID",
                  "bookingId": $BOOKING_ID,
@@ -144,37 +135,28 @@ class PrisonApiMockServer : WireMockServer(WIREMOCK_PORT) {
                  "dateOfBirth": "1995-03-08",
                  "agencyId": "LDS"
               }
-              """.trimIndent(),
-            )
-            .withStatus(200),
-        ),
-    )
-  fun stubGetPrison(prisonId: String, prisonDescription: String): StubMapping =
-    stubFor(
-      get("/api/agencies/$prisonId?activeOnly=false")
-        .willReturn(
-          aResponse()
-            .withHeader("Content-Type", "application/json")
-            .withBody(
-              """
+        """.trimIndent(),
+      ).withStatus(200),
+    ),
+  )
+
+  fun stubGetPrison(prisonId: String, prisonDescription: String): StubMapping = stubFor(
+    get("/api/agencies/$prisonId?activeOnly=false").willReturn(
+      aResponse().withHeader("Content-Type", "application/json").withBody(
+        """
               {
                  "agencyId": "$prisonId",
                  "description": "$prisonDescription"
               }
-              """.trimIndent(),
-            )
-            .withStatus(200),
-        ),
-    )
+        """.trimIndent(),
+      ).withStatus(200),
+    ),
+  )
 
-  fun stubGetRecallPrisonerDetails(): StubMapping =
-    stubFor(
-      get("/api/offenders/$RECALL_PRISONER_ID")
-        .willReturn(
-          aResponse()
-            .withHeader("Content-Type", "application/json")
-            .withBody(
-              """
+  fun stubGetRecallPrisonerDetails(): StubMapping = stubFor(
+    get("/api/offenders/$RECALL_PRISONER_ID").willReturn(
+      aResponse().withHeader("Content-Type", "application/json").withBody(
+        """
               {
                  "offenderNo": "$RECALL_PRISONER_ID",
                  "bookingId": $RECALL_BOOKING_ID,
@@ -183,19 +165,16 @@ class PrisonApiMockServer : WireMockServer(WIREMOCK_PORT) {
                  "dateOfBirth": "1995-03-08",
                  "agencyId": "LDS"
               }
-              """.trimIndent(),
-            )
-            .withStatus(200),
-        ),
-    )
+        """.trimIndent(),
+      ).withStatus(200),
+    ),
+  )
+
   fun stubRecallSentenceAndOffences() {
     stubFor(
-      get("/api/offender-sentences/booking/$RECALL_BOOKING_ID/sentences-and-offences")
-        .willReturn(
-          aResponse()
-            .withHeader("Content-Type", "application/json")
-            .withBody(
-              """
+      get("/api/offender-sentences/booking/$RECALL_BOOKING_ID/sentences-and-offences").willReturn(
+        aResponse().withHeader("Content-Type", "application/json").withBody(
+          """
                 [
                   {
                     "bookingId": 123,
@@ -221,46 +200,33 @@ class PrisonApiMockServer : WireMockServer(WIREMOCK_PORT) {
                     ]
                   }
                 ]
-              """.trimIndent(),
-            )
-            .withStatus(200),
-        ),
+          """.trimIndent(),
+        ).withStatus(200),
+      ),
     )
   }
 
   fun stubG4946VC() {
     stubFor(
-      get("/api/offenders/G4946VC")
-        .willReturn(
-          aResponse()
-            .withHeader("Content-Type", "application/json")
-            .withBody(
-              G4946VC_PRISONER.trimIndent(),
-            )
-            .withStatus(200),
-        ),
+      get("/api/offenders/G4946VC").willReturn(
+        aResponse().withHeader("Content-Type", "application/json").withBody(
+          G4946VC_PRISONER.trimIndent(),
+        ).withStatus(200),
+      ),
     )
     stubFor(
-      get("/api/offender-sentences/booking/777831/sentences-and-offences")
-        .willReturn(
-          aResponse()
-            .withHeader("Content-Type", "application/json")
-            .withBody(
-              G4946VC_SENTENCES_AND_OFFENCES.trimIndent(),
-            )
-            .withStatus(200),
-        ),
+      get("/api/offender-sentences/booking/777831/sentences-and-offences").willReturn(
+        aResponse().withHeader("Content-Type", "application/json").withBody(
+          G4946VC_SENTENCES_AND_OFFENCES.trimIndent(),
+        ).withStatus(200),
+      ),
     )
     stubFor(
-      get("/api/court-date-results/by-charge/G4946VC")
-        .willReturn(
-          aResponse()
-            .withHeader("Content-Type", "application/json")
-            .withBody(
-              G4946VC_COURT_DATE_RESULTS.trimIndent(),
-            )
-            .withStatus(200),
-        ),
+      get("/api/court-date-results/by-charge/G4946VC").willReturn(
+        aResponse().withHeader("Content-Type", "application/json").withBody(
+          G4946VC_COURT_DATE_RESULTS.trimIndent(),
+        ).withStatus(200),
+      ),
     )
   }
 }

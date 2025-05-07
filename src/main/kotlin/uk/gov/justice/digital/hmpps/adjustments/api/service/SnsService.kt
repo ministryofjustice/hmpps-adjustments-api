@@ -93,5 +93,4 @@ enum class EventType(val value: String) {
   ADJUSTMENT_DELETED("release-date-adjustments.adjustment.deleted"),
 }
 
-fun Instant.toOffsetDateFormat(): String =
-  atZone(ZoneId.of("Europe/London")).toOffsetDateTime().format(DateTimeFormatter.ISO_OFFSET_DATE_TIME)
+fun Instant.toOffsetDateFormat(): String = atZone(ZoneId.of("Europe/London")).toOffsetDateTime().format(DateTimeFormatter.ISO_OFFSET_DATE_TIME)

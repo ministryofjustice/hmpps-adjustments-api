@@ -49,7 +49,17 @@ class LegacyControllerIntTest : SqsIntegrationTestBase() {
     assertThat(adjustment.effectiveDays).isEqualTo(3)
 
     val legacyData = objectMapper.convertValue(adjustment.legacyData, LegacyData::class.java)
-    assertThat(legacyData).isEqualTo(LegacyData(bookingId = 1, sentenceSequence = 1, postedDate = LocalDate.now(), comment = "Created", type = LegacyAdjustmentType.UR, migration = false, adjustmentActive = false))
+    assertThat(legacyData).isEqualTo(
+      LegacyData(
+        bookingId = 1,
+        sentenceSequence = 1,
+        postedDate = LocalDate.now(),
+        comment = "Created",
+        type = LegacyAdjustmentType.UR,
+        migration = false,
+        adjustmentActive = false,
+      ),
+    )
 
     awaitAtMost30Secs untilCallTo { getNumberOfMessagesCurrentlyOnQueue() } matches { it == 1 }
     val latestMessage: String = getLatestMessage()!!.messages()[0].body()
@@ -142,7 +152,16 @@ class LegacyControllerIntTest : SqsIntegrationTestBase() {
     assertThat(adjustment.days).isEqualTo(null)
 
     val legacyData = objectMapper.convertValue(adjustment.legacyData, LegacyData::class.java)
-    assertThat(legacyData).isEqualTo(LegacyData(bookingId = 1, sentenceSequence = 1, postedDate = LocalDate.now(), comment = "Updated", type = LegacyAdjustmentType.RX, migration = false))
+    assertThat(legacyData).isEqualTo(
+      LegacyData(
+        bookingId = 1,
+        sentenceSequence = 1,
+        postedDate = LocalDate.now(),
+        comment = "Updated",
+        type = LegacyAdjustmentType.RX,
+        migration = false,
+      ),
+    )
 
     awaitAtMost30Secs untilCallTo { getNumberOfMessagesCurrentlyOnQueue() } matches { it == 1 }
     val latestMessage: String = getLatestMessage()!!.messages()[0].body()
@@ -208,23 +227,31 @@ class LegacyControllerIntTest : SqsIntegrationTestBase() {
     assertThat(adjustment.currentPeriodOfCustody).isEqualTo(false)
 
     val legacyData = objectMapper.convertValue(adjustment.legacyData, LegacyData::class.java)
-    assertThat(legacyData).isEqualTo(LegacyData(bookingId = 1, sentenceSequence = 1, postedDate = LocalDate.now(), comment = "Created", type = LegacyAdjustmentType.UR, migration = false, adjustmentActive = true))
+    assertThat(legacyData).isEqualTo(
+      LegacyData(
+        bookingId = 1,
+        sentenceSequence = 1,
+        postedDate = LocalDate.now(),
+        comment = "Created",
+        type = LegacyAdjustmentType.UR,
+        migration = false,
+        adjustmentActive = true,
+      ),
+    )
   }
 
-  private fun createAdjustment(legacyAdjustment: LegacyAdjustment): LegacyAdjustmentCreatedResponse {
-    return webTestClient
-      .post()
-      .uri("/legacy/adjustments")
-      .headers(
-        setLegacySynchronisationAuth(),
-      )
-      .header("Content-Type", LegacyController.LEGACY_CONTENT_TYPE)
-      .bodyValue(legacyAdjustment)
-      .exchange()
-      .expectStatus().isCreated
-      .returnResult(LegacyAdjustmentCreatedResponse::class.java)
-      .responseBody.blockFirst()!!
-  }
+  private fun createAdjustment(legacyAdjustment: LegacyAdjustment): LegacyAdjustmentCreatedResponse = webTestClient
+    .post()
+    .uri("/legacy/adjustments")
+    .headers(
+      setLegacySynchronisationAuth(),
+    )
+    .header("Content-Type", LegacyController.LEGACY_CONTENT_TYPE)
+    .bodyValue(legacyAdjustment)
+    .exchange()
+    .expectStatus().isCreated
+    .returnResult(LegacyAdjustmentCreatedResponse::class.java)
+    .responseBody.blockFirst()!!
 
   private fun createDefaultAdjustmentAndCleanQueue(): UUID {
     val createdId = createAdjustment(CREATED_ADJUSTMENT).adjustmentId

@@ -37,7 +37,9 @@ class SqsIntegrationTestBase : IntegrationTestBase() {
   @Autowired
   protected lateinit var objectMapper: ObjectMapper
 
-  private val domainEventsTopic by lazy { hmppsQueueService.findByTopicId("domainevents") ?: throw MissingQueueException("HmppsTopic domainevents not found") }
+  private val domainEventsTopic by lazy {
+    hmppsQueueService.findByTopicId("domainevents") ?: throw MissingQueueException("HmppsTopic domainevents not found")
+  }
   protected val domainEventsTopicSnsClient by lazy { domainEventsTopic.snsClient }
   protected val domainEventsTopicArn by lazy { domainEventsTopic.arn }
 
@@ -52,8 +54,8 @@ class SqsIntegrationTestBase : IntegrationTestBase() {
   internal val unusedDeductionsQueueUrl by lazy { unusedDeductionsQueue.queueUrl }
   internal val unusedDeductionsDlqUrl by lazy { unusedDeductionsQueue.dlqUrl }
 
-  fun HmppsSqsProperties.domaineventsTopicConfig() =
-    topics["domainevents"] ?: throw MissingTopicException("domainevents has not been loaded from configuration properties")
+  fun HmppsSqsProperties.domaineventsTopicConfig() = topics["domainevents"]
+    ?: throw MissingTopicException("domainevents has not been loaded from configuration properties")
 
   @BeforeEach
   fun cleanQueue() {
@@ -62,11 +64,15 @@ class SqsIntegrationTestBase : IntegrationTestBase() {
       adjustmentsQueue.sqsClient.countMessagesOnQueue(adjustmentsQueue.queueUrl).get()
     } matches { it == 0 }
     await untilCallTo {
-      awsSqsUnusedDeductionsClient.purgeQueue(PurgeQueueRequest.builder().queueUrl(unusedDeductionsQueue.queueUrl).build())
+      awsSqsUnusedDeductionsClient.purgeQueue(
+        PurgeQueueRequest.builder().queueUrl(unusedDeductionsQueue.queueUrl).build(),
+      )
       unusedDeductionsQueue.sqsClient.countMessagesOnQueue(unusedDeductionsQueue.queueUrl).get()
     } matches { it == 0 }
     await untilCallTo {
-      awsSqsUnusedDeductionsDlqClient?.purgeQueue(PurgeQueueRequest.builder().queueUrl(unusedDeductionsQueue.dlqUrl).build())
+      awsSqsUnusedDeductionsDlqClient?.purgeQueue(
+        PurgeQueueRequest.builder().queueUrl(unusedDeductionsQueue.dlqUrl).build(),
+      )
       unusedDeductionsQueue.sqsDlqClient!!.countMessagesOnQueue(unusedDeductionsQueue.dlqUrl!!).get()
     } matches { it == 0 }
   }
@@ -77,18 +83,14 @@ class SqsIntegrationTestBase : IntegrationTestBase() {
     @Suppress("unused")
     @JvmStatic
     @DynamicPropertySource
-    fun testcontainers(registry: DynamicPropertyRegistry) {
-      localStackContainer?.also { LocalStackContainer.setLocalStackProperties(it, registry) }
-    }
+    fun testcontainers(registry: DynamicPropertyRegistry) = localStackContainer?.also { LocalStackContainer.setLocalStackProperties(it, registry) }
   }
 
   protected fun jsonString(any: Any) = objectMapper.writeValueAsString(any) as String
 
-  fun getNumberOfMessagesCurrentlyOnQueue(): Int? {
-    return adjustmentsQueue.sqsClient.countMessagesOnQueue(adjustmentsQueue.queueUrl).get()
-  }
+  fun getNumberOfMessagesCurrentlyOnQueue(): Int? = adjustmentsQueue.sqsClient.countMessagesOnQueue(adjustmentsQueue.queueUrl).get()
 
-  fun getLatestMessage(): ReceiveMessageResponse? {
-    return adjustmentsQueue.sqsClient.receiveMessage(ReceiveMessageRequest.builder().maxNumberOfMessages(2).queueUrl(adjustmentsQueue.queueUrl).build()).get()
-  }
+  fun getLatestMessage(): ReceiveMessageResponse? = adjustmentsQueue.sqsClient.receiveMessage(
+    ReceiveMessageRequest.builder().maxNumberOfMessages(2).queueUrl(adjustmentsQueue.queueUrl).build(),
+  ).get()
 }

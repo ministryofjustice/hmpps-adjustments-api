@@ -45,11 +45,9 @@ class LegacyController(
     ],
   )
   @PreAuthorize("hasRole('SENTENCE_ADJUSTMENTS_SYNCHRONISATION')")
-  fun create(@RequestBody adjustment: LegacyAdjustment): LegacyAdjustmentCreatedResponse {
-    return legacyService.create(adjustment, migration = false).also {
-      eventService.create(listOf(it.adjustmentId), adjustment.offenderNo, AdjustmentSource.NOMIS)
-      legacyService.updateAllAdjustmentsToHaveEffectiveDaysAsDpsDays(adjustment.offenderNo, adjustment.bookingId, adjustment.agencyId)
-    }
+  fun create(@RequestBody adjustment: LegacyAdjustment): LegacyAdjustmentCreatedResponse = legacyService.create(adjustment, migration = false).also {
+    eventService.create(listOf(it.adjustmentId), adjustment.offenderNo, AdjustmentSource.NOMIS)
+    legacyService.updateAllAdjustmentsToHaveEffectiveDaysAsDpsDays(adjustment.offenderNo, adjustment.bookingId, adjustment.agencyId)
   }
 
   @PostMapping("/migration")
@@ -66,9 +64,7 @@ class LegacyController(
     ],
   )
   @PreAuthorize("hasRole('SENTENCE_ADJUSTMENTS_SYNCHRONISATION')")
-  fun migration(@RequestBody adjustment: LegacyAdjustment): LegacyAdjustmentCreatedResponse {
-    return legacyService.create(adjustment, migration = true)
-  }
+  fun migration(@RequestBody adjustment: LegacyAdjustment): LegacyAdjustmentCreatedResponse = legacyService.create(adjustment, migration = true)
 
   @GetMapping("/{adjustmentId}")
   @Operation(
@@ -87,9 +83,7 @@ class LegacyController(
     @Parameter(required = true, description = "The adjustment UUID")
     @PathVariable("adjustmentId")
     adjustmentId: UUID,
-  ): LegacyAdjustment {
-    return legacyService.get(adjustmentId)
-  }
+  ): LegacyAdjustment = legacyService.get(adjustmentId)
 
   @PutMapping("/{adjustmentId}")
   @Operation(

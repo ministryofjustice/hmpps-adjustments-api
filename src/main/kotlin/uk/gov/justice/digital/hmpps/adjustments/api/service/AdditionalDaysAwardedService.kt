@@ -143,19 +143,16 @@ class AdditionalDaysAwardedService(
     )
   }
 
-  private fun getTotalDays(adas: List<AdasByDateCharged>): Int {
-    return adas.map { it.total!! }.reduceOrNull { acc, it -> acc + it } ?: 0
-  }
+  private fun getTotalDays(adas: List<AdasByDateCharged>): Int = adas.map { it.total!! }.reduceOrNull { acc, it -> acc + it } ?: 0
 
   private fun getMessageParams(nomsId: String): List<String> {
     val prisonerDetail = prisonerSearchApiClient.findByPrisonerNumber(nomsId)
     return listOf("${prisonerDetail.firstName} ${prisonerDetail.lastName}".toTitleCase())
   }
 
-  fun String.toTitleCase(): String =
-    split(" ").joinToString(" ") { it ->
-      it.lowercase().replaceFirstChar { if (it.isLowerCase()) it.titlecase() else it.toString() }
-    }
+  fun String.toTitleCase(): String = split(" ").joinToString(" ") { it ->
+    it.lowercase().replaceFirstChar { if (it.isLowerCase()) it.titlecase() else it.toString() }
+  }
 
   private fun deriveAdaIntercept(
     nomsId: String,
@@ -198,9 +195,7 @@ class AdditionalDaysAwardedService(
     }
   }
 
-  private fun anyUnlinkedAdas(adaAdjustments: List<Adjustment>): Boolean {
-    return adaAdjustments.any { it.additionalDaysAwarded?.adjudicationCharges?.isEmpty() ?: true && it.effectiveDays > 0 }
-  }
+  private fun anyUnlinkedAdas(adaAdjustments: List<Adjustment>): Boolean = adaAdjustments.any { it.additionalDaysAwarded?.adjudicationCharges?.isEmpty() ?: true && it.effectiveDays > 0 }
 
   private fun filterQuashedAdasByMatchingChargeIds(
     adas: List<AdasByDateCharged>,
@@ -215,33 +210,32 @@ class AdditionalDaysAwardedService(
   private fun filterAdasByMatchingAdjustment(
     adas: List<AdasByDateCharged>,
     adjustments: List<Adjustment>,
-  ): Pair<List<AdasByDateCharged>, List<AdasByDateCharged>> {
-    return if (anyUnlinkedAdas(adjustments)) {
-      // An ADA has been created in NOMIS, Revert everything to pending approval
-      Pair(
-        emptyList(),
-        adas.map { it.copy(status = PENDING_APPROVAL) },
-      )
-    } else {
-      val awardedAndPendingAdas = adas.map { adasByDate ->
-        if (adjustments.any { adjustmentMatchesAdjudication(adasByDate, it) }) {
-          val adjustment = adjustments.first { adjustmentMatchesAdjudication(adasByDate, it) }
-          adasByDate.copy(status = AWARDED, adjustmentId = adjustment.id)
-        } else {
-          adasByDate.copy(status = PENDING_APPROVAL)
-        }
+  ): Pair<List<AdasByDateCharged>, List<AdasByDateCharged>> = if (anyUnlinkedAdas(adjustments)) {
+    // An ADA has been created in NOMIS, Revert everything to pending approval
+    Pair(
+      emptyList(),
+      adas.map { it.copy(status = PENDING_APPROVAL) },
+    )
+  } else {
+    val awardedAndPendingAdas = adas.map { adasByDate ->
+      if (adjustments.any { adjustmentMatchesAdjudication(adasByDate, it) }) {
+        val adjustment = adjustments.first { adjustmentMatchesAdjudication(adasByDate, it) }
+        adasByDate.copy(status = AWARDED, adjustmentId = adjustment.id)
+      } else {
+        adasByDate.copy(status = PENDING_APPROVAL)
       }
-      Pair(
-        awardedAndPendingAdas.filter { it.status == AWARDED },
-        awardedAndPendingAdas.filter { it.status == PENDING_APPROVAL },
-      )
     }
+    Pair(
+      awardedAndPendingAdas.filter { it.status == AWARDED },
+      awardedAndPendingAdas.filter { it.status == PENDING_APPROVAL },
+    )
   }
 
-  private fun adjustmentMatchesAdjudication(adjudication: AdasByDateCharged, adjustment: Adjustment): Boolean {
-    return adjudication.total == adjustment.effectiveDays && adjudication.dateChargeProved == adjustment.fromDate && adjustment.additionalDaysAwarded != null && adjudication.charges.map { it.chargeNumber }
+  private fun adjustmentMatchesAdjudication(adjudication: AdasByDateCharged, adjustment: Adjustment): Boolean = adjudication.total == adjustment.effectiveDays &&
+    adjudication.dateChargeProved == adjustment.fromDate &&
+    adjustment.additionalDaysAwarded != null &&
+    adjudication.charges.map { it.chargeNumber }
       .toSet() == adjustment.additionalDaysAwarded!!.adjudicationCharges.map { it.adjudicationId }.toSet()
-  }
 
   private fun getAdasByDateCharged(adas: List<Ada>, filterStatus: ChargeStatus): List<AdasByDateCharged> {
     val adasByDateCharged = adas.filter { it.status == filterStatus }.groupBy { it.dateChargeProved }
@@ -253,20 +247,18 @@ class AdditionalDaysAwardedService(
     }.sortedBy { it.dateChargeProved }
   }
 
-  private fun calculateTotal(adaByDateCharge: AdasByDateCharged): Int {
-    return if (adaByDateCharge.charges.size == 1) {
-      adaByDateCharge.charges[0].days
-    } else {
-      val baseCharges = adaByDateCharge.charges.filter { it.consecutiveToChargeNumber == null }
-      val consecCharges = adaByDateCharge.charges.filter { it.consecutiveToChargeNumber != null }
-      val chains = mutableListOf<MutableList<Ada>>()
-      baseCharges.forEach { ada ->
-        val chain = mutableListOf(ada)
-        chains.add(chain)
-        createChain(ada, chain, consecCharges)
-      }
-      chains.filter { it.isNotEmpty() }.maxOfOrNull { chain -> chain.sumOf { it.days } } ?: 0
+  private fun calculateTotal(adaByDateCharge: AdasByDateCharged): Int = if (adaByDateCharge.charges.size == 1) {
+    adaByDateCharge.charges[0].days
+  } else {
+    val baseCharges = adaByDateCharge.charges.filter { it.consecutiveToChargeNumber == null }
+    val consecCharges = adaByDateCharge.charges.filter { it.consecutiveToChargeNumber != null }
+    val chains = mutableListOf<MutableList<Ada>>()
+    baseCharges.forEach { ada ->
+      val chain = mutableListOf(ada)
+      chains.add(chain)
+      createChain(ada, chain, consecCharges)
     }
+    chains.filter { it.isNotEmpty() }.maxOfOrNull { chain -> chain.sumOf { it.days } } ?: 0
   }
 
   private fun createChain(ada: Ada, chain: MutableList<Ada>, consecCharges: List<Ada>) {
@@ -294,10 +286,11 @@ class AdditionalDaysAwardedService(
               charge.copy(toBeServed = "Consecutive to ${consecutiveAda.chargeNumber}")
             }
 
-            !validConsecutiveSequence(charge, consecutiveSourceAdas) && !isSourceForConsecutiveChain(
-              consecutiveSourceAdas,
-              charge,
-            ) -> charge.copy(toBeServed = "Concurrent")
+            !validConsecutiveSequence(charge, consecutiveSourceAdas) &&
+              !isSourceForConsecutiveChain(
+                consecutiveSourceAdas,
+                charge,
+              ) -> charge.copy(toBeServed = "Concurrent")
 
             else -> charge.copy(toBeServed = "Forthwith")
           }
@@ -309,20 +302,18 @@ class AdditionalDaysAwardedService(
     }
   }
 
-  private fun isSourceForConsecutiveChain(consecutiveSourceAdas: List<Ada>, charge: Ada) =
-    consecutiveSourceAdas.any { consecutiveAda -> adaHasChargeNumber(charge.chargeNumber, consecutiveAda) }
+  private fun isSourceForConsecutiveChain(consecutiveSourceAdas: List<Ada>, charge: Ada) = consecutiveSourceAdas.any { consecutiveAda -> adaHasChargeNumber(charge.chargeNumber, consecutiveAda) }
 
-  private fun validConsecutiveSequence(charge: Ada, consecutiveSourceAdas: List<Ada>): Boolean =
-    charge.consecutiveToChargeNumber != null && consecutiveSourceAdas.any { consecutiveAda ->
+  private fun validConsecutiveSequence(charge: Ada, consecutiveSourceAdas: List<Ada>): Boolean = charge.consecutiveToChargeNumber != null &&
+    consecutiveSourceAdas.any { consecutiveAda ->
       adaHasChargeNumber(
         charge.consecutiveToChargeNumber,
         consecutiveAda,
       )
     }
 
-  private fun getSourceAdaForConsecutive(allAdas: List<Ada>): List<Ada> =
-    allAdas.filter { ada -> ada.consecutiveToChargeNumber != null && allAdas.any { it.chargeNumber == ada.consecutiveToChargeNumber } }
-      .map { consecutiveAda -> allAdas.first { it.chargeNumber == consecutiveAda.consecutiveToChargeNumber } }
+  private fun getSourceAdaForConsecutive(allAdas: List<Ada>): List<Ada> = allAdas.filter { ada -> ada.consecutiveToChargeNumber != null && allAdas.any { it.chargeNumber == ada.consecutiveToChargeNumber } }
+    .map { consecutiveAda -> allAdas.first { it.chargeNumber == consecutiveAda.consecutiveToChargeNumber } }
 
   private fun adaHasChargeNumber(chargeNumber: String, ada: Ada) = chargeNumber == ada.chargeNumber
 }
