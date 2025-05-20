@@ -53,9 +53,7 @@ class AdjustmentsController(
       ApiResponse(responseCode = "401", description = "Unauthorised, requires a valid Oauth2 token"),
     ],
   )
-  fun create(@RequestBody adjustments: List<AdjustmentDto>): CreateResponseDto {
-    return adjustmentsService.create(adjustments)
-  }
+  fun create(@RequestBody adjustments: List<AdjustmentDto>): CreateResponseDto = adjustmentsService.create(adjustments)
 
   @GetMapping("", params = ["person"])
   @Operation(
@@ -86,9 +84,7 @@ class AdjustmentsController(
     )
     @RequestParam("recallId")
     recallId: UUID? = null,
-  ): List<AdjustmentDto> {
-    return adjustmentsService.findCurrentAdjustments(person, status ?: listOf(AdjustmentStatus.ACTIVE), currentPeriodOfCustody ?: true, recallId)
-  }
+  ): List<AdjustmentDto> = adjustmentsService.findCurrentAdjustments(person, status ?: listOf(AdjustmentStatus.ACTIVE), currentPeriodOfCustody ?: true, recallId)
 
   @GetMapping("/{adjustmentId}")
   @Operation(
@@ -107,9 +103,7 @@ class AdjustmentsController(
     @Parameter(required = true, description = "The adjustment UUID")
     @PathVariable("adjustmentId")
     adjustmentId: UUID,
-  ): AdjustmentDto {
-    return adjustmentsService.get(adjustmentId)
-  }
+  ): AdjustmentDto = adjustmentsService.get(adjustmentId)
 
   @PutMapping("/{adjustmentId}")
   @Operation(
@@ -215,9 +209,7 @@ class AdjustmentsController(
     @Parameter(required = true, description = "The person")
     @PathVariable("person")
     person: String,
-  ): UnusedDeductionsCalculationResultDto {
-    return unusedDeductionsService.getUnusedDeductionsResult(person)
-  }
+  ): UnusedDeductionsCalculationResultDto = unusedDeductionsService.getUnusedDeductionsResult(person)
 
   @DeleteMapping("/{adjustmentId}")
   @Operation(
@@ -252,7 +244,5 @@ class AdjustmentsController(
     ],
   )
   @PreAuthorize("hasAnyRole('ADJUSTMENTS__ADJUSTMENTS_RW')")
-  fun validate(@RequestBody adjustment: AdjustmentDto): List<ValidationMessage> {
-    return validationService.validate(adjustment)
-  }
+  fun validate(@RequestBody adjustment: AdjustmentDto): List<ValidationMessage> = validationService.validate(adjustment)
 }

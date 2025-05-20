@@ -267,14 +267,11 @@ class PrisonerListenerIntTest : SqsIntegrationTestBase() {
     assertThat(adjustment.adjustmentHistory.last().changeType == ChangeType.MERGE)
   }
 
-  private fun prisonerAdmissionPayload(nomsNumber: String, eventType: String) =
-    """{"eventType":"$eventType", "additionalInformation": {"nomsNumber":"$nomsNumber", "reason": "NEW_ADMISSION"}}"""
+  private fun prisonerAdmissionPayload(nomsNumber: String, eventType: String) = """{"eventType":"$eventType", "additionalInformation": {"nomsNumber":"$nomsNumber", "reason": "NEW_ADMISSION"}}"""
 
-  private fun prisonerReleasedPayload(nomsNumber: String, eventType: String) =
-    """{"eventType":"$eventType", "additionalInformation": {"nomsNumber":"$nomsNumber", "reason": "RELEASED"}}"""
+  private fun prisonerReleasedPayload(nomsNumber: String, eventType: String) = """{"eventType":"$eventType", "additionalInformation": {"nomsNumber":"$nomsNumber", "reason": "RELEASED"}}"""
 
-  private fun prisonerMergedPayload(nomsNumber: String, removedNomsNumber: String) =
-    """{"eventType":"prison-offender-events.prisoner.merged","description":"A prisoner has been merged from $removedNomsNumber to $nomsNumber","additionalInformation":{"nomsNumber":"$nomsNumber","removedNomsNumber":"$removedNomsNumber","reason":"MERGE"}}"""
+  private fun prisonerMergedPayload(nomsNumber: String, removedNomsNumber: String) = """{"eventType":"prison-offender-events.prisoner.merged","description":"A prisoner has been merged from $removedNomsNumber to $nomsNumber","additionalInformation":{"nomsNumber":"$nomsNumber","removedNomsNumber":"$removedNomsNumber","reason":"MERGE"}}"""
 
   private fun prisonerBookingMovedPayload(eventType: String, bookingId: String, oldPersonId: String, newPersonId: String) =
     """
@@ -300,20 +297,18 @@ class PrisonerListenerIntTest : SqsIntegrationTestBase() {
         }
     """
 
-  private fun createAnAdjustment(adjustment: LegacyAdjustment): UUID {
-    return webTestClient
-      .post()
-      .uri("/legacy/adjustments")
-      .headers(
-        setLegacySynchronisationAuth(),
-      )
-      .header("Content-Type", LegacyController.LEGACY_CONTENT_TYPE)
-      .bodyValue(adjustment)
-      .exchange()
-      .expectStatus().isCreated
-      .returnResult(LegacyAdjustmentCreatedResponse::class.java)
-      .responseBody.blockFirst()!!.adjustmentId
-  }
+  private fun createAnAdjustment(adjustment: LegacyAdjustment): UUID = webTestClient
+    .post()
+    .uri("/legacy/adjustments")
+    .headers(
+      setLegacySynchronisationAuth(),
+    )
+    .header("Content-Type", LegacyController.LEGACY_CONTENT_TYPE)
+    .bodyValue(adjustment)
+    .exchange()
+    .expectStatus().isCreated
+    .returnResult(LegacyAdjustmentCreatedResponse::class.java)
+    .responseBody.blockFirst()!!.adjustmentId
 
   private fun deleteAdjustment(adjustmentId: UUID) {
     webTestClient

@@ -87,8 +87,7 @@ class UnusedDeductionsEventListenerIntTest : SqsIntegrationTestBase() {
     }
   }
 
-  fun sentencingAdjustmentMessagePayload(adjustmentId: String, nomsNumber: String, eventType: String, source: String = "DPS") =
-    """{"eventType":"$eventType", "additionalInformation": {"id":"$adjustmentId", "offenderNo": "$nomsNumber", "source": "$source"}}"""
+  fun sentencingAdjustmentMessagePayload(adjustmentId: String, nomsNumber: String, eventType: String, source: String = "DPS") = """{"eventType":"$eventType", "additionalInformation": {"id":"$adjustmentId", "offenderNo": "$nomsNumber", "source": "$source"}}"""
 
   @Test
   @Sql(
@@ -181,6 +180,5 @@ class UnusedDeductionsEventListenerIntTest : SqsIntegrationTestBase() {
     }
   }
 
-  private fun prisonerSearchPayload(offenderNumber: String, eventType: String): String? =
-    """{"eventType":"$eventType", "additionalInformation": {"nomsNumber": "$offenderNumber", "categoriesChanged": ["SENTENCE"]}}"""
+  private fun prisonerSearchPayload(offenderNumber: String, eventType: String): String? = """{"eventType":"$eventType", "additionalInformation": {"nomsNumber": "$offenderNumber", "categoriesChanged": ["SENTENCE"]}}"""
 }

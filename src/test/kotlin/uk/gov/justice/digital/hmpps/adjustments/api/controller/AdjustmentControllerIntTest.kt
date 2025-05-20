@@ -1,7 +1,6 @@
 package uk.gov.justice.digital.hmpps.adjustments.api.controller
 
 import jakarta.persistence.EntityManager
-import jakarta.transaction.Transactional
 import org.assertj.core.api.Assertions.assertThat
 import org.awaitility.kotlin.matches
 import org.awaitility.kotlin.untilCallTo
@@ -12,6 +11,7 @@ import org.springframework.core.ParameterizedTypeReference
 import org.springframework.http.MediaType
 import org.springframework.test.context.jdbc.Sql
 import org.springframework.test.web.reactive.server.expectBodyList
+import org.springframework.transaction.annotation.Transactional
 import uk.gov.justice.digital.hmpps.adjustments.api.config.ErrorResponse
 import uk.gov.justice.digital.hmpps.adjustments.api.entity.AdjudicationCharges
 import uk.gov.justice.digital.hmpps.adjustments.api.entity.AdjustmentSource
@@ -696,7 +696,7 @@ class AdjustmentControllerIntTest : SqsIntegrationTestBase() {
       val updatedAdjustment = getAdjustmentById(adjustmentId)
       assertThat(updatedAdjustment)
         .usingRecursiveComparison()
-        .ignoringFieldsMatchingRegexes("lastUpdatedDate")
+        .ignoringFieldsMatchingRegexes("lastUpdatedDate", "createDate")
         .isEqualTo(createdAdjustment.copy(effectiveDays = 986, days = 986))
     }
 
@@ -746,7 +746,7 @@ class AdjustmentControllerIntTest : SqsIntegrationTestBase() {
       val updatedAdjustment = getAdjustmentById(adjustmentId)
       assertThat(updatedAdjustment)
         .usingRecursiveComparison()
-        .ignoringFieldsMatchingRegexes("lastUpdatedDate")
+        .ignoringFieldsMatchingRegexes("lastUpdatedDate", "createdDate")
         .isEqualTo(createdAdjustment.copy(effectiveDays = 986, days = 986))
     }
   }
@@ -822,7 +822,7 @@ class AdjustmentControllerIntTest : SqsIntegrationTestBase() {
       val updatedAdjustment = getAdjustmentById(adjustmentId)
       assertThat(updatedAdjustment)
         .usingRecursiveComparison()
-        .ignoringFieldsMatchingRegexes("lastUpdatedDate")
+        .ignoringFieldsMatchingRegexes("lastUpdatedDate", "createdDate")
         .isEqualTo(
           adjustment.copy(
             lastUpdatedBy = "Test User",
@@ -883,7 +883,7 @@ class AdjustmentControllerIntTest : SqsIntegrationTestBase() {
       val updatedAdjustment = getAdjustmentById(adjustmentId)
       assertThat(updatedAdjustment)
         .usingRecursiveComparison()
-        .ignoringFieldsMatchingRegexes("lastUpdatedDate")
+        .ignoringFieldsMatchingRegexes("lastUpdatedDate", "createDate")
         .isEqualTo(createdAdjustment.copy(specialRemission = SpecialRemissionDto(type = RELEASE_DATE_CALCULATED_TOO_EARLY)))
     }
 
@@ -904,7 +904,7 @@ class AdjustmentControllerIntTest : SqsIntegrationTestBase() {
       val updatedAdjustment = getAdjustmentById(adjustmentId)
       assertThat(updatedAdjustment)
         .usingRecursiveComparison()
-        .ignoringFieldsMatchingRegexes("lastUpdatedDate")
+        .ignoringFieldsMatchingRegexes("lastUpdatedDate", "createdDate")
         .isEqualTo(
           adjustment.copy(
             lastUpdatedBy = "Test User",
@@ -979,7 +979,7 @@ class AdjustmentControllerIntTest : SqsIntegrationTestBase() {
       val updatedAdjustment = getAdjustmentById(adjustmentId)
       assertThat(updatedAdjustment)
         .usingRecursiveComparison()
-        .ignoringFieldsMatchingRegexes("lastUpdatedDate")
+        .ignoringFieldsMatchingRegexes("lastUpdatedDate", "createdDate")
         .isEqualTo(createdAdjustment.copy(timeSpentInCustodyAbroad = TimeSpentInCustodyAbroadDto(COURT_WARRANT, listOf(9991L))))
     }
   }
@@ -1048,7 +1048,7 @@ class AdjustmentControllerIntTest : SqsIntegrationTestBase() {
       val updatedAdjustment = getAdjustmentById(adjustmentId)
       assertThat(updatedAdjustment)
         .usingRecursiveComparison()
-        .ignoringFieldsMatchingRegexes("lastUpdatedDate")
+        .ignoringFieldsMatchingRegexes("lastUpdatedDate", "createdDate")
         .isEqualTo(createdAdjustment.copy(timeSpentAsAnAppealApplicant = TimeSpentAsAnAppealApplicantDto("WF123456", listOf(9991))))
     }
 
@@ -1123,7 +1123,7 @@ class AdjustmentControllerIntTest : SqsIntegrationTestBase() {
       val updatedAdjustment = getAdjustmentById(adjustmentId)
       assertThat(updatedAdjustment)
         .usingRecursiveComparison()
-        .ignoringFieldsMatchingRegexes("lastUpdatedDate")
+        .ignoringFieldsMatchingRegexes("lastUpdatedDate", "createdDate")
         .isEqualTo(createdAdjustment.copy(unlawfullyAtLarge = UnlawfullyAtLargeDto(type = ESCAPE)))
     }
 
@@ -1144,7 +1144,7 @@ class AdjustmentControllerIntTest : SqsIntegrationTestBase() {
       val updatedAdjustment = getAdjustmentById(adjustmentId)
       assertThat(updatedAdjustment)
         .usingRecursiveComparison()
-        .ignoringFieldsMatchingRegexes("lastUpdatedDate")
+        .ignoringFieldsMatchingRegexes("lastUpdatedDate", "createdDate")
         .isEqualTo(
           adjustment.copy(
             lastUpdatedBy = "Test User",
@@ -1171,7 +1171,7 @@ class AdjustmentControllerIntTest : SqsIntegrationTestBase() {
       val updatedAdjustment = getAdjustmentById(adjustmentId)
       assertThat(updatedAdjustment)
         .usingRecursiveComparison()
-        .ignoringFieldsMatchingRegexes("lastUpdatedDate")
+        .ignoringFieldsMatchingRegexes("lastUpdatedDate", "createdDate")
         .isEqualTo(
           adjustment.copy(
             lastUpdatedBy = "Test User",
@@ -1188,16 +1188,15 @@ class AdjustmentControllerIntTest : SqsIntegrationTestBase() {
     person: String,
     status: AdjustmentStatus? = null,
     recallId: UUID? = null,
-  ): List<AdjustmentDto> =
-    webTestClient
-      .get()
-      .uri("/adjustments?person=$person${if (status != null) "&status=$status" else ""}${if (recallId != null) "&recallId=$recallId" else ""}")
-      .headers(setAdjustmentsRWAuth())
-      .exchange()
-      .expectStatus().isOk
-      .expectBodyList<AdjustmentDto>()
-      .returnResult()
-      .responseBody
+  ): List<AdjustmentDto> = webTestClient
+    .get()
+    .uri("/adjustments?person=$person${if (status != null) "&status=$status" else ""}${if (recallId != null) "&recallId=$recallId" else ""}")
+    .headers(setAdjustmentsRWAuth())
+    .exchange()
+    .expectStatus().isOk
+    .expectBodyList<AdjustmentDto>()
+    .returnResult()
+    .responseBody
 
   private fun postCreateAdjustments(adjustmentDtos: List<AdjustmentDto>) = webTestClient
     .post()
@@ -1219,20 +1218,18 @@ class AdjustmentControllerIntTest : SqsIntegrationTestBase() {
     .returnResult(AdjustmentDto::class.java)
     .responseBody.blockFirst()!!
 
-  private fun createAnAdjustment(adjustment: AdjustmentDto = CREATED_ADJUSTMENT.copy()): UUID {
-    return webTestClient
-      .post()
-      .uri("/adjustments")
-      .headers(
-        setAdjustmentsRWAuth(),
-      )
-      .contentType(MediaType.APPLICATION_JSON)
-      .bodyValue(listOf(adjustment))
-      .exchange()
-      .expectStatus().isCreated
-      .returnResult(CreateResponseDto::class.java)
-      .responseBody.blockFirst()!!.adjustmentIds[0]
-  }
+  private fun createAnAdjustment(adjustment: AdjustmentDto = CREATED_ADJUSTMENT.copy()): UUID = webTestClient
+    .post()
+    .uri("/adjustments")
+    .headers(
+      setAdjustmentsRWAuth(),
+    )
+    .contentType(MediaType.APPLICATION_JSON)
+    .bodyValue(listOf(adjustment))
+    .exchange()
+    .expectStatus().isCreated
+    .returnResult(CreateResponseDto::class.java)
+    .responseBody.blockFirst()!!.adjustmentIds[0]
 
   @Test
   fun validate() {

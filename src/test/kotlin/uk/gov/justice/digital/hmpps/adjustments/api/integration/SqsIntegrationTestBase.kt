@@ -52,8 +52,7 @@ class SqsIntegrationTestBase : IntegrationTestBase() {
   internal val unusedDeductionsQueueUrl by lazy { unusedDeductionsQueue.queueUrl }
   internal val unusedDeductionsDlqUrl by lazy { unusedDeductionsQueue.dlqUrl }
 
-  fun HmppsSqsProperties.domaineventsTopicConfig() =
-    topics["domainevents"] ?: throw MissingTopicException("domainevents has not been loaded from configuration properties")
+  fun HmppsSqsProperties.domaineventsTopicConfig() = topics["domainevents"] ?: throw MissingTopicException("domainevents has not been loaded from configuration properties")
 
   @BeforeEach
   fun cleanQueue() {
@@ -84,11 +83,7 @@ class SqsIntegrationTestBase : IntegrationTestBase() {
 
   protected fun jsonString(any: Any) = objectMapper.writeValueAsString(any) as String
 
-  fun getNumberOfMessagesCurrentlyOnQueue(): Int? {
-    return adjustmentsQueue.sqsClient.countMessagesOnQueue(adjustmentsQueue.queueUrl).get()
-  }
+  fun getNumberOfMessagesCurrentlyOnQueue(): Int? = adjustmentsQueue.sqsClient.countMessagesOnQueue(adjustmentsQueue.queueUrl).get()
 
-  fun getLatestMessage(): ReceiveMessageResponse? {
-    return adjustmentsQueue.sqsClient.receiveMessage(ReceiveMessageRequest.builder().maxNumberOfMessages(2).queueUrl(adjustmentsQueue.queueUrl).build()).get()
-  }
+  fun getLatestMessage(): ReceiveMessageResponse? = adjustmentsQueue.sqsClient.receiveMessage(ReceiveMessageRequest.builder().maxNumberOfMessages(2).queueUrl(adjustmentsQueue.queueUrl).build()).get()
 }

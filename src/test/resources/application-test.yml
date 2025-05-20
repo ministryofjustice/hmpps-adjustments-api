@@ -7,25 +7,18 @@ spring:
           public-key-location: classpath:local-public-key.pub
 
   datasource:
-    url: 'jdbc:h2:mem:adjustments-db;INIT=create domain if not exists jsonb as CLOB;MODE=PostgreSQL'
+    url: 'jdbc:postgresql://localhost:5432/adjustments'
     username: adjustments
-    password: dummy
+    password: adjustments
 
   flyway:
-    locations: classpath:/migration/h2,classpath:/migration/common
+    locations: classpath:/migration/postgres,classpath:/migration/common
     url: ${spring.datasource.url}
     user: adjustments
-    password: dummy
-
-  h2:
-    console:
-      enabled: true
+    password: adjustments
 
   jpa:
     show-sql: true
-    properties:
-      hibernate:
-        dialect: org.hibernate.dialect.H2Dialect
 
   sql:
     init:

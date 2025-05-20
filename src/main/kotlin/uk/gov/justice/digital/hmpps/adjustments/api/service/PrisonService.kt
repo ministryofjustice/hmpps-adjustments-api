@@ -23,10 +23,8 @@ class PrisonService(
     return sentences.minOf { it.sentenceDate }
   }
 
-  fun getSentencesAndOffences(bookingId: Long, filterActive: Boolean = true): List<SentenceAndOffences> {
-    return prisonApiClient.getSentencesAndOffences(bookingId)
-      .filter { !filterActive || it.sentenceStatus == "A" }
-  }
+  fun getSentencesAndOffences(bookingId: Long, filterActive: Boolean = true): List<SentenceAndOffences> = prisonApiClient.getSentencesAndOffences(bookingId)
+    .filter { !filterActive || it.sentenceStatus == "A" }
 
   fun getSentencesAndStartDateDetails(personId: String): SentenceAndStartDateDetails {
     val bookingId = prisonerSearchApiClient.findByPrisonerNumber(personId).bookingId
