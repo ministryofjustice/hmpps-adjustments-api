@@ -72,14 +72,11 @@ class AdjustmentsTransactionalService(
   private val remandAndSentencingApiClient: RemandAndSentencingApiClient,
 ) {
 
-  fun getCurrentAuthenticationUsername(): String =
-    (SecurityContextHolder.getContext().authentication as AuthAwareAuthenticationToken?)?.principal
-      ?: UserContext.getOverrideUsername()
+  fun getCurrentAuthenticationUsername(): String = (SecurityContextHolder.getContext().authentication as AuthAwareAuthenticationToken?)?.principal
+    ?: UserContext.getOverrideUsername()
 
   @Transactional
-  fun create(resource: List<AdjustmentDto>): CreateResponseDto {
-    return CreateResponseDto(resource.map { create(it) })
-  }
+  fun create(resource: List<AdjustmentDto>): CreateResponseDto = CreateResponseDto(resource.map { create(it) })
 
   private fun create(resource: AdjustmentDto): UUID {
     val isPeriodAdjustment = resource.fromDate != null && resource.toDate != null
@@ -139,16 +136,14 @@ class AdjustmentsTransactionalService(
     return adjustmentRepository.save(adjustment).id
   }
 
-  fun getChargeIds(resource: AdjustmentDto): List<Long> {
-    return if (resource.adjustmentType == REMAND && resource.remand != null) {
-      resource.remand.chargeId
-    } else if (resource.adjustmentType == CUSTODY_ABROAD && resource.timeSpentInCustodyAbroad != null) {
-      resource.timeSpentInCustodyAbroad.chargeIds ?: emptyList()
-    } else if (resource.adjustmentType == APPEAL_APPLICANT && resource.timeSpentAsAnAppealApplicant != null) {
-      resource.timeSpentAsAnAppealApplicant.chargeIds
-    } else {
-      emptyList()
-    }
+  fun getChargeIds(resource: AdjustmentDto): List<Long> = if (resource.adjustmentType == REMAND && resource.remand != null) {
+    resource.remand.chargeId
+  } else if (resource.adjustmentType == CUSTODY_ABROAD && resource.timeSpentInCustodyAbroad != null) {
+    resource.timeSpentInCustodyAbroad.chargeIds ?: emptyList()
+  } else if (resource.adjustmentType == APPEAL_APPLICANT && resource.timeSpentAsAnAppealApplicant != null) {
+    resource.timeSpentAsAnAppealApplicant.chargeIds
+  } else {
+    emptyList()
   }
 
   @Transactional
@@ -168,23 +163,21 @@ class AdjustmentsTransactionalService(
     }
   }
 
-  private fun unlawfullyAtLarge(adjustmentDto: AdjustmentDto, adjustment: Adjustment? = null): UnlawfullyAtLarge? =
-    if (adjustmentDto.adjustmentType == UNLAWFULLY_AT_LARGE && adjustmentDto.unlawfullyAtLarge != null) {
-      getUnlawfullyAtLarge(adjustment).apply {
-        type = adjustmentDto.unlawfullyAtLarge.type
-      }
-    } else {
-      null
+  private fun unlawfullyAtLarge(adjustmentDto: AdjustmentDto, adjustment: Adjustment? = null): UnlawfullyAtLarge? = if (adjustmentDto.adjustmentType == UNLAWFULLY_AT_LARGE && adjustmentDto.unlawfullyAtLarge != null) {
+    getUnlawfullyAtLarge(adjustment).apply {
+      type = adjustmentDto.unlawfullyAtLarge.type
     }
+  } else {
+    null
+  }
 
-  private fun getUnlawfullyAtLarge(adjustment: Adjustment?) =
-    if (adjustment?.unlawfullyAtLarge != null) {
-      adjustment.unlawfullyAtLarge!!
-    } else if (adjustment != null) {
-      UnlawfullyAtLarge(adjustment = adjustment)
-    } else {
-      UnlawfullyAtLarge()
-    }
+  private fun getUnlawfullyAtLarge(adjustment: Adjustment?) = if (adjustment?.unlawfullyAtLarge != null) {
+    adjustment.unlawfullyAtLarge!!
+  } else if (adjustment != null) {
+    UnlawfullyAtLarge(adjustment = adjustment)
+  } else {
+    UnlawfullyAtLarge()
+  }
 
   private fun taggedBail(adjustmentDto: AdjustmentDto): TaggedBail? {
     val courtCase: CourtCase?
@@ -201,84 +194,76 @@ class AdjustmentsTransactionalService(
     return null
   }
 
-  private fun lawfullyAtLarge(adjustmentDto: AdjustmentDto, adjustment: Adjustment? = null): LawfullyAtLarge? =
-    if (adjustmentDto.adjustmentType == LAWFULLY_AT_LARGE && adjustmentDto.lawfullyAtLarge != null) {
-      getLawfullyAtLarge(adjustment).apply {
-        affectsDates = adjustmentDto.lawfullyAtLarge.affectsDates
-      }
-    } else {
-      null
+  private fun lawfullyAtLarge(adjustmentDto: AdjustmentDto, adjustment: Adjustment? = null): LawfullyAtLarge? = if (adjustmentDto.adjustmentType == LAWFULLY_AT_LARGE && adjustmentDto.lawfullyAtLarge != null) {
+    getLawfullyAtLarge(adjustment).apply {
+      affectsDates = adjustmentDto.lawfullyAtLarge.affectsDates
     }
+  } else {
+    null
+  }
 
-  private fun getLawfullyAtLarge(adjustment: Adjustment?) =
-    if (adjustment?.lawfullyAtLarge != null) {
-      adjustment.lawfullyAtLarge!!
-    } else if (adjustment != null) {
-      LawfullyAtLarge(adjustment = adjustment)
-    } else {
-      LawfullyAtLarge()
-    }
+  private fun getLawfullyAtLarge(adjustment: Adjustment?) = if (adjustment?.lawfullyAtLarge != null) {
+    adjustment.lawfullyAtLarge!!
+  } else if (adjustment != null) {
+    LawfullyAtLarge(adjustment = adjustment)
+  } else {
+    LawfullyAtLarge()
+  }
 
-  private fun specialRemission(adjustmentDto: AdjustmentDto, adjustment: Adjustment? = null): SpecialRemission? =
-    if (adjustmentDto.adjustmentType == SPECIAL_REMISSION && adjustmentDto.specialRemission != null) {
-      getSpecialRemission(adjustment).apply {
-        type = adjustmentDto.specialRemission.type
-      }
-    } else {
-      null
+  private fun specialRemission(adjustmentDto: AdjustmentDto, adjustment: Adjustment? = null): SpecialRemission? = if (adjustmentDto.adjustmentType == SPECIAL_REMISSION && adjustmentDto.specialRemission != null) {
+    getSpecialRemission(adjustment).apply {
+      type = adjustmentDto.specialRemission.type
     }
+  } else {
+    null
+  }
 
-  private fun getSpecialRemission(adjustment: Adjustment?) =
-    if (adjustment?.specialRemission != null) {
-      adjustment.specialRemission!!
-    } else if (adjustment != null) {
-      SpecialRemission(adjustment = adjustment)
-    } else {
-      SpecialRemission()
-    }
+  private fun getSpecialRemission(adjustment: Adjustment?) = if (adjustment?.specialRemission != null) {
+    adjustment.specialRemission!!
+  } else if (adjustment != null) {
+    SpecialRemission(adjustment = adjustment)
+  } else {
+    SpecialRemission()
+  }
 
   private fun timeSpentInCustodyAbroad(
     adjustmentDto: AdjustmentDto,
     adjustment: Adjustment? = null,
-  ): TimeSpentInCustodyAbroad? =
-    if (adjustmentDto.adjustmentType == CUSTODY_ABROAD && adjustmentDto.timeSpentInCustodyAbroad != null) {
-      getTimeSpentInCustodyAbroad(adjustment).apply {
-        documentationSource = adjustmentDto.timeSpentInCustodyAbroad.documentationSource
-      }
-    } else {
-      null
+  ): TimeSpentInCustodyAbroad? = if (adjustmentDto.adjustmentType == CUSTODY_ABROAD && adjustmentDto.timeSpentInCustodyAbroad != null) {
+    getTimeSpentInCustodyAbroad(adjustment).apply {
+      documentationSource = adjustmentDto.timeSpentInCustodyAbroad.documentationSource
     }
+  } else {
+    null
+  }
 
-  private fun getTimeSpentInCustodyAbroad(adjustment: Adjustment?) =
-    if (adjustment?.timeSpentInCustodyAbroad != null) {
-      adjustment.timeSpentInCustodyAbroad!!
-    } else if (adjustment != null) {
-      TimeSpentInCustodyAbroad(adjustment = adjustment)
-    } else {
-      TimeSpentInCustodyAbroad()
-    }
+  private fun getTimeSpentInCustodyAbroad(adjustment: Adjustment?) = if (adjustment?.timeSpentInCustodyAbroad != null) {
+    adjustment.timeSpentInCustodyAbroad!!
+  } else if (adjustment != null) {
+    TimeSpentInCustodyAbroad(adjustment = adjustment)
+  } else {
+    TimeSpentInCustodyAbroad()
+  }
 
   private fun timeSpentAsAnAppealApplicant(
     adjustmentDto: AdjustmentDto,
     adjustment: Adjustment? = null,
-  ): TimeSpentAsAnAppealApplicant? =
-    if (adjustmentDto.adjustmentType == APPEAL_APPLICANT && adjustmentDto.timeSpentAsAnAppealApplicant != null) {
-      getTimeSpentAsAnAppealApplicant(adjustment).apply {
-        courtOfAppealReferenceNumber =
-          adjustmentDto.timeSpentAsAnAppealApplicant.courtOfAppealReferenceNumber?.uppercase()
-      }
-    } else {
-      null
+  ): TimeSpentAsAnAppealApplicant? = if (adjustmentDto.adjustmentType == APPEAL_APPLICANT && adjustmentDto.timeSpentAsAnAppealApplicant != null) {
+    getTimeSpentAsAnAppealApplicant(adjustment).apply {
+      courtOfAppealReferenceNumber =
+        adjustmentDto.timeSpentAsAnAppealApplicant.courtOfAppealReferenceNumber?.uppercase()
     }
+  } else {
+    null
+  }
 
-  private fun getTimeSpentAsAnAppealApplicant(adjustment: Adjustment?) =
-    if (adjustment?.timeSpentAsAnAppealApplicant != null) {
-      adjustment.timeSpentAsAnAppealApplicant!!
-    } else if (adjustment != null) {
-      TimeSpentAsAnAppealApplicant(adjustment = adjustment)
-    } else {
-      TimeSpentAsAnAppealApplicant()
-    }
+  private fun getTimeSpentAsAnAppealApplicant(adjustment: Adjustment?) = if (adjustment?.timeSpentAsAnAppealApplicant != null) {
+    adjustment.timeSpentAsAnAppealApplicant!!
+  } else if (adjustment != null) {
+    TimeSpentAsAnAppealApplicant(adjustment = adjustment)
+  } else {
+    TimeSpentAsAnAppealApplicant()
+  }
 
   private fun additionalDaysAwarded(resource: AdjustmentDto, adjustment: Adjustment? = null): AdditionalDaysAwarded? {
     if (resource.adjustmentType == AdjustmentType.ADDITIONAL_DAYS_AWARDED && resource.additionalDaysAwarded != null) {
@@ -291,14 +276,13 @@ class AdjustmentsTransactionalService(
     return null
   }
 
-  private fun getAdditionalDaysAwarded(adjustment: Adjustment?) =
-    if (adjustment?.additionalDaysAwarded != null) {
-      adjustment.additionalDaysAwarded!!
-    } else if (adjustment != null) {
-      AdditionalDaysAwarded(adjustment = adjustment)
-    } else {
-      AdditionalDaysAwarded()
-    }
+  private fun getAdditionalDaysAwarded(adjustment: Adjustment?) = if (adjustment?.additionalDaysAwarded != null) {
+    adjustment.additionalDaysAwarded!!
+  } else if (adjustment != null) {
+    AdditionalDaysAwarded(adjustment = adjustment)
+  } else {
+    AdditionalDaysAwarded()
+  }
 
   fun get(adjustmentId: UUID): AdjustmentDto {
     val adjustment = adjustmentRepository.findById(adjustmentId)
@@ -314,14 +298,12 @@ class AdjustmentsTransactionalService(
     status: List<AdjustmentStatus>,
     currentPeriodOfCustody: Boolean,
     recallId: UUID?,
-  ): List<AdjustmentDto> {
-    return adjustmentRepository.findAdjustmentsByPersonWithinSentenceEnvelope(
-      person,
-      status,
-      currentPeriodOfCustody,
-      recallId,
-    ).map { mapToDto(it) }
-  }
+  ): List<AdjustmentDto> = adjustmentRepository.findAdjustmentsByPersonWithinSentenceEnvelope(
+    person,
+    status,
+    currentPeriodOfCustody,
+    recallId,
+  ).map { mapToDto(it) }
 
   @Transactional
   fun update(adjustmentId: UUID, resource: AdjustmentDto) {
@@ -460,12 +442,10 @@ class AdjustmentsTransactionalService(
     }
   }
 
-  private fun objectToJson(subject: Any): JsonNode {
-    return JacksonUtil.toJsonNode(objectMapper.writeValueAsString(subject))
-  }
+  private fun objectToJson(subject: Any): JsonNode = JacksonUtil.toJsonNode(objectMapper.writeValueAsString(subject))
 
   private fun mapToDto(adjustment: Adjustment): AdjustmentDto {
-    val latestHistory = adjustment.adjustmentHistory.last { it.changeType !in listOf(ChangeType.MERGE, ChangeType.RELEASE, ChangeType.ADMISSION) }
+    val latestHistory = adjustment.adjustmentHistory.sortedBy { it.changeAt }.last { it.changeType !in listOf(ChangeType.MERGE, ChangeType.RELEASE, ChangeType.ADMISSION) }
     val legacyData = objectMapper.convertValue(adjustment.legacyData, LegacyData::class.java)
     val prisonDescription = latestHistory.prisonId?.let { prisonApiClient.getPrison(it).description }
     return AdjustmentDto(
@@ -523,52 +503,47 @@ class AdjustmentsTransactionalService(
     return null
   }
 
-  private fun unlawfullyAtLargeDto(adjustment: Adjustment): UnlawfullyAtLargeDto? =
-    if (adjustment.unlawfullyAtLarge != null) {
-      UnlawfullyAtLargeDto(type = adjustment.unlawfullyAtLarge!!.type)
-    } else {
-      null
-    }
+  private fun unlawfullyAtLargeDto(adjustment: Adjustment): UnlawfullyAtLargeDto? = if (adjustment.unlawfullyAtLarge != null) {
+    UnlawfullyAtLargeDto(type = adjustment.unlawfullyAtLarge!!.type)
+  } else {
+    null
+  }
 
-  private fun lawfullyAtLargeDto(adjustment: Adjustment): LawfullyAtLargeDto? =
-    if (adjustment.lawfullyAtLarge != null) {
-      LawfullyAtLargeDto(affectsDates = adjustment.lawfullyAtLarge!!.affectsDates)
-    } else {
-      null
-    }
+  private fun lawfullyAtLargeDto(adjustment: Adjustment): LawfullyAtLargeDto? = if (adjustment.lawfullyAtLarge != null) {
+    LawfullyAtLargeDto(affectsDates = adjustment.lawfullyAtLarge!!.affectsDates)
+  } else {
+    null
+  }
 
-  private fun specialRemissionDto(adjustment: Adjustment): SpecialRemissionDto? =
-    if (adjustment.specialRemission != null) {
-      SpecialRemissionDto(type = adjustment.specialRemission!!.type)
-    } else {
-      null
-    }
+  private fun specialRemissionDto(adjustment: Adjustment): SpecialRemissionDto? = if (adjustment.specialRemission != null) {
+    SpecialRemissionDto(type = adjustment.specialRemission!!.type)
+  } else {
+    null
+  }
 
   private fun timeSpentInCustodyAbroadDto(
     adjustment: Adjustment,
     legacyData: LegacyData,
-  ): TimeSpentInCustodyAbroadDto? =
-    if (adjustment.timeSpentInCustodyAbroad != null) {
-      TimeSpentInCustodyAbroadDto(
-        documentationSource = adjustment.timeSpentInCustodyAbroad!!.documentationSource,
-        chargeIds = legacyData.chargeIds,
-      )
-    } else {
-      null
-    }
+  ): TimeSpentInCustodyAbroadDto? = if (adjustment.timeSpentInCustodyAbroad != null) {
+    TimeSpentInCustodyAbroadDto(
+      documentationSource = adjustment.timeSpentInCustodyAbroad!!.documentationSource,
+      chargeIds = legacyData.chargeIds,
+    )
+  } else {
+    null
+  }
 
   private fun timeSpentAsAnAppealApplicantDto(
     adjustment: Adjustment,
     legacyData: LegacyData,
-  ): TimeSpentAsAnAppealApplicantDto? =
-    if (adjustment.timeSpentAsAnAppealApplicant != null) {
-      TimeSpentAsAnAppealApplicantDto(
-        courtOfAppealReferenceNumber = adjustment.timeSpentAsAnAppealApplicant!!.courtOfAppealReferenceNumber,
-        chargeIds = legacyData.chargeIds,
-      )
-    } else {
-      null
-    }
+  ): TimeSpentAsAnAppealApplicantDto? = if (adjustment.timeSpentAsAnAppealApplicant != null) {
+    TimeSpentAsAnAppealApplicantDto(
+      courtOfAppealReferenceNumber = adjustment.timeSpentAsAnAppealApplicant!!.courtOfAppealReferenceNumber,
+      chargeIds = legacyData.chargeIds,
+    )
+  } else {
+    null
+  }
 
   private fun additionalDaysAwardedToDto(adjustment: Adjustment): AdditionalDaysAwardedDto? {
     if (adjustment.additionalDaysAwarded != null) {
@@ -588,7 +563,6 @@ class AdjustmentsTransactionalService(
   }
 
   companion object {
-    fun daysBetween(from: LocalDate?, to: LocalDate?): Int? =
-      from?.let { fromDate -> to?.let { toDate -> (ChronoUnit.DAYS.between(fromDate, toDate) + 1).toInt() } }
+    fun daysBetween(from: LocalDate?, to: LocalDate?): Int? = from?.let { fromDate -> to?.let { toDate -> (ChronoUnit.DAYS.between(fromDate, toDate) + 1).toInt() } }
   }
 }

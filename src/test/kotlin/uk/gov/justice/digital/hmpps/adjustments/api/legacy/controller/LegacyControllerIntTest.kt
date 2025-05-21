@@ -211,20 +211,18 @@ class LegacyControllerIntTest : SqsIntegrationTestBase() {
     assertThat(legacyData).isEqualTo(LegacyData(bookingId = 1, sentenceSequence = 1, postedDate = LocalDate.now(), comment = "Created", type = LegacyAdjustmentType.UR, migration = false, adjustmentActive = true))
   }
 
-  private fun createAdjustment(legacyAdjustment: LegacyAdjustment): LegacyAdjustmentCreatedResponse {
-    return webTestClient
-      .post()
-      .uri("/legacy/adjustments")
-      .headers(
-        setLegacySynchronisationAuth(),
-      )
-      .header("Content-Type", LegacyController.LEGACY_CONTENT_TYPE)
-      .bodyValue(legacyAdjustment)
-      .exchange()
-      .expectStatus().isCreated
-      .returnResult(LegacyAdjustmentCreatedResponse::class.java)
-      .responseBody.blockFirst()!!
-  }
+  private fun createAdjustment(legacyAdjustment: LegacyAdjustment): LegacyAdjustmentCreatedResponse = webTestClient
+    .post()
+    .uri("/legacy/adjustments")
+    .headers(
+      setLegacySynchronisationAuth(),
+    )
+    .header("Content-Type", LegacyController.LEGACY_CONTENT_TYPE)
+    .bodyValue(legacyAdjustment)
+    .exchange()
+    .expectStatus().isCreated
+    .returnResult(LegacyAdjustmentCreatedResponse::class.java)
+    .responseBody.blockFirst()!!
 
   private fun createDefaultAdjustmentAndCleanQueue(): UUID {
     val createdId = createAdjustment(CREATED_ADJUSTMENT).adjustmentId

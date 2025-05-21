@@ -49,13 +49,9 @@ class AdjudicationsLookupService(
       }
   }
 
-  private fun getPunishment(it: Adjudication): Punishment? {
-    return it.punishments.lastOrNull { pun -> pun.type == "PROSPECTIVE_DAYS" || pun.type == "ADDITIONAL_DAYS" }
-  }
+  private fun getPunishment(it: Adjudication): Punishment? = it.punishments.lastOrNull { pun -> pun.type == "PROSPECTIVE_DAYS" || pun.type == "ADDITIONAL_DAYS" }
 
-  private fun getOutcome(it: Adjudication): OutcomeAndHearing? {
-    return it.outcomes.lastOrNull { out -> out.hearing != null }
-  }
+  private fun getOutcome(it: Adjudication): OutcomeAndHearing? = it.outcomes.lastOrNull { out -> out.hearing != null }
 
   private fun fromAgencyId(heardAt: String?, agencies: MutableMap<String, String>): String? {
     if (heardAt != null) {
@@ -70,17 +66,15 @@ class AdjudicationsLookupService(
     return null
   }
 
-  private fun deriveChargeStatus(adjudication: Adjudication, punishment: Punishment): ChargeStatus {
-    return if (adjudication.status == "QUASHED") {
-      ChargeStatus.QUASHED
-    } else if (punishment.schedule.suspendedUntil != null) {
-      ChargeStatus.SUSPENDED
-    } else if (punishment.type == "PROSPECTIVE_DAYS") {
-      ChargeStatus.PROSPECTIVE
-    } else if (punishment.type == "ADDITIONAL_DAYS") {
-      ChargeStatus.AWARDED_OR_PENDING
-    } else {
-      throw AdjudicationError("unknown adjudication status")
-    }
+  private fun deriveChargeStatus(adjudication: Adjudication, punishment: Punishment): ChargeStatus = if (adjudication.status == "QUASHED") {
+    ChargeStatus.QUASHED
+  } else if (punishment.schedule.suspendedUntil != null) {
+    ChargeStatus.SUSPENDED
+  } else if (punishment.type == "PROSPECTIVE_DAYS") {
+    ChargeStatus.PROSPECTIVE
+  } else if (punishment.type == "ADDITIONAL_DAYS") {
+    ChargeStatus.AWARDED_OR_PENDING
+  } else {
+    throw AdjudicationError("unknown adjudication status")
   }
 }

@@ -337,16 +337,15 @@ class LegacyAndAdjustmentsControllerIntTest : SqsIntegrationTestBase() {
     .exchange()
     .expectStatus().isOk
 
-  private fun getAdjustmentsByPerson(person: String, status: AdjustmentStatus? = null, startOfSentenceEnvelope: LocalDate? = null): List<AdjustmentDto> =
-    webTestClient
-      .get()
-      .uri("/adjustments?person=$person${if (status != null) "&status=$status" else ""}${if (startOfSentenceEnvelope != null) "&sentenceEnvelopeDate=$startOfSentenceEnvelope" else ""}")
-      .headers(setAdjustmentsRWAuth())
-      .exchange()
-      .expectStatus().isOk
-      .expectBodyList<AdjustmentDto>()
-      .returnResult()
-      .responseBody
+  private fun getAdjustmentsByPerson(person: String, status: AdjustmentStatus? = null, startOfSentenceEnvelope: LocalDate? = null): List<AdjustmentDto> = webTestClient
+    .get()
+    .uri("/adjustments?person=$person${if (status != null) "&status=$status" else ""}${if (startOfSentenceEnvelope != null) "&sentenceEnvelopeDate=$startOfSentenceEnvelope" else ""}")
+    .headers(setAdjustmentsRWAuth())
+    .exchange()
+    .expectStatus().isOk
+    .expectBodyList<AdjustmentDto>()
+    .returnResult()
+    .responseBody
 
   private fun deleteLegacyAdjustment(id: UUID) = webTestClient
     .delete()
@@ -369,20 +368,18 @@ class LegacyAndAdjustmentsControllerIntTest : SqsIntegrationTestBase() {
     .returnResult(CreateResponseDto::class.java)
     .responseBody.blockFirst()!!.adjustmentIds
 
-  private fun postCreateLegacyAdjustment(legacyAdjustment: LegacyAdjustment): LegacyAdjustmentCreatedResponse {
-    return webTestClient
-      .post()
-      .uri("/legacy/adjustments")
-      .headers(
-        setLegacySynchronisationAuth(),
-      )
-      .header("Content-Type", LegacyController.LEGACY_CONTENT_TYPE)
-      .bodyValue(legacyAdjustment)
-      .exchange()
-      .expectStatus().isCreated
-      .returnResult(LegacyAdjustmentCreatedResponse::class.java)
-      .responseBody.blockFirst()!!
-  }
+  private fun postCreateLegacyAdjustment(legacyAdjustment: LegacyAdjustment): LegacyAdjustmentCreatedResponse = webTestClient
+    .post()
+    .uri("/legacy/adjustments")
+    .headers(
+      setLegacySynchronisationAuth(),
+    )
+    .header("Content-Type", LegacyController.LEGACY_CONTENT_TYPE)
+    .bodyValue(legacyAdjustment)
+    .exchange()
+    .expectStatus().isCreated
+    .returnResult(LegacyAdjustmentCreatedResponse::class.java)
+    .responseBody.blockFirst()!!
   private fun getLegacyAdjustment(id: UUID) = webTestClient
     .get()
     .uri("/legacy/adjustments/$id")

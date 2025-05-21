@@ -15,10 +15,8 @@ class AdjustmentsService(
   private val adjustmentsTransactionalService: AdjustmentsTransactionalService,
 ) {
 
-  fun create(adjustments: List<AdjustmentDto>): CreateResponseDto {
-    return adjustmentsTransactionalService.create(adjustments).also {
-      adjustmentsDomainEventService.create(it.adjustmentIds, adjustments[0].person, AdjustmentSource.DPS, adjustments[0].adjustmentType)
-    }
+  fun create(adjustments: List<AdjustmentDto>): CreateResponseDto = adjustmentsTransactionalService.create(adjustments).also {
+    adjustmentsDomainEventService.create(it.adjustmentIds, adjustments[0].person, AdjustmentSource.DPS, adjustments[0].adjustmentType)
   }
 
   fun updateEffectiveDays(adjustmentId: UUID, adjustment: AdjustmentEffectiveDaysDto) {
@@ -27,18 +25,14 @@ class AdjustmentsService(
     }
   }
 
-  fun get(adjustmentId: UUID): AdjustmentDto {
-    return adjustmentsTransactionalService.get(adjustmentId)
-  }
+  fun get(adjustmentId: UUID): AdjustmentDto = adjustmentsTransactionalService.get(adjustmentId)
 
   fun findCurrentAdjustments(
     person: String,
     status: List<AdjustmentStatus>,
     currentPeriodOfCustody: Boolean,
     recallId: UUID? = null,
-  ): List<AdjustmentDto> {
-    return adjustmentsTransactionalService.findCurrentAdjustments(person, status, currentPeriodOfCustody, recallId)
-  }
+  ): List<AdjustmentDto> = adjustmentsTransactionalService.findCurrentAdjustments(person, status, currentPeriodOfCustody, recallId)
 
   fun update(adjustmentId: UUID, adjustment: AdjustmentDto) {
     adjustmentsTransactionalService.update(adjustmentId, adjustment).also {
