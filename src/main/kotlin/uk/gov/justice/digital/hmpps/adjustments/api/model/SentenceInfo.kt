@@ -49,7 +49,7 @@ data class SentenceInfo(
       "LR_EPP",
       "LR_IPP",
       "LR_MLP",
-      "LR_ES"
+      "LR_ES",
     )
   }
 }
