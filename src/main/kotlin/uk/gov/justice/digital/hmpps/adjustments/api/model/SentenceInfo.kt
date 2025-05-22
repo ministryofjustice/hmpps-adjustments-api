@@ -34,6 +34,22 @@ data class SentenceInfo(
       "FTRSCH18_ORA",
       "14FTRHDC_ORA",
       "FTR_HDC_ORA",
+      "CUR",
+      "CUR_ORA",
+      "HDR",
+      "HDR_ORA",
+      "FTR_HDC",
+      "LR_DPP",
+      "LR_DLP",
+      "LR_ALP",
+      "LR_ALP_LASPO",
+      "LR_ALP_CDE18",
+      "LR_ALP_CDE21",
+      "LR_LIFE",
+      "LR_EPP",
+      "LR_IPP",
+      "LR_MLP",
+      "LR_ES"
     )
   }
 }
