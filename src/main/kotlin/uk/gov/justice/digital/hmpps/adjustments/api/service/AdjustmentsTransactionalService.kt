@@ -70,6 +70,7 @@ class AdjustmentsTransactionalService(
   private val prisonApiClient: PrisonApiClient,
   private val prisonerSearchApiClient: PrisonerSearchApiClient,
   private val remandAndSentencingApiClient: RemandAndSentencingApiClient,
+  private val sentenceInfoService: SentenceInfoService,
 ) {
 
   fun getCurrentAuthenticationUsername(): String = (SecurityContextHolder.getContext().authentication as AuthAwareAuthenticationToken?)?.principal
@@ -399,14 +400,15 @@ class AdjustmentsTransactionalService(
           if (matchingSentences.isEmpty()) {
             throw ApiValidationException("No matching sentences for caseSequence ${resource.taggedBail.caseSequence}")
           }
-          SentenceInfo(matchingSentences.maxBy { it.sentenceDate })
+          val maxBySentenceDate = matchingSentences.maxBy { it.sentenceDate }
+          SentenceInfo(maxBySentenceDate, sentenceInfoService.isRecall(maxBySentenceDate.sentenceCalculationType))
         } else {
           null
         }
       } else {
         val matchingSentence = sentences.find { it.sentenceSequence == resource.sentenceSequence }
           ?: throw ApiValidationException("No matching sentences for sentence sequence ${resource.sentenceSequence}")
-        SentenceInfo(matchingSentence)
+        SentenceInfo(matchingSentence, sentenceInfoService.isRecall(matchingSentence.sentenceCalculationType))
       }
     }
     return null
@@ -418,7 +420,8 @@ class AdjustmentsTransactionalService(
     if (matchingSentences.isEmpty()) {
       throw ApiValidationException("No matching sentences for charge ids ${chargeIds.joinToString()}")
     }
-    return SentenceInfo(matchingSentences.maxBy { it.sentenceDate })
+    val maxBySentenceDate = matchingSentences.maxBy { it.sentenceDate }
+    return SentenceInfo(maxBySentenceDate, sentenceInfoService.isRecall(maxBySentenceDate.sentenceCalculationType))
   }
 
   @Transactional

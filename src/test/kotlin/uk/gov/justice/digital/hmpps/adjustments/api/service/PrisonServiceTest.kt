@@ -20,8 +20,10 @@ class PrisonServiceTest {
 
   private val prisonerSearchApiClient = mock<PrisonerSearchApiClient>()
 
+  private val sentenceInfoService = mock<SentenceInfoService>()
+
   private val prisonService =
-    PrisonService(prisonApiClient, prisonerSearchApiClient)
+    PrisonService(prisonApiClient, prisonerSearchApiClient, sentenceInfoService)
 
   @Test
   fun `get sentence start details when mix of recall and determinate`() {
@@ -72,6 +74,7 @@ class PrisonServiceTest {
     whenever(prisonerSearchApiClient.findByPrisonerNumber(person)).thenReturn(prisoner)
     whenever(prisonApiClient.getSentencesAndOffences(bookingId)).thenReturn(sentences)
     whenever(prisonApiClient.getCourtDateResults(person)).thenReturn(courtEvents)
+    whenever(sentenceInfoService.isRecall("LR")).thenReturn(true)
 
     val result = prisonService.getSentencesAndStartDateDetails(person)
 

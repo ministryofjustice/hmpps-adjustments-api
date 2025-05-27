@@ -3,6 +3,8 @@ package uk.gov.justice.digital.hmpps.adjustments.api.wiremock
 import com.github.tomakehurst.wiremock.WireMockServer
 import com.github.tomakehurst.wiremock.client.WireMock.aResponse
 import com.github.tomakehurst.wiremock.client.WireMock.get
+import com.github.tomakehurst.wiremock.client.WireMock.matching
+import com.github.tomakehurst.wiremock.client.WireMock.urlPathEqualTo
 import org.junit.jupiter.api.extension.AfterAllCallback
 import org.junit.jupiter.api.extension.BeforeAllCallback
 import org.junit.jupiter.api.extension.BeforeEachCallback
@@ -23,6 +25,8 @@ class RemandAndSentencingApiExtension :
   override fun beforeAll(context: ExtensionContext) {
     remandAndSentencingApi.start()
     remandAndSentencingApi.stubValidateCourtCases()
+    remandAndSentencingApi.stubGetSentenceTypeDetailsForSentenceType("ADIMP_ORA")
+    remandAndSentencingApi.stubGetSentenceTypeDetailsForSentenceType("LR_LASPO_DR")
   }
 
   override fun beforeEach(context: ExtensionContext) {
@@ -37,6 +41,52 @@ class RemandAndSentencingApiExtension :
 class RemandAndSentencingApiMockServer : WireMockServer(WIREMOCK_PORT) {
   companion object {
     private const val WIREMOCK_PORT = 8335
+  }
+
+  fun stubGetSentenceTypeDetailsForSentenceType(sentenceType: String) {
+    val isNotRecall = """
+                        {
+                            "nomisSentenceTypeReference": "ADIMP_ORA",
+                            "recall": {
+                                "isRecall": false,
+                                "type": "NONE",
+                                "isFixedTermRecall": false,
+                                "lengthInDays": 0
+                            },
+                            "nomisDescription": "CJA03 Standard Determinate Sentence",
+                            "isIndeterminate": false,
+                            "nomisActive": true,
+                            "nomisExpiryDate": null
+                        }
+              """
+    val isRecall = """
+                        {
+                            "nomisSentenceTypeReference": "LR_LASPO_DR",
+                            "recall": {
+                                "isRecall": true,
+                                "type": "LR - EDS LASPO Discretionary Release",
+                                "isFixedTermRecall": false,
+                                "lengthInDays": 0
+                            },
+                            "nomisDescription": "CJA03 Standard Determinate Sentence",
+                            "isIndeterminate": false,
+                            "nomisActive": true,
+                            "nomisExpiryDate": null
+                        }
+              """
+    val returnValue = if (sentenceType == "ADIMP_ORA") isNotRecall else isRecall
+    stubFor(
+      get(urlPathEqualTo("/legacy/sentence-type/summary"))
+        .withQueryParam("nomisSentenceTypeReference", matching(sentenceType))
+        .willReturn(
+          aResponse()
+            .withHeader("Content-Type", "application/json")
+            .withBody(
+              returnValue.trimIndent(),
+            )
+            .withStatus(200),
+        ),
+    )
   }
 
   fun stubValidateCourtCases() {
