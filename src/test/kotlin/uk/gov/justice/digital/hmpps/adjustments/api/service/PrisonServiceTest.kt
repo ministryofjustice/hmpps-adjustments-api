@@ -6,6 +6,7 @@ import org.mockito.kotlin.mock
 import org.mockito.kotlin.whenever
 import uk.gov.justice.digital.hmpps.adjustments.api.client.PrisonApiClient
 import uk.gov.justice.digital.hmpps.adjustments.api.client.PrisonerSearchApiClient
+import uk.gov.justice.digital.hmpps.adjustments.api.client.RemandAndSentencingApiClient
 import uk.gov.justice.digital.hmpps.adjustments.api.model.prisonapi.CourtDateChargeAndOutcomes
 import uk.gov.justice.digital.hmpps.adjustments.api.model.prisonapi.CourtDateOutcome
 import uk.gov.justice.digital.hmpps.adjustments.api.model.prisonapi.OffenderOffence
@@ -20,8 +21,10 @@ class PrisonServiceTest {
 
   private val prisonerSearchApiClient = mock<PrisonerSearchApiClient>()
 
+  private val remandAndSentencingApiClient = mock<RemandAndSentencingApiClient>()
+
   private val prisonService =
-    PrisonService(prisonApiClient, prisonerSearchApiClient)
+    PrisonService(prisonApiClient, prisonerSearchApiClient, remandAndSentencingApiClient)
 
   @Test
   fun `get sentence start details when mix of recall and determinate`() {

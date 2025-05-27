@@ -39,6 +39,34 @@ class RemandAndSentencingApiMockServer : WireMockServer(WIREMOCK_PORT) {
     private const val WIREMOCK_PORT = 8335
   }
 
+  fun stubGetSentenceTypeDetails() {
+    stubFor(
+      get("/legacy/sentence-type/summary")
+        .willReturn(
+          aResponse()
+            .withHeader("Content-Type", "application/json")
+            .withBody(
+              """
+                        {
+                            "nomisSentenceTypeReference": "ADIMP",
+                            "recall": {
+                                "isRecall": true,
+                                "type": "NONE",
+                                "isFixedTermRecall": false,
+                                "lengthInDays": 0
+                            },
+                            "nomisDescription": "CJA03 Standard Determinate Sentence",
+                            "isIndeterminate": false,
+                            "nomisActive": true,
+                            "nomisExpiryDate": null
+                        }
+              """.trimIndent(),
+            )
+            .withStatus(200),
+        ),
+    )
+  }
+
   fun stubValidateCourtCases() {
     stubFor(
       get("/court-cases/73df3e55-9c5d-487e-959a-5befa13b7123")
