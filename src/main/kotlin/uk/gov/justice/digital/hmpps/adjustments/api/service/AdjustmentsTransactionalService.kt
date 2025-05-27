@@ -399,14 +399,14 @@ class AdjustmentsTransactionalService(
           if (matchingSentences.isEmpty()) {
             throw ApiValidationException("No matching sentences for caseSequence ${resource.taggedBail.caseSequence}")
           }
-          SentenceInfo(matchingSentences.maxBy { it.sentenceDate })
+          SentenceInfo(matchingSentences.maxBy { it.sentenceDate }, remandAndSentencingApiClient)
         } else {
           null
         }
       } else {
         val matchingSentence = sentences.find { it.sentenceSequence == resource.sentenceSequence }
           ?: throw ApiValidationException("No matching sentences for sentence sequence ${resource.sentenceSequence}")
-        SentenceInfo(matchingSentence)
+        SentenceInfo(matchingSentence, remandAndSentencingApiClient)
       }
     }
     return null
@@ -418,7 +418,7 @@ class AdjustmentsTransactionalService(
     if (matchingSentences.isEmpty()) {
       throw ApiValidationException("No matching sentences for charge ids ${chargeIds.joinToString()}")
     }
-    return SentenceInfo(matchingSentences.maxBy { it.sentenceDate })
+    return SentenceInfo(matchingSentences.maxBy { it.sentenceDate }, remandAndSentencingApiClient)
   }
 
   @Transactional

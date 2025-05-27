@@ -5,6 +5,7 @@ import org.springframework.beans.factory.annotation.Qualifier
 import org.springframework.stereotype.Service
 import org.springframework.web.reactive.function.client.WebClient
 import uk.gov.justice.digital.hmpps.adjustments.api.model.remandandsentencing.CourtCase
+import uk.gov.justice.digital.hmpps.adjustments.api.model.remandandsentencing.SentenceDetailResponse
 import java.util.UUID
 
 @Service
@@ -18,5 +19,18 @@ class RemandAndSentencingApiClient(@Qualifier("remandAndSentencingApiWebClient")
       .retrieve()
       .bodyToMono(CourtCase::class.java)
       .block()!!
+  }
+
+  fun getSentenceTypeDetails(nomisSentenceReference: String): SentenceDetailResponse? {
+    log.info("Fetching recall type for nomisSentenceReference: $nomisSentenceReference")
+    return webClient.get()
+      .uri { uriBuilder ->
+        uriBuilder.path("/legacy/sentence-type/summary")
+          .queryParam("nomisSentenceTypeReference", nomisSentenceReference)
+          .build()
+      }
+      .retrieve()
+      .bodyToMono(SentenceDetailResponse::class.java)
+      .block()
   }
 }

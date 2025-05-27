@@ -3,6 +3,7 @@ package uk.gov.justice.digital.hmpps.adjustments.api.service
 import org.springframework.stereotype.Service
 import uk.gov.justice.digital.hmpps.adjustments.api.client.PrisonApiClient
 import uk.gov.justice.digital.hmpps.adjustments.api.client.PrisonerSearchApiClient
+import uk.gov.justice.digital.hmpps.adjustments.api.client.RemandAndSentencingApiClient
 import uk.gov.justice.digital.hmpps.adjustments.api.error.NoActiveSentencesException
 import uk.gov.justice.digital.hmpps.adjustments.api.model.SentenceInfo.Companion.isRecall
 import uk.gov.justice.digital.hmpps.adjustments.api.model.prisonapi.RECALL_COURT_EVENT
@@ -13,6 +14,7 @@ import java.time.LocalDate
 class PrisonService(
   private val prisonApiClient: PrisonApiClient,
   private val prisonerSearchApiClient: PrisonerSearchApiClient,
+  private val remandAndSentencingApiClient: RemandAndSentencingApiClient,
 ) {
 
   fun getStartOfSentenceEnvelope(bookingId: Long): LocalDate {
@@ -29,9 +31,9 @@ class PrisonService(
   fun getSentencesAndStartDateDetails(personId: String): SentenceAndStartDateDetails {
     val bookingId = prisonerSearchApiClient.findByPrisonerNumber(personId).bookingId
     val sentences = getSentencesAndOffences(bookingId)
-    val hasRecall = sentences.any { isRecall(it) }
+    val hasRecall = sentences.any { isRecall(it, remandAndSentencingApiClient) }
     val earliestRecallDate = if (hasRecall) {
-      val recallChargeIds = sentences.filter { isRecall(it) }.flatMap { it.offences.map { off -> off.offenderChargeId } }
+      val recallChargeIds = sentences.filter { isRecall(it, remandAndSentencingApiClient) }.flatMap { it.offences.map { off -> off.offenderChargeId } }
       val courtCharges = prisonApiClient.getCourtDateResults(personId)
       val matchingCharges = courtCharges.filter { recallChargeIds.contains(it.chargeId) }
       val matchingOutcomes = matchingCharges.mapNotNull { it.outcomes.find { outcome -> outcome.resultCode == RECALL_COURT_EVENT } }
@@ -39,7 +41,7 @@ class PrisonService(
     } else {
       null
     }
-    val earliestNonRecallSentenceDate = sentences.filter { !isRecall(it) }.minOfOrNull { it.sentenceDate }
+    val earliestNonRecallSentenceDate = sentences.filter { !isRecall(it, remandAndSentencingApiClient) }.minOfOrNull { it.sentenceDate }
     val earliestSentenceDate = sentences.minOfOrNull { it.sentenceDate }
     val latestSentenceDate = sentences.maxOfOrNull { it.sentenceDate }
     return SentenceAndStartDateDetails(

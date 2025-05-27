@@ -1,39 +1,21 @@
 package uk.gov.justice.digital.hmpps.adjustments.api.model
 
+import uk.gov.justice.digital.hmpps.adjustments.api.client.RemandAndSentencingApiClient
 import uk.gov.justice.digital.hmpps.adjustments.api.model.prisonapi.SentenceAndOffences
 
 data class SentenceInfo(
   val sentenceSequence: Int,
   val recall: Boolean,
 ) {
-  constructor(sentence: SentenceAndOffences) : this(sentence.sentenceSequence, isRecall(sentence))
+  constructor(sentence: SentenceAndOffences, remandAndSentencingApiClient: RemandAndSentencingApiClient) : this(
+    sentence.sentenceSequence,
+    isRecall(sentence, remandAndSentencingApiClient),
+  )
 
   companion object {
-    fun isRecall(sentence: SentenceAndOffences): Boolean = recallTypes.contains(sentence.sentenceCalculationType)
-
-    private val recallTypes = listOf(
-      "LR",
-      "LR_ORA",
-      "LR_YOI_ORA",
-      "LR_SEC91_ORA",
-      "LRSEC250_ORA",
-      "LR_EDS18",
-      "LR_EDS21",
-      "LR_EDSU18",
-      "LR_LASPO_AR",
-      "LR_LASPO_DR",
-      "LR_SEC236A",
-      "LR_SOPC18",
-      "LR_SOPC21",
-      "14FTR_ORA",
-      "FTR",
-      "FTR_ORA",
-      "FTR_SCH15",
-      "FTRSCH15_ORA",
-      "FTRSCH18",
-      "FTRSCH18_ORA",
-      "14FTRHDC_ORA",
-      "FTR_HDC_ORA",
-    )
+    fun isRecall(sentence: SentenceAndOffences, remandAndSentencingApiClient: RemandAndSentencingApiClient): Boolean {
+      val sentenceDetails = remandAndSentencingApiClient.getSentenceTypeDetails(sentence.sentenceCalculationType)
+      return sentenceDetails?.recall?.type?.let { it != "NONE" && it.isNotEmpty() } ?: false
+    }
   }
 }
