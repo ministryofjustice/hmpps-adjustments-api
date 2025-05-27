@@ -3,6 +3,8 @@ package uk.gov.justice.digital.hmpps.adjustments.api.wiremock
 import com.github.tomakehurst.wiremock.WireMockServer
 import com.github.tomakehurst.wiremock.client.WireMock.aResponse
 import com.github.tomakehurst.wiremock.client.WireMock.get
+import com.github.tomakehurst.wiremock.client.WireMock.matching
+import com.github.tomakehurst.wiremock.client.WireMock.urlPathEqualTo
 import org.junit.jupiter.api.extension.AfterAllCallback
 import org.junit.jupiter.api.extension.BeforeAllCallback
 import org.junit.jupiter.api.extension.BeforeEachCallback
@@ -42,7 +44,8 @@ class RemandAndSentencingApiMockServer : WireMockServer(WIREMOCK_PORT) {
 
   fun stubGetSentenceTypeDetails() {
     stubFor(
-      get("/legacy/sentence-type/summary")
+      get(urlPathEqualTo("/legacy/sentence-type/summary"))
+        .withQueryParam("nomisSentenceTypeReference", matching(".*"))
         .willReturn(
           aResponse()
             .withHeader("Content-Type", "application/json")
