@@ -23,6 +23,7 @@ class RemandAndSentencingApiExtension :
   override fun beforeAll(context: ExtensionContext) {
     remandAndSentencingApi.start()
     remandAndSentencingApi.stubValidateCourtCases()
+    remandAndSentencingApi.stubGetSentenceTypeDetails()
   }
 
   override fun beforeEach(context: ExtensionContext) {
