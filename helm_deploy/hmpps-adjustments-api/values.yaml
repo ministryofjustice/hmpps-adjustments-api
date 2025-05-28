@@ -68,6 +68,7 @@ generic-prometheus-alerts:
   targetApplication: hmpps-adjustments-api
 
 generic-data-analytics-extractor:
+  serviceAccountName: hmpps-adjustments
   enabled: true
   databaseSecretName: rds-instance-output
   destinationS3SecretName: analytical-platform-reporting-s3-bucket
