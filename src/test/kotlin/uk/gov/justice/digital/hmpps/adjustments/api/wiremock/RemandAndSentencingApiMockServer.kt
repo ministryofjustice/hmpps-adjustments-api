@@ -26,7 +26,9 @@ class RemandAndSentencingApiExtension :
     remandAndSentencingApi.start()
     remandAndSentencingApi.stubValidateCourtCases()
     remandAndSentencingApi.stubGetSentenceTypeDetailsForSentenceType("ADIMP_ORA")
+    remandAndSentencingApi.stubGetSentenceTypeDetailsForSentenceType("ADIMP")
     remandAndSentencingApi.stubGetSentenceTypeDetailsForSentenceType("LR_LASPO_DR")
+    remandAndSentencingApi.stubGetSentenceTypeDetailsForSentenceType("LR")
   }
 
   override fun beforeEach(context: ExtensionContext) {
@@ -74,7 +76,7 @@ class RemandAndSentencingApiMockServer : WireMockServer(WIREMOCK_PORT) {
                             "nomisExpiryDate": null
                         }
               """
-    val returnValue = if (sentenceType == "ADIMP_ORA") isNotRecall else isRecall
+    val returnValue = if (sentenceType == "ADIMP_ORA" || sentenceType == "ADIMP") isNotRecall else isRecall
     stubFor(
       get(urlPathEqualTo("/legacy/sentence-type/summary"))
         .withQueryParam("nomisSentenceTypeReference", matching(sentenceType))
