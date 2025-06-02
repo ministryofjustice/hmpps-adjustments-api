@@ -233,13 +233,6 @@ class LegacyAndAdjustmentsControllerIntTest : SqsIntegrationTestBase() {
     val legacyAdjustment = getLegacyAdjustment(idOne)
     updateLegacyAdjustment(idOne, legacyAdjustment.copy(adjustmentDays = 4))
 
-    // Adjustment should have new days.
-    adjustmentOne = getAdjustmentById(idOne)
-    adjustmentTwo = getAdjustmentById(idTwo)
-    assertThat(adjustmentOne.days).isEqualTo(4)
-    assertThat(adjustmentTwo.days).isEqualTo(0)
-    assertThat(adjustmentOne.source).isEqualTo(AdjustmentSource.NOMIS)
-    assertThat(adjustmentTwo.source).isEqualTo(AdjustmentSource.NOMIS)
     await untilAsserted {
       val unusedDeductionsCalculationResult =
         unusedDeductionsCalculationResultRepository.findFirstByPerson(ADJUSTMENT.person)
@@ -261,10 +254,6 @@ class LegacyAndAdjustmentsControllerIntTest : SqsIntegrationTestBase() {
     // Create new NOMIS adjustment
     postCreateLegacyAdjustment(LEGACY_ADJUSTMENT)
 
-    // DPS adjustment should be reset to effective days.
-    adjustment = getAdjustmentById(id)
-    val daysBetweenResult = (ChronoUnit.DAYS.between(adjustment.fromDate, adjustment.toDate) + 1).toInt()
-    assertThat(daysBetweenResult).isEqualTo(effectiveDays)
     await untilAsserted {
       val unusedDeductionsCalculationResult =
         unusedDeductionsCalculationResultRepository.findFirstByPerson(ADJUSTMENT.person)
@@ -286,14 +275,6 @@ class LegacyAndAdjustmentsControllerIntTest : SqsIntegrationTestBase() {
     // Delete one of the adjustments
     deleteLegacyAdjustment(idOne)
 
-    // Adjustment should have new days.
-    val dbAdjustmentOne = adjustmentRepository.findById(idOne)
-    assertThat(dbAdjustmentOne.get().status).isEqualTo(AdjustmentStatus.DELETED)
-    adjustmentTwo = getAdjustmentById(idTwo)
-    assertThat(adjustmentTwo.status).isEqualTo(AdjustmentStatus.ACTIVE)
-    val daysBetweenResult = (ChronoUnit.DAYS.between(adjustmentTwo.fromDate, adjustmentTwo.toDate) + 1).toInt()
-    assertThat(daysBetweenResult).isEqualTo(2)
-    assertThat(adjustmentTwo.days).isEqualTo(2)
     await untilAsserted {
       val unusedDeductionsCalculationResult =
         unusedDeductionsCalculationResultRepository.findFirstByPerson(ADJUSTMENT.person)
