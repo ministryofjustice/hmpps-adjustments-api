@@ -47,7 +47,6 @@ class LegacyController(
   @PreAuthorize("hasRole('SENTENCE_ADJUSTMENTS_SYNCHRONISATION')")
   fun create(@RequestBody adjustment: LegacyAdjustment): LegacyAdjustmentCreatedResponse = legacyService.create(adjustment, migration = false).also {
     eventService.create(listOf(it.adjustmentId), adjustment.offenderNo, AdjustmentSource.NOMIS)
-    legacyService.updateAllAdjustmentsToHaveEffectiveDaysAsDpsDays(adjustment.offenderNo, adjustment.bookingId, adjustment.agencyId)
   }
 
   @PostMapping("/migration")
@@ -106,9 +105,6 @@ class LegacyController(
   ) {
     legacyService.update(adjustmentId, adjustment).also {
       eventService.update(adjustmentId, adjustment.offenderNo, AdjustmentSource.NOMIS)
-      if (it.isChangeToDays) {
-        legacyService.updateAllAdjustmentsToHaveEffectiveDaysAsDpsDays(adjustment.offenderNo, adjustment.bookingId, adjustment.agencyId)
-      }
     }
   }
 
@@ -133,7 +129,6 @@ class LegacyController(
     legacyService.get(adjustmentId).also {
       legacyService.delete(adjustmentId)
       eventService.delete(adjustmentId, it.offenderNo, AdjustmentSource.NOMIS)
-      legacyService.updateAllAdjustmentsToHaveEffectiveDaysAsDpsDays(it.offenderNo, it.bookingId)
     }
   }
 
