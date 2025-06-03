@@ -127,37 +127,6 @@ class LegacyService(
   }
 
   @Transactional
-  fun updateAllAdjustmentsToHaveEffectiveDaysAsDpsDays(person: String, bookingId: Long, apiPrisonId: String? = null) {
-    val prisonId = apiPrisonId ?: prisonerSearchApiClient.findByPrisonerNumber(person).prisonId
-    val adjustments = adjustmentRepository.findByPersonAndStatus(person, ACTIVE)
-    adjustments
-      .filter {
-        val legacyData = objectMapper.convertValue(it.legacyData, LegacyData::class.java)
-        legacyData.bookingId == bookingId
-      }
-      .forEach {
-        val dpsDays = it.days ?: it.daysCalculated
-        if (dpsDays != null && dpsDays != it.effectiveDays) {
-          val change = objectToJson(it)
-          it.apply {
-            toDate = it.fromDate?.plusDays(it.effectiveDays.toLong() - 1)
-            days = if (this.days != null) it.effectiveDays else this.days
-            daysCalculated = if (this.daysCalculated != null) it.effectiveDays else this.daysCalculated
-            source = AdjustmentSource.NOMIS
-            adjustmentHistory += AdjustmentHistory(
-              changeByUsername = "NOMIS",
-              changeType = ChangeType.RESET_DAYS,
-              change = change,
-              changeSource = AdjustmentSource.NOMIS,
-              adjustment = it,
-              prisonId = prisonId,
-            )
-          }
-        }
-      }
-  }
-
-  @Transactional
   fun delete(adjustmentId: UUID) {
     val adjustment = adjustmentRepository.findById(adjustmentId)
       .map { if (it.status.isDeleted()) null else it }
