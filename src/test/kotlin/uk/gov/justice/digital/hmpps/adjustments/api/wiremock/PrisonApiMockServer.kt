@@ -218,6 +218,28 @@ class PrisonApiMockServer : WireMockServer(WIREMOCK_PORT) {
                         "offenceDescription": "Grievous bodily harm"
                       }
                     ]
+                  }, {
+                    "bookingId": 123,
+                    "sentenceSequence": 2,
+                    "sentenceStatus": "I",
+                    "sentenceCategory": "2003",
+                    "sentenceCalculationType": "LR_LASPO_DR",
+                    "sentenceTypeDescription": "Recall",
+                    "sentenceDate": "2010-01-01",
+                    "terms": [{
+                      "years": 0,
+                      "months": 20,
+                      "weeks": 0,
+                      "days": 0
+                    }],
+                    "offences": [
+                      {
+                        "offenderChargeId": 1111,
+                        "offenceStartDate": "2015-03-17",
+                        "offenceCode": "GBH",
+                        "offenceDescription": "Grievous bodily harm"
+                      }
+                    ]
                   }
                 ]
               """.trimIndent(),
