@@ -420,8 +420,14 @@ class AdjustmentsTransactionalService(
     if (matchingSentences.isEmpty()) {
       throw ApiValidationException("No matching sentences for charge ids ${chargeIds.joinToString()}")
     }
-    val maxBySentenceDate = matchingSentences.maxBy { it.sentenceDate }
-    return SentenceInfo(maxBySentenceDate, sentenceInfoService.isRecall(maxBySentenceDate.sentenceCalculationType))
+    val activeSentences = matchingSentences.filter { it.sentenceStatus == "A" }
+    val sentence = activeSentences.ifEmpty {
+      matchingSentences
+    }.maxBy { it.sentenceDate }
+    return SentenceInfo(
+      sentence,
+      sentenceInfoService.isRecall(sentence.sentenceCalculationType),
+    )
   }
 
   @Transactional
