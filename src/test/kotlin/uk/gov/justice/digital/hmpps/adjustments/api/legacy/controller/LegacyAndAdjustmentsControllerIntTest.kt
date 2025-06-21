@@ -283,6 +283,18 @@ class LegacyAndAdjustmentsControllerIntTest : SqsIntegrationTestBase() {
     }
   }
 
+  @Test
+  fun `Created a remand adjustment linked to inactive and active sentenced charges`() {
+    val adjustment = ADJUSTMENT.copy(
+      remand = RemandDto(chargeId = listOf(9991, 1111L)),
+    )
+    val (id) = postCreateAdjustments(listOf(adjustment))
+
+    val legacyAdjustment = getLegacyAdjustment(id)
+
+    assertThat(legacyAdjustment.sentenceSequence).isEqualTo(1)
+  }
+
   private fun getAdjustmentById(adjustmentId: UUID) = webTestClient
     .get()
     .uri("/adjustments/$adjustmentId")
