@@ -38,9 +38,9 @@ jobs:
     with:
       localstack-tag: "3"
       postgres-tag: "17"
-      postgres_db: adjustments
-      postgres_username: adjustments
-      postgres_password: adjustments
+      postgres-db: adjustments
+      postgres-username: adjustments
+      postgres-password: adjustments
   build:
     name: Build docker image from hmpps-github-actions
     if: github.ref == 'refs/heads/main'
