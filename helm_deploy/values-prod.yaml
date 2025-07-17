@@ -39,3 +39,6 @@ generic-prometheus-alerts:
   sqsAlertsOldestThreshold: 2
   sqsAlertsTotalMessagesThreshold: 1
   alertSeverity: legacy-replacement-alerts
+
+generic-data-analytics-extractor:
+  serviceAccountName: hmpps-adjustments-prod-to-ap-s3

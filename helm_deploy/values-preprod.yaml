@@ -38,3 +38,7 @@ generic-prometheus-alerts:
   sqsAlertsOldestThreshold: 2
   sqsAlertsTotalMessagesThreshold: 1
   alertSeverity: legacy-replacement-alerts-non-prod
+
+generic-data-analytics-extractor:
+  enabled: false
+  serviceAccountName: not-enabled
