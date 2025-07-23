@@ -2,7 +2,7 @@ import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
 plugins {
-  id("uk.gov.justice.hmpps.gradle-spring-boot") version "8.3.2"
+  id("uk.gov.justice.hmpps.gradle-spring-boot") version "8.3.3"
   kotlin("plugin.spring") version "2.2.0"
   kotlin("plugin.jpa") version "2.2.0"
   id("se.patrikerdes.use-latest-versions") version "0.2.18"
@@ -17,7 +17,7 @@ ext["hibernate.version"] = "6.5.3.Final"
 dependencies {
   annotationProcessor("org.springframework.boot:spring-boot-configuration-processor")
 
-  implementation("uk.gov.justice.service.hmpps:hmpps-kotlin-spring-boot-starter:1.4.8")
+  implementation("uk.gov.justice.service.hmpps:hmpps-kotlin-spring-boot-starter:1.4.10")
 
   // Spring boot dependencies
   implementation("org.springframework.boot:spring-boot-starter-security")
@@ -32,7 +32,7 @@ dependencies {
   // Enable kotlin reflect
   implementation("org.jetbrains.kotlin:kotlin-reflect:2.2.0")
 
-  implementation("uk.gov.justice.service.hmpps:hmpps-sqs-spring-boot-starter:5.4.7")
+  implementation("uk.gov.justice.service.hmpps:hmpps-sqs-spring-boot-starter:5.4.9")
 
   implementation("org.springframework:spring-jms:6.2.9")
 
@@ -53,7 +53,7 @@ dependencies {
   testImplementation("net.javacrumbs.json-unit:json-unit-assertj:4.1.1")
   testImplementation("io.swagger.parser.v3:swagger-parser-v2-converter:2.1.31")
   testImplementation("org.mockito:mockito-inline:5.2.0")
-  testImplementation("org.junit.jupiter:junit-jupiter:5.13.3")
+  testImplementation("org.junit.jupiter:junit-jupiter:5.13.4")
   testImplementation("org.testcontainers:localstack:1.21.3")
   testImplementation("org.testcontainers:postgresql:1.21.3")
 }
