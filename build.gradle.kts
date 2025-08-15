@@ -2,9 +2,9 @@ import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
 plugins {
-  id("uk.gov.justice.hmpps.gradle-spring-boot") version "8.3.4"
-  kotlin("plugin.spring") version "2.2.0"
-  kotlin("plugin.jpa") version "2.2.0"
+  id("uk.gov.justice.hmpps.gradle-spring-boot") version "8.3.6"
+  kotlin("plugin.spring") version "2.2.10"
+  kotlin("plugin.jpa") version "2.2.10"
   id("se.patrikerdes.use-latest-versions") version "0.2.19"
 }
 
@@ -30,11 +30,11 @@ dependencies {
   implementation("io.hypersistence:hypersistence-utils-hibernate-63:3.10.3")
 
   // Enable kotlin reflect
-  implementation("org.jetbrains.kotlin:kotlin-reflect:2.2.0")
+  implementation("org.jetbrains.kotlin:kotlin-reflect:2.2.10")
 
   implementation("uk.gov.justice.service.hmpps:hmpps-sqs-spring-boot-starter:5.4.10")
 
-  implementation("org.springframework:spring-jms:6.2.9")
+  implementation("org.springframework:spring-jms:6.2.10")
 
   // Database dependencies
   runtimeOnly("org.flywaydb:flyway-core")
@@ -49,7 +49,7 @@ dependencies {
   testImplementation("com.github.tomakehurst:wiremock-jre8-standalone:3.0.1")
   testImplementation("org.springframework.security:spring-security-test")
   testImplementation("org.awaitility:awaitility-kotlin:4.3.0")
-  testImplementation("io.jsonwebtoken:jjwt:0.12.6")
+  testImplementation("io.jsonwebtoken:jjwt:0.12.7")
   testImplementation("net.javacrumbs.json-unit:json-unit-assertj:4.1.1")
   testImplementation("io.swagger.parser.v3:swagger-parser-v2-converter:2.1.31")
   testImplementation("org.mockito:mockito-inline:5.2.0")
