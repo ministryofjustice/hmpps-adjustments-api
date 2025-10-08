@@ -53,7 +53,7 @@ dependencies {
   testImplementation("net.javacrumbs.json-unit:json-unit-assertj:4.1.1")
   testImplementation("io.swagger.parser.v3:swagger-parser-v2-converter:2.1.31")
   testImplementation("org.mockito:mockito-inline:5.2.0")
-  testImplementation("org.junit.jupiter:junit-jupiter:5.13.4")
+  testImplementation("org.junit.jupiter:junit-jupiter:6.0.0")
   testImplementation("org.testcontainers:localstack:1.21.3")
   testImplementation("org.testcontainers:postgresql:1.21.3")
 }
