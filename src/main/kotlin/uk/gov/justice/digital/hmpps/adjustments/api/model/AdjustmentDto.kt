@@ -13,8 +13,8 @@ import java.util.UUID
 data class AdjustmentDto(
   @Schema(description = "The ID of the adjustment")
   val id: UUID?,
-  @Schema(description = "The NOMIS booking ID of the adjustment")
-  val bookingId: Long,
+  @Schema(description = "The NOMIS booking ID of the adjustment. If not specified, the latest booking is used.")
+  val bookingId: Long?,
   @Schema(description = "The NOMIS ID of the person this adjustment applies to")
   val person: String,
   @Schema(description = "The type of adjustment")
