@@ -7,7 +7,10 @@ import org.junit.jupiter.api.Test
 import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.CsvSource
 import org.mockito.kotlin.mock
+import org.mockito.kotlin.never
+import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
+import uk.gov.justice.digital.hmpps.adjustments.api.client.PrisonerSearchApiClient
 import uk.gov.justice.digital.hmpps.adjustments.api.entity.AdjustmentStatus
 import uk.gov.justice.digital.hmpps.adjustments.api.entity.AdjustmentType
 import uk.gov.justice.digital.hmpps.adjustments.api.enums.LawfullyAtLargeAffectsDates
@@ -45,15 +48,17 @@ import uk.gov.justice.digital.hmpps.adjustments.api.model.ValidationCode.UAL_LAS
 import uk.gov.justice.digital.hmpps.adjustments.api.model.ValidationCode.UAL_TO_DATE_NOT_NULL
 import uk.gov.justice.digital.hmpps.adjustments.api.model.ValidationCode.UAL_TYPE_NOT_NULL
 import uk.gov.justice.digital.hmpps.adjustments.api.model.ValidationMessage
+import uk.gov.justice.digital.hmpps.adjustments.api.model.prisonersearchapi.Prisoner
 import java.time.LocalDate
 import java.time.LocalDateTime
-import java.util.UUID
+import java.util.*
 
 class ValidationServiceTest {
 
   private val prisonService = mock<PrisonService>()
   private val adjustmentService = mock<AdjustmentsService>()
-  private val validationService = ValidationService(prisonService, adjustmentService)
+  private val prisonerSearchApiClient = mock<PrisonerSearchApiClient>()
+  private val validationService = ValidationService(prisonService, prisonerSearchApiClient, adjustmentService)
 
   private val bookingId = 1L
   private val person = "ABC123"
@@ -98,7 +103,42 @@ class ValidationServiceTest {
   @BeforeEach
   fun init() {
     whenever(prisonService.getStartOfSentenceEnvelope(bookingId)).thenReturn(startOfSentenceOverlap)
-    whenever(adjustmentService.findCurrentAdjustments(person, listOf(AdjustmentStatus.ACTIVE), true)).thenReturn(listOf(existingAda, existingRada))
+    whenever(adjustmentService.findCurrentAdjustments(person, listOf(AdjustmentStatus.ACTIVE), true)).thenReturn(
+      listOf(
+        existingAda,
+        existingRada,
+      ),
+    )
+  }
+
+  @Test
+  fun `use booking id of adjustment dto if present`() {
+    val anAdjustment = existingRada.copy(id = null, bookingId = 123456789, days = 4)
+    whenever(prisonService.getStartOfSentenceEnvelope(123456789)).thenReturn(startOfSentenceOverlap)
+    val result = validationService.validate(anAdjustment)
+    assertThat(result).isEmpty()
+    verify(prisonService).getStartOfSentenceEnvelope(123456789)
+    verify(prisonerSearchApiClient, never()).findByPrisonerNumber(anAdjustment.person)
+  }
+
+  @Test
+  fun `use latest booking id of prisoner if not present in dto`() {
+    val anAdjustment = existingRada.copy(id = null, bookingId = null, days = 4)
+    whenever(prisonerSearchApiClient.findByPrisonerNumber(anAdjustment.person)).thenReturn(
+      Prisoner(
+        prisonerNumber = anAdjustment.person,
+        bookingId = 897564231,
+        dateOfBirth = LocalDate.of(2000, 1, 1),
+      ),
+    )
+    whenever(prisonService.getStartOfSentenceEnvelope(897564231)).thenReturn(startOfSentenceOverlap)
+
+    val result = validationService.validate(anAdjustment)
+
+    assertThat(result).isEmpty()
+
+    verify(prisonService).getStartOfSentenceEnvelope(897564231)
+    verify(prisonerSearchApiClient).findByPrisonerNumber(anAdjustment.person)
   }
 
   @Nested
@@ -114,7 +154,9 @@ class ValidationServiceTest {
 
     @Test
     fun `RADA days valid if existing rada is from NOMIS`() {
-      whenever(adjustmentService.findCurrentAdjustments(person, listOf(AdjustmentStatus.ACTIVE), true)).thenReturn(listOf(existingAda, existingNomisRada))
+      whenever(adjustmentService.findCurrentAdjustments(person, listOf(AdjustmentStatus.ACTIVE), true)).thenReturn(
+        listOf(existingAda, existingNomisRada),
+      )
       val result = validationService.validate(validNewRada)
       assertThat(result).isEmpty()
     }
@@ -416,7 +458,10 @@ class ValidationServiceTest {
       id = null,
       days = 9,
       adjustmentType = AdjustmentType.CUSTODY_ABROAD,
-      timeSpentInCustodyAbroad = TimeSpentInCustodyAbroadDto(TimeSpentInCustodyAbroadDocumentationSource.COURT_WARRANT, listOf(42)),
+      timeSpentInCustodyAbroad = TimeSpentInCustodyAbroadDto(
+        TimeSpentInCustodyAbroadDocumentationSource.COURT_WARRANT,
+        listOf(42),
+      ),
     )
 
     @Test

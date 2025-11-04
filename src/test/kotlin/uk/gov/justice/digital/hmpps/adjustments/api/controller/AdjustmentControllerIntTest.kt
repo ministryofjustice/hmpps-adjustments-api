@@ -115,6 +115,25 @@ class AdjustmentControllerIntTest : SqsIntegrationTestBase() {
     }
 
     @Test
+    @Transactional
+    fun `creating without a booking id will create using the latest booking id from prisoner search`() {
+      val id = createAnAdjustment(CREATED_ADJUSTMENT.copy(bookingId = null))
+      val adjustment = adjustmentRepository.findById(id).get()
+
+      val legacyData = objectMapper.convertValue(adjustment.legacyData, LegacyData::class.java)
+      assertThat(legacyData).isEqualTo(
+        LegacyData(
+          bookingId = PrisonApiExtension.BOOKING_ID,
+          sentenceSequence = 1,
+          postedDate = LocalDate.now(),
+          comment = null,
+          type = null,
+          chargeIds = listOf(9991),
+        ),
+      )
+    }
+
+    @Test
     fun createMany() {
       postCreateAdjustments(
         listOf(
@@ -221,6 +240,37 @@ class AdjustmentControllerIntTest : SqsIntegrationTestBase() {
       assertThat(latestMessage).contains(EventType.ADJUSTMENT_UPDATED.value)
       assertThat(latestMessage).contains(AdjustmentSource.DPS.name)
       assertThat(latestMessage).contains("\\\"lastEvent\\\":true")
+    }
+
+    @Test
+    @Transactional
+    fun `updating without a booking id will use the latest booking id`() {
+      val id = createAnAdjustment(CREATED_ADJUSTMENT.copy(bookingId = PrisonApiExtension.RECALL_BOOKING_ID)).also {
+        cleanQueue()
+      }
+      val newFromDate = CREATED_ADJUSTMENT.fromDate!!.minusYears(1)
+      val newToDate = CREATED_ADJUSTMENT.toDate!!.minusYears(1)
+      putAdjustmentUpdate(
+        id,
+        CREATED_ADJUSTMENT.copy(
+          fromDate = newFromDate,
+          toDate = newToDate,
+          bookingId = null,
+        ),
+      )
+
+      val adjustment = adjustmentRepository.findById(id).get()
+      val legacyData = objectMapper.convertValue(adjustment.legacyData, LegacyData::class.java)
+      assertThat(legacyData).isEqualTo(
+        LegacyData(
+          bookingId = PrisonApiExtension.BOOKING_ID,
+          sentenceSequence = 1,
+          postedDate = LocalDate.now(),
+          comment = null,
+          type = null,
+          chargeIds = listOf(9991),
+        ),
+      )
     }
 
     @Test

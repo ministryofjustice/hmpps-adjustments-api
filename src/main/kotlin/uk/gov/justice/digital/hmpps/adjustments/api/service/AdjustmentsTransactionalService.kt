@@ -55,6 +55,7 @@ import uk.gov.justice.digital.hmpps.adjustments.api.model.TimeSpentAsAnAppealApp
 import uk.gov.justice.digital.hmpps.adjustments.api.model.TimeSpentInCustodyAbroadDto
 import uk.gov.justice.digital.hmpps.adjustments.api.model.UnlawfullyAtLargeDto
 import uk.gov.justice.digital.hmpps.adjustments.api.model.prisonapi.SentenceAndOffences
+import uk.gov.justice.digital.hmpps.adjustments.api.model.prisonersearchapi.Prisoner
 import uk.gov.justice.digital.hmpps.adjustments.api.model.remandandsentencing.CourtCase
 import uk.gov.justice.digital.hmpps.adjustments.api.respository.AdjustmentRepository
 import java.time.LocalDate
@@ -91,8 +92,8 @@ class AdjustmentsTransactionalService(
 
     validateTaggedBail(resource)
 
-    val sentenceInfo = sentenceInfo(resource)
     val prisoner = prisonerSearchApiClient.findByPrisonerNumber(resource.person)
+    val sentenceInfo = sentenceInfo(resource, prisoner)
     val adjustment = Adjustment(
       person = resource.person,
       effectiveDays = daysBetween ?: resource.days!!,
@@ -106,7 +107,7 @@ class AdjustmentsTransactionalService(
       currentPeriodOfCustody = true,
       legacyData = objectToJson(
         LegacyData(
-          resource.bookingId,
+          resource.bookingId ?: prisoner.bookingId,
           sentenceInfo?.sentenceSequence,
           LocalDate.now(),
           null,
@@ -334,7 +335,7 @@ class AdjustmentsTransactionalService(
     val prisoner = prisonerSearchApiClient.findByPrisonerNumber(adjustment.person)
     val persistedLegacyData = objectMapper.convertValue(adjustment.legacyData, LegacyData::class.java)
     val change = objectToJson(adjustment)
-    val sentenceInfo = sentenceInfo(resource)
+    val sentenceInfo = sentenceInfo(resource, prisoner)
     adjustment.apply {
       effectiveDays = daysBetween ?: resource.days!!
       days = if (isPeriodAdjustment) null else resource.days
@@ -346,7 +347,7 @@ class AdjustmentsTransactionalService(
       currentPeriodOfCustody = true
       legacyData = objectToJson(
         LegacyData(
-          resource.bookingId,
+          resource.bookingId ?: prisoner.bookingId,
           sentenceInfo?.sentenceSequence,
           persistedLegacyData.postedDate,
           persistedLegacyData.comment,
@@ -385,9 +386,9 @@ class AdjustmentsTransactionalService(
     return null
   }
 
-  private fun sentenceInfo(resource: AdjustmentDto): SentenceInfo? {
+  private fun sentenceInfo(resource: AdjustmentDto, prisoner: Prisoner): SentenceInfo? {
     if (resource.adjustmentType.isSentenceType()) {
-      val sentences = prisonService.getSentencesAndOffences(resource.bookingId)
+      val sentences = prisonService.getSentencesAndOffences(resource.bookingId ?: prisoner.bookingId)
       return if (resource.remand != null && resource.adjustmentType == REMAND) {
         getSentenceInfoFromChargeIds(resource.remand.chargeId, sentences)
       } else if (resource.timeSpentInCustodyAbroad != null && resource.adjustmentType == CUSTODY_ABROAD) {

@@ -1,6 +1,7 @@
 package uk.gov.justice.digital.hmpps.adjustments.api.service
 
 import org.springframework.stereotype.Service
+import uk.gov.justice.digital.hmpps.adjustments.api.client.PrisonerSearchApiClient
 import uk.gov.justice.digital.hmpps.adjustments.api.entity.AdjustmentStatus
 import uk.gov.justice.digital.hmpps.adjustments.api.entity.AdjustmentType
 import uk.gov.justice.digital.hmpps.adjustments.api.model.AdjustmentDto
@@ -12,11 +13,17 @@ import java.time.format.DateTimeFormatter
 @Service
 class ValidationService(
   private val prisonService: PrisonService,
+  private val prisonerSearchApiClient: PrisonerSearchApiClient,
   private val adjustmentService: AdjustmentsService,
 ) {
 
   fun validate(adjustment: AdjustmentDto): List<ValidationMessage> {
-    val startOfSentenceEnvelope = prisonService.getStartOfSentenceEnvelope(adjustment.bookingId)
+    val bookingId = if (adjustment.bookingId != null) {
+      adjustment.bookingId
+    } else {
+      prisonerSearchApiClient.findByPrisonerNumber(adjustment.person).bookingId
+    }
+    val startOfSentenceEnvelope = prisonService.getStartOfSentenceEnvelope(bookingId)
     if (adjustment.adjustmentType == AdjustmentType.RESTORATION_OF_ADDITIONAL_DAYS_AWARDED) {
       return validateRada(adjustment, startOfSentenceEnvelope)
     }
