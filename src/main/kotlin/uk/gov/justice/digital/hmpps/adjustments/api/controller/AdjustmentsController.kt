@@ -98,7 +98,7 @@ class AdjustmentsController(
       ApiResponse(responseCode = "404", description = "Adjustment not found"),
     ],
   )
-  @PreAuthorize("hasAnyRole('ADJUSTMENTS__ADJUSTMENTS_RW', 'ADJUSTMENTS__ADJUSTMENTS_RO')")
+  @PreAuthorize("hasAnyRole('ADJUSTMENTS__ADJUSTMENTS_RW', 'ADJUSTMENTS__ADJUSTMENTS_RO', 'ADJUSTMENTS__RECALLS__RW')")
   fun get(
     @Parameter(required = true, description = "The adjustment UUID")
     @PathVariable("adjustmentId")
