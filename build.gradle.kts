@@ -34,7 +34,7 @@ dependencies {
 
   implementation("uk.gov.justice.service.hmpps:hmpps-sqs-spring-boot-starter:5.4.10")
 
-  implementation("org.springframework:spring-jms:6.2.9")
+  implementation("org.springframework:spring-jms:7.0.0")
 
   // Database dependencies
   runtimeOnly("org.flywaydb:flyway-core")
