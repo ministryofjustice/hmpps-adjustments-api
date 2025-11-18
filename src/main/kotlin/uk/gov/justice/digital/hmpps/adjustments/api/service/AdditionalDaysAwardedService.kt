@@ -250,8 +250,16 @@ class AdditionalDaysAwardedService(
   private fun calculateTotal(adaByDateCharge: AdasByDateCharged): Int = if (adaByDateCharge.charges.size == 1) {
     adaByDateCharge.charges[0].days
   } else {
-    val baseCharges = adaByDateCharge.charges.filter { it.consecutiveToChargeNumber == null }
-    val consecCharges = adaByDateCharge.charges.filter { it.consecutiveToChargeNumber != null }
+    var baseCharges = adaByDateCharge.charges.filter { it.consecutiveToChargeNumber == null }
+    var consecCharges = adaByDateCharge.charges.filter { it.consecutiveToChargeNumber != null }
+    val isLoopFormedByCharges = consecCharges.map { adasByDateCharge -> adasByDateCharge.consecutiveToChargeNumber }.toSet().size == consecCharges.size
+
+    if (baseCharges.isEmpty() && isLoopFormedByCharges) {
+      val firstConsecCharge = consecCharges.first()
+      baseCharges = consecCharges.filter { it == firstConsecCharge }
+      consecCharges = consecCharges.filter { it != firstConsecCharge }
+    }
+
     val chains = mutableListOf<MutableList<Ada>>()
     baseCharges.forEach { ada ->
       val chain = mutableListOf(ada)
