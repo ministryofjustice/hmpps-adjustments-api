@@ -27,7 +27,7 @@ dependencies {
   implementation("org.springframework.boot:spring-boot-starter-data-jpa")
   implementation("org.springframework.boot:spring-boot-starter-actuator")
 
-  implementation("io.hypersistence:hypersistence-utils-hibernate-63:3.13.1")
+  implementation("io.hypersistence:hypersistence-utils-hibernate-63:3.13.2")
 
   // Enable kotlin reflect
   implementation("org.jetbrains.kotlin:kotlin-reflect:2.2.21")
