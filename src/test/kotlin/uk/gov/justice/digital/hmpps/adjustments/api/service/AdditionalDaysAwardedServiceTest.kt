@@ -40,7 +40,7 @@ import uk.gov.justice.digital.hmpps.adjustments.api.respository.ProspectiveAdaRe
 import java.time.LocalDate
 import java.time.LocalDateTime
 
-class AdditionalDaysAddedServiceTest {
+class AdditionalDaysAwardedServiceTest {
 
   private val prisonService = mock<PrisonService>()
   private val adjustmentRepository = mock<AdjustmentRepository>()
@@ -460,6 +460,40 @@ class AdditionalDaysAddedServiceTest {
           showExistingAdaMessage = true,
         ),
       )
+    }
+
+    @Test
+    fun `When a loop of consecutive adjudications is formed, it is handled correctly`() {
+      val adjudicationOneConsecutiveToTwoCreatesLoop = adjudicationOne.copy(
+        punishments = listOf(
+          Punishment(
+            type = "ADDITIONAL_DAYS",
+            schedule = Schedule(15, null),
+            consecutiveChargeNumber = "MOR-1525917",
+          ),
+        ),
+      )
+
+      whenever(
+        adjustmentRepository.findByPersonAndAdjustmentTypeAndStatusAndCurrentPeriodOfCustody(
+          NOMS_ID,
+          ADDITIONAL_DAYS_AWARDED,
+        ),
+      ).thenReturn(
+        emptyList(),
+      )
+      whenever(adjudicationApiClient.getAdjudications(NOMS_ID)).thenReturn(
+        AdjudicationResponse(
+          listOf(
+            adjudicationOneConsecutiveToTwoCreatesLoop,
+            adjudicationTwoConsecutiveToOne,
+          ),
+        ),
+      )
+      whenever(prospectiveAdaRejectionRepository.findByPerson(NOMS_ID)).thenReturn(emptyList())
+      whenever(prisonService.getSentencesAndStartDateDetails(NOMS_ID)).thenReturn(defaultSentenceDetail)
+
+      assertThat(additionalDaysAwardedService.getAdaAdjudicationDetails(NOMS_ID).totalAwaitingApproval).isEqualTo(20)
     }
   }
 

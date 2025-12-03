@@ -2,9 +2,9 @@ import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
 plugins {
-  id("uk.gov.justice.hmpps.gradle-spring-boot") version "8.3.7"
-  kotlin("plugin.spring") version "2.2.20"
-  kotlin("plugin.jpa") version "2.2.20"
+  id("uk.gov.justice.hmpps.gradle-spring-boot") version "9.1.1"
+  kotlin("plugin.spring") version "2.2.0"
+  kotlin("plugin.jpa") version "2.2.0"
   id("se.patrikerdes.use-latest-versions") version "0.2.19"
 }
 
@@ -53,7 +53,7 @@ dependencies {
   testImplementation("net.javacrumbs.json-unit:json-unit-assertj:4.1.1")
   testImplementation("io.swagger.parser.v3:swagger-parser-v2-converter:2.1.34")
   testImplementation("org.mockito:mockito-inline:5.2.0")
-  testImplementation("org.junit.jupiter:junit-jupiter:5.13.4")
+  testImplementation("org.junit.jupiter:junit-jupiter:6.0.0")
   testImplementation("org.testcontainers:localstack:1.21.3")
   testImplementation("org.testcontainers:postgresql:1.21.3")
 }

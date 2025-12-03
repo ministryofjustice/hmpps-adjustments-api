@@ -42,7 +42,7 @@ class AdjustmentsController(
 
   @PostMapping
   @ResponseStatus(HttpStatus.CREATED)
-  @PreAuthorize("hasAnyRole('ADJUSTMENTS__ADJUSTMENTS_RW')")
+  @PreAuthorize("hasAnyRole('ADJUSTMENTS__ADJUSTMENTS_RW', 'ADJUSTMENTS__RECALLS__RW')")
   @Operation(
     summary = "Create adjustments",
     description = "Create adjustment.",
@@ -67,7 +67,7 @@ class AdjustmentsController(
       ApiResponse(responseCode = "404", description = "Adjustment not found"),
     ],
   )
-  @PreAuthorize("hasAnyRole('ADJUSTMENTS__ADJUSTMENTS_RW', 'ADJUSTMENTS__ADJUSTMENTS_RO')")
+  @PreAuthorize("hasAnyRole('ADJUSTMENTS__ADJUSTMENTS_RW', 'ADJUSTMENTS__ADJUSTMENTS_RO', 'ADJUSTMENTS__RECALLS__RW')")
   fun findByPerson(
     @Parameter(required = true, description = "The noms ID of the person")
     @RequestParam("person")
@@ -98,7 +98,7 @@ class AdjustmentsController(
       ApiResponse(responseCode = "404", description = "Adjustment not found"),
     ],
   )
-  @PreAuthorize("hasAnyRole('ADJUSTMENTS__ADJUSTMENTS_RW', 'ADJUSTMENTS__ADJUSTMENTS_RO')")
+  @PreAuthorize("hasAnyRole('ADJUSTMENTS__ADJUSTMENTS_RW', 'ADJUSTMENTS__ADJUSTMENTS_RO', 'ADJUSTMENTS__RECALLS__RW')")
   fun get(
     @Parameter(required = true, description = "The adjustment UUID")
     @PathVariable("adjustmentId")
@@ -117,7 +117,7 @@ class AdjustmentsController(
       ApiResponse(responseCode = "404", description = "Adjustment not found"),
     ],
   )
-  @PreAuthorize("hasAnyRole('ADJUSTMENTS__ADJUSTMENTS_RW')")
+  @PreAuthorize("hasAnyRole('ADJUSTMENTS__ADJUSTMENTS_RW', 'ADJUSTMENTS__RECALLS__RW')")
   fun update(
     @Parameter(required = true, description = "The adjustment UUID")
     @PathVariable("adjustmentId")
@@ -223,7 +223,7 @@ class AdjustmentsController(
       ApiResponse(responseCode = "404", description = "Adjustment not found"),
     ],
   )
-  @PreAuthorize("hasAnyRole('ADJUSTMENTS__ADJUSTMENTS_RW')")
+  @PreAuthorize("hasAnyRole('ADJUSTMENTS__ADJUSTMENTS_RW', 'ADJUSTMENTS__RECALLS__RW')")
   fun delete(
     @Parameter(required = true, description = "The adjustment UUID")
     @PathVariable("adjustmentId")
