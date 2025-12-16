@@ -27,14 +27,14 @@ dependencies {
   implementation("org.springframework.boot:spring-boot-starter-data-jpa")
   implementation("org.springframework.boot:spring-boot-starter-actuator")
 
-  implementation("io.hypersistence:hypersistence-utils-hibernate-63:3.13.1")
+  implementation("io.hypersistence:hypersistence-utils-hibernate-63:3.14.0")
 
   // Enable kotlin reflect
   implementation("org.jetbrains.kotlin:kotlin-reflect:2.2.21")
 
   implementation("uk.gov.justice.service.hmpps:hmpps-sqs-spring-boot-starter:5.6.3")
 
-  implementation("org.springframework:spring-jms:7.0.1")
+  implementation("org.springframework:spring-jms:7.0.2")
 
   // Database dependencies
   runtimeOnly("org.flywaydb:flyway-core")
@@ -54,8 +54,8 @@ dependencies {
   testImplementation("io.swagger.parser.v3:swagger-parser-v2-converter:2.1.36")
   testImplementation("org.mockito:mockito-inline:5.2.0")
   testImplementation("org.junit.jupiter:junit-jupiter:6.0.1")
-  testImplementation("org.testcontainers:localstack:1.21.3")
-  testImplementation("org.testcontainers:postgresql:1.21.3")
+  testImplementation("org.testcontainers:localstack:1.21.4")
+  testImplementation("org.testcontainers:postgresql:1.21.4")
 }
 
 kotlin {
