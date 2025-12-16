@@ -64,6 +64,6 @@ kotlin {
 
 tasks.withType<KotlinCompile>().configureEach {
   compilerOptions {
-    jvmTarget.set(JvmTarget.JVM_25)
+    jvmTarget = "25"
   }
 }
