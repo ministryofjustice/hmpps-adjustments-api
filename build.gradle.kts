@@ -58,12 +58,13 @@ dependencies {
   testImplementation("org.testcontainers:postgresql:1.21.4")
 }
 
-kotlin {
-  jvmToolchain(25)
+java {
+  sourceCompatibility = JavaVersion.VERSION_24
+  targetCompatibility = JavaVersion.VERSION_24
 }
 
-tasks.withType<KotlinCompile>().configureEach {
-  compilerOptions {
-    jvmTarget = "25"
+tasks {
+  withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompile> {
+    compilerOptions.jvmTarget = org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_24
   }
 }
