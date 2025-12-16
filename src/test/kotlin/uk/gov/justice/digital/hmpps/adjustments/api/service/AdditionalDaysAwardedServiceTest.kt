@@ -495,6 +495,38 @@ class AdditionalDaysAwardedServiceTest {
 
       assertThat(additionalDaysAwardedService.getAdaAdjudicationDetails(NOMS_ID).totalAwaitingApproval).isEqualTo(20)
     }
+
+    @Test
+    fun `Two consecutive adjudications are handled correctly`() {
+      val adjudicationThreeConsecutiveToOne = adjudicationOne.copy(
+        chargeNumber = "MOR-1525918",
+        punishments = listOf(
+          Punishment(
+            type = "ADDITIONAL_DAYS",
+            schedule = Schedule(12, null),
+            consecutiveChargeNumber = "MOR-1525916",
+          ),
+        ),
+      )
+
+      whenever(
+        adjustmentRepository.findByPersonAndAdjustmentTypeAndStatusAndCurrentPeriodOfCustody(
+          NOMS_ID,
+          ADDITIONAL_DAYS_AWARDED,
+        ),
+      ).thenReturn(
+        emptyList(),
+      )
+      whenever(adjudicationApiClient.getAdjudications(NOMS_ID)).thenReturn(
+        AdjudicationResponse(
+          listOf(adjudicationOne, adjudicationTwoConsecutiveToOne, adjudicationThreeConsecutiveToOne),
+        ),
+      )
+      whenever(prospectiveAdaRejectionRepository.findByPerson(NOMS_ID)).thenReturn(emptyList())
+      whenever(prisonService.getSentencesAndStartDateDetails(NOMS_ID)).thenReturn(defaultSentenceDetail)
+
+      assertThat(additionalDaysAwardedService.getAdaAdjudicationDetails(NOMS_ID).totalAwaitingApproval).isEqualTo(17)
+    }
   }
 
   @Nested
