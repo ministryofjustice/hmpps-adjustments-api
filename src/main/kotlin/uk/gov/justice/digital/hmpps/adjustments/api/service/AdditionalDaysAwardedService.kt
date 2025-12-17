@@ -251,7 +251,7 @@ class AdditionalDaysAwardedService(
     adaByDateCharge.charges[0].days
   } else {
     var baseCharges = adaByDateCharge.charges.filter { it.consecutiveToChargeNumber == null }
-    var consecCharges = adaByDateCharge.charges.filter { it.consecutiveToChargeNumber != null }
+    var consecCharges = adaByDateCharge.charges.filter { it.consecutiveToChargeNumber != null }.sortedByDescending { it.days }
     val isLoopFormedByCharges = consecCharges.map { adasByDateCharge -> adasByDateCharge.consecutiveToChargeNumber }.toSet().size == consecCharges.size
 
     if (baseCharges.isEmpty() && isLoopFormedByCharges) {
