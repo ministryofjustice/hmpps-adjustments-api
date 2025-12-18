@@ -168,7 +168,7 @@ class LegacyControllerIntTest : SqsIntegrationTestBase() {
 
     assertThat(adjustment.status).isEqualTo(AdjustmentStatus.INACTIVE_WHEN_DELETED)
     assertThat(adjustment.adjustmentHistory.size).isEqualTo(2)
-    // assertThat(adjustment.adjustmentHistory[1].changeType).isEqualTo(ChangeType.DELETE)
+    assertThat(adjustment.adjustmentHistory.maxByOrNull { it.changeAt }!!.changeType).isEqualTo(ChangeType.DELETE)
 
     awaitAtMost30Secs untilCallTo { getNumberOfMessagesCurrentlyOnQueue() } matches { it == 1 }
     val latestMessage: String = getLatestMessage()!!.messages()[0].body()
