@@ -21,13 +21,13 @@ class RemandAndSentencingApiClient(@Qualifier("remandAndSentencingApiWebClient")
       .block()!!
   }
 
-  fun getSentenceTypeDetails(nomisSentenceReference: String): SentenceDetailResponse? = webClient.get()
+  fun getSentenceTypesAndItsDetails(): List<SentenceDetailResponse>? = webClient.get()
     .uri { uriBuilder ->
-      uriBuilder.path("/legacy/sentence-type/summary")
-        .queryParam("nomisSentenceTypeReference", nomisSentenceReference)
+      uriBuilder.path("/legacy/sentence-type/all/summary")
         .build()
     }
     .retrieve()
-    .bodyToMono(SentenceDetailResponse::class.java)
+    .bodyToFlux(SentenceDetailResponse::class.java)
+    .collectList()
     .block()
 }

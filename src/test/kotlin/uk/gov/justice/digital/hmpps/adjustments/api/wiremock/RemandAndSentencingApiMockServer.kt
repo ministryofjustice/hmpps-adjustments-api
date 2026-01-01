@@ -3,7 +3,6 @@ package uk.gov.justice.digital.hmpps.adjustments.api.wiremock
 import com.github.tomakehurst.wiremock.WireMockServer
 import com.github.tomakehurst.wiremock.client.WireMock.aResponse
 import com.github.tomakehurst.wiremock.client.WireMock.get
-import com.github.tomakehurst.wiremock.client.WireMock.matching
 import com.github.tomakehurst.wiremock.client.WireMock.urlPathEqualTo
 import org.junit.jupiter.api.extension.AfterAllCallback
 import org.junit.jupiter.api.extension.BeforeAllCallback
@@ -25,10 +24,7 @@ class RemandAndSentencingApiExtension :
   override fun beforeAll(context: ExtensionContext) {
     remandAndSentencingApi.start()
     remandAndSentencingApi.stubValidateCourtCases()
-    remandAndSentencingApi.stubGetSentenceTypeDetailsForSentenceType("ADIMP_ORA")
-    remandAndSentencingApi.stubGetSentenceTypeDetailsForSentenceType("ADIMP")
-    remandAndSentencingApi.stubGetSentenceTypeDetailsForSentenceType("LR_LASPO_DR")
-    remandAndSentencingApi.stubGetSentenceTypeDetailsForSentenceType("LR")
+    remandAndSentencingApi.stubGetSentenceTypeDetailsForAllSentenceTypes()
   }
 
   override fun beforeEach(context: ExtensionContext) {
@@ -45,8 +41,8 @@ class RemandAndSentencingApiMockServer : WireMockServer(WIREMOCK_PORT) {
     private const val WIREMOCK_PORT = 8335
   }
 
-  fun stubGetSentenceTypeDetailsForSentenceType(sentenceType: String) {
-    val isNotRecall = """
+  fun stubGetSentenceTypeDetailsForAllSentenceTypes() {
+    val sentenceTypesAndItsDetails = """[
                         {
                             "nomisSentenceTypeReference": "ADIMP_ORA",
                             "recall": {
@@ -59,9 +55,20 @@ class RemandAndSentencingApiMockServer : WireMockServer(WIREMOCK_PORT) {
                             "isIndeterminate": false,
                             "nomisActive": true,
                             "nomisExpiryDate": null
-                        }
-              """
-    val isRecall = """
+                        },
+                        {
+                            "nomisSentenceTypeReference": "ADIMP",
+                            "recall": {
+                                "isRecall": false,
+                                "type": "NONE",
+                                "isFixedTermRecall": false,
+                                "lengthInDays": 0
+                            },
+                            "nomisDescription": "CJA03 Standard Determinate Sentence",
+                            "isIndeterminate": false,
+                            "nomisActive": true,
+                            "nomisExpiryDate": null
+                        },
                         {
                             "nomisSentenceTypeReference": "LR_LASPO_DR",
                             "recall": {
@@ -74,17 +81,28 @@ class RemandAndSentencingApiMockServer : WireMockServer(WIREMOCK_PORT) {
                             "isIndeterminate": false,
                             "nomisActive": true,
                             "nomisExpiryDate": null
+                        },
+                        {
+                            "nomisSentenceTypeReference": "LR",
+                            "recall": {
+                                "isRecall": true,
+                                "type": "LR",
+                                "isFixedTermRecall": false,
+                                "lengthInDays": 0
+                            },
+                            "nomisDescription": "CJA03 Standard Determinate Sentence",
+                            "isIndeterminate": false,
+                            "nomisActive": true,
+                            "nomisExpiryDate": null
                         }
-              """
-    val returnValue = if (sentenceType == "ADIMP_ORA" || sentenceType == "ADIMP") isNotRecall else isRecall
+              ]"""
     stubFor(
-      get(urlPathEqualTo("/legacy/sentence-type/summary"))
-        .withQueryParam("nomisSentenceTypeReference", matching(sentenceType))
+      get(urlPathEqualTo("/legacy/sentence-type/all/summary"))
         .willReturn(
           aResponse()
             .withHeader("Content-Type", "application/json")
             .withBody(
-              returnValue.trimIndent(),
+              sentenceTypesAndItsDetails.trimIndent(),
             )
             .withStatus(200),
         ),
