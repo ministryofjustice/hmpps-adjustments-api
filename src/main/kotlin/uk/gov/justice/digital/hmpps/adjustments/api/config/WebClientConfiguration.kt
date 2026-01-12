@@ -7,7 +7,6 @@ import org.springframework.http.HttpHeaders
 import org.springframework.security.oauth2.client.AuthorizedClientServiceOAuth2AuthorizedClientManager
 import org.springframework.security.oauth2.client.OAuth2AuthorizedClientManager
 import org.springframework.security.oauth2.client.OAuth2AuthorizedClientProviderBuilder
-import org.springframework.security.oauth2.client.OAuth2AuthorizedClientService
 import org.springframework.security.oauth2.client.registration.ClientRegistrationRepository
 import org.springframework.web.reactive.function.client.ClientRequest
 import org.springframework.web.reactive.function.client.ExchangeFilterFunction
@@ -15,6 +14,7 @@ import org.springframework.web.reactive.function.client.ExchangeFunction
 import org.springframework.web.reactive.function.client.ExchangeStrategies
 import org.springframework.web.reactive.function.client.WebClient
 import uk.gov.justice.hmpps.kotlin.auth.authorisedWebClient
+import uk.gov.justice.hmpps.kotlin.auth.service.GlobalPrincipalOAuth2AuthorizedClientService
 import java.time.Duration
 
 @Configuration
@@ -90,12 +90,14 @@ class WebClientConfiguration(
   @Bean
   fun authorizedClientManager(
     clientRegistrationRepository: ClientRegistrationRepository,
-    oAuth2AuthorizedClientService: OAuth2AuthorizedClientService,
-  ): OAuth2AuthorizedClientManager = AuthorizedClientServiceOAuth2AuthorizedClientManager(
-    clientRegistrationRepository,
-    oAuth2AuthorizedClientService,
-  ).apply {
-    setAuthorizedClientProvider(OAuth2AuthorizedClientProviderBuilder.builder().clientCredentials().build())
+  ): OAuth2AuthorizedClientManager {
+    val authorizedClientProvider = OAuth2AuthorizedClientProviderBuilder.builder().clientCredentials().build()
+    val authorizedClientManager = AuthorizedClientServiceOAuth2AuthorizedClientManager(
+      clientRegistrationRepository,
+      GlobalPrincipalOAuth2AuthorizedClientService(clientRegistrationRepository),
+    )
+    authorizedClientManager.setAuthorizedClientProvider(authorizedClientProvider)
+    return authorizedClientManager
   }
 
   @Bean
