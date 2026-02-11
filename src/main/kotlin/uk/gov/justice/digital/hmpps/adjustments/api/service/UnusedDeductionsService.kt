@@ -24,6 +24,7 @@ class UnusedDeductionsService(
   val prisonService: PrisonService,
   val calculateReleaseDatesApiClient: CalculateReleaseDatesApiClient,
   val unusedDeductionsCalculationResultRepository: UnusedDeductionsCalculationResultRepository,
+  val adjustmentsDomainEventService: AdjustmentsDomainEventService,
 ) {
 
   @Transactional
@@ -111,7 +112,13 @@ class UnusedDeductionsService(
       adjustments.find { it.adjustmentType == AdjustmentType.UNUSED_DEDUCTIONS }
     if (unusedDeductionsAdjustment != null) {
       if (unusedDeductions == 0) {
-        adjustmentService.delete(unusedDeductionsAdjustment.id!!)
+        val deletedAdjustment = adjustmentService.delete(unusedDeductionsAdjustment.id!!)
+        adjustmentsDomainEventService.delete(
+          deletedAdjustment.record.id,
+          deletedAdjustment.adjustmentEventToEmit.person,
+          AdjustmentSource.DPS,
+          deletedAdjustment.adjustmentEventToEmit.adjustmentType,
+        )
       } else {
         if (unusedDeductionsAdjustment.days != unusedDeductions) {
           adjustmentService.update(unusedDeductionsAdjustment.id!!, unusedDeductionsAdjustment.copy(days = unusedDeductions, fromDate = null, toDate = null))
@@ -120,7 +127,7 @@ class UnusedDeductionsService(
     } else {
       if (unusedDeductions > 0) {
         val aDeduction = deductions[0]
-        adjustmentService.create(
+        val createEvent = adjustmentService.create(
           listOf(
             aDeduction.copy(
               id = null,
@@ -133,6 +140,7 @@ class UnusedDeductionsService(
             ),
           ),
         )
+        adjustmentsDomainEventService.create(createEvent.adjustmentEventToEmit.ids, createEvent.adjustmentEventToEmit.person, createEvent.adjustmentEventToEmit.source, createEvent.adjustmentEventToEmit.adjustmentType)
       }
     }
   }

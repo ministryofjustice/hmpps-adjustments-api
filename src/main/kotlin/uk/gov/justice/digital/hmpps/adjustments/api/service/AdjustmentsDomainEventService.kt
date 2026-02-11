@@ -56,7 +56,7 @@ class AdjustmentsDomainEventService(
     )
   }
 
-  fun delete(id: UUID, person: String, source: AdjustmentSource, adjustmentType: AdjustmentType? = null) {
+  fun delete(id: UUID?, person: String, source: AdjustmentSource, adjustmentType: AdjustmentType? = null) {
     snsService.publishDomainEvent(
       EventType.ADJUSTMENT_DELETED,
       "An adjustment has been deleted",

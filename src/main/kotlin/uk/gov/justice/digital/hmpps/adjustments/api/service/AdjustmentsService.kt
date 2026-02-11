@@ -5,7 +5,9 @@ import uk.gov.justice.digital.hmpps.adjustments.api.entity.AdjustmentSource
 import uk.gov.justice.digital.hmpps.adjustments.api.entity.AdjustmentStatus
 import uk.gov.justice.digital.hmpps.adjustments.api.model.AdjustmentDto
 import uk.gov.justice.digital.hmpps.adjustments.api.model.AdjustmentEffectiveDaysDto
+import uk.gov.justice.digital.hmpps.adjustments.api.model.AdjustmentEventMetadata
 import uk.gov.justice.digital.hmpps.adjustments.api.model.CreateResponseDto
+import uk.gov.justice.digital.hmpps.adjustments.api.model.RecordResponse
 import uk.gov.justice.digital.hmpps.adjustments.api.model.RestoreAdjustmentsDto
 import java.util.UUID
 
@@ -15,8 +17,17 @@ class AdjustmentsService(
   private val adjustmentsTransactionalService: AdjustmentsTransactionalService,
 ) {
 
-  fun create(adjustments: List<AdjustmentDto>): CreateResponseDto = adjustmentsTransactionalService.create(adjustments).also {
-    adjustmentsDomainEventService.create(it.adjustmentIds, adjustments[0].person, AdjustmentSource.DPS, adjustments[0].adjustmentType)
+  fun create(adjustments: List<AdjustmentDto>): RecordResponse<CreateResponseDto> {
+    val result = adjustmentsTransactionalService.create(adjustments)
+    return RecordResponse(
+      result,
+      AdjustmentEventMetadata(
+        result.adjustmentIds,
+        adjustments[0].person,
+        AdjustmentSource.DPS,
+        adjustments[0].adjustmentType,
+      ),
+    )
   }
 
   fun updateEffectiveDays(adjustmentId: UUID, adjustment: AdjustmentEffectiveDaysDto) {
@@ -40,11 +51,21 @@ class AdjustmentsService(
     }
   }
 
-  fun delete(adjustmentId: UUID) {
-    adjustmentsTransactionalService.get(adjustmentId).also {
-      adjustmentsTransactionalService.delete(adjustmentId)
-      adjustmentsDomainEventService.delete(adjustmentId, it.person, AdjustmentSource.DPS, it.adjustmentType)
+  fun delete(adjustmentId: UUID): RecordResponse<AdjustmentDto> {
+    val adjustment = adjustmentsTransactionalService.get(adjustmentId)
+    if (adjustment.id != null) {
+      adjustmentsTransactionalService.delete(adjustment.id)
     }
+
+    return RecordResponse(
+      adjustment,
+      AdjustmentEventMetadata(
+        listOfNotNull(adjustment.id),
+        adjustment.person,
+        AdjustmentSource.DPS,
+        adjustment.adjustmentType,
+      ),
+    )
   }
 
   fun restore(adjustments: RestoreAdjustmentsDto) {

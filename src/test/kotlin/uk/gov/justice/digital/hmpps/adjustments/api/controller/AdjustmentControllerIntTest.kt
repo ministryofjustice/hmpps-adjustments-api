@@ -358,7 +358,6 @@ class AdjustmentControllerIntTest : SqsIntegrationTestBase() {
     }
 
     @Test
-    @Transactional
     fun delete() {
       val id = createAnAdjustment().also {
         cleanQueue()
@@ -418,12 +417,13 @@ class AdjustmentControllerIntTest : SqsIntegrationTestBase() {
       "classpath:test_data/reset-data.sql",
     )
     fun findByPerson() {
-      val id = createAnAdjustment().also {
+      val adjustment = CREATED_ADJUSTMENT.copy(person = "TFBR")
+      val id = createAnAdjustment(adjustment).also {
         cleanQueue()
       }
       val result = webTestClient
         .get()
-        .uri("/adjustments?person=${PrisonApiExtension.PRISONER_ID}")
+        .uri("/adjustments?person=TFBR")
         .headers(
           setAdjustmentsRWAuth(),
         )
@@ -440,7 +440,7 @@ class AdjustmentControllerIntTest : SqsIntegrationTestBase() {
         .isEqualTo(
           CREATED_ADJUSTMENT.copy(
             id = id,
-            person = PrisonApiExtension.PRISONER_ID,
+            person = "TFBR",
             effectiveDays = 4,
             lastUpdatedBy = "Test User",
             status = ACTIVE,

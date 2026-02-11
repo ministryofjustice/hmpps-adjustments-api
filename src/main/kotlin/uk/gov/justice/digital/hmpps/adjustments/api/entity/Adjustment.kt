@@ -58,7 +58,7 @@ data class Adjustment(
   @Enumerated(EnumType.STRING)
   var status: AdjustmentStatus = AdjustmentStatus.ACTIVE,
 
-  @OneToMany(mappedBy = "adjustment", cascade = [CascadeType.ALL])
+  @OneToMany(mappedBy = "adjustment", fetch = FetchType.EAGER, cascade = [CascadeType.ALL])
   @JsonIgnore
   var adjustmentHistory: List<AdjustmentHistory> = ArrayList(),
 

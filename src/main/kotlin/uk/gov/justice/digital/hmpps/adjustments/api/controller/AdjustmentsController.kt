@@ -18,6 +18,7 @@ import org.springframework.web.bind.annotation.RequestMapping
 import org.springframework.web.bind.annotation.RequestParam
 import org.springframework.web.bind.annotation.ResponseStatus
 import org.springframework.web.bind.annotation.RestController
+import uk.gov.justice.digital.hmpps.adjustments.api.entity.AdjustmentSource
 import uk.gov.justice.digital.hmpps.adjustments.api.entity.AdjustmentStatus
 import uk.gov.justice.digital.hmpps.adjustments.api.model.AdjustmentDto
 import uk.gov.justice.digital.hmpps.adjustments.api.model.AdjustmentEffectiveDaysDto
@@ -26,6 +27,7 @@ import uk.gov.justice.digital.hmpps.adjustments.api.model.ManualUnusedDeductions
 import uk.gov.justice.digital.hmpps.adjustments.api.model.RestoreAdjustmentsDto
 import uk.gov.justice.digital.hmpps.adjustments.api.model.UnusedDeductionsCalculationResultDto
 import uk.gov.justice.digital.hmpps.adjustments.api.model.ValidationMessage
+import uk.gov.justice.digital.hmpps.adjustments.api.service.AdjustmentsDomainEventService
 import uk.gov.justice.digital.hmpps.adjustments.api.service.AdjustmentsService
 import uk.gov.justice.digital.hmpps.adjustments.api.service.UnusedDeductionsService
 import uk.gov.justice.digital.hmpps.adjustments.api.service.ValidationService
@@ -38,6 +40,7 @@ class AdjustmentsController(
   val adjustmentsService: AdjustmentsService,
   val validationService: ValidationService,
   val unusedDeductionsService: UnusedDeductionsService,
+  val adjustmentsDomainEventService: AdjustmentsDomainEventService,
 ) {
 
   @PostMapping
@@ -53,7 +56,11 @@ class AdjustmentsController(
       ApiResponse(responseCode = "401", description = "Unauthorised, requires a valid Oauth2 token"),
     ],
   )
-  fun create(@RequestBody adjustments: List<AdjustmentDto>): CreateResponseDto = adjustmentsService.create(adjustments)
+  fun create(@RequestBody adjustments: List<AdjustmentDto>): CreateResponseDto {
+    val createEvent = adjustmentsService.create(adjustments)
+    adjustmentsDomainEventService.create(createEvent.adjustmentEventToEmit.ids, adjustments[0].person, AdjustmentSource.DPS, adjustments[0].adjustmentType)
+    return createEvent.record
+  }
 
   @GetMapping("", params = ["person"])
   @Operation(
@@ -229,7 +236,13 @@ class AdjustmentsController(
     @PathVariable("adjustmentId")
     adjustmentId: UUID,
   ) {
-    adjustmentsService.delete(adjustmentId)
+    val deletedAdjustment = adjustmentsService.delete(adjustmentId)
+    adjustmentsDomainEventService.delete(
+      deletedAdjustment.adjustmentEventToEmit.ids[0],
+      deletedAdjustment.adjustmentEventToEmit.person,
+      AdjustmentSource.DPS,
+      deletedAdjustment.adjustmentEventToEmit.adjustmentType,
+    )
   }
 
   @PostMapping("/validate")

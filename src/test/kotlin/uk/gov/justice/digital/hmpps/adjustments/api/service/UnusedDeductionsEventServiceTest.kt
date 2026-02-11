@@ -1,5 +1,6 @@
 package uk.gov.justice.digital.hmpps.adjustments.api.service
 
+import org.hibernate.internal.util.collections.CollectionHelper.listOf
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
 import org.mockito.kotlin.argWhere
@@ -15,6 +16,9 @@ import uk.gov.justice.digital.hmpps.adjustments.api.entity.AdjustmentType
 import uk.gov.justice.digital.hmpps.adjustments.api.entity.UnusedDeductionsCalculationResult
 import uk.gov.justice.digital.hmpps.adjustments.api.model.AdjustmentDto
 import uk.gov.justice.digital.hmpps.adjustments.api.model.AdjustmentEffectiveDaysDto
+import uk.gov.justice.digital.hmpps.adjustments.api.model.AdjustmentEventMetadata
+import uk.gov.justice.digital.hmpps.adjustments.api.model.CreateResponseDto
+import uk.gov.justice.digital.hmpps.adjustments.api.model.RecordResponse
 import uk.gov.justice.digital.hmpps.adjustments.api.model.RemandDto
 import uk.gov.justice.digital.hmpps.adjustments.api.model.TaggedBailDto
 import uk.gov.justice.digital.hmpps.adjustments.api.model.UnusedDeductionCalculationResponse
@@ -31,12 +35,14 @@ class UnusedDeductionsEventServiceTest {
   private val calculateReleaseDatesApiClient = mock<CalculateReleaseDatesApiClient>()
   private val prisonService = mock<PrisonService>()
   private val unusedDeductionsCalculationResultRepository = mock<UnusedDeductionsCalculationResultRepository>()
+  private val adjustmentsDomainEventService = mock<AdjustmentsDomainEventService>()
 
   private val unusedDeductionsService = UnusedDeductionsService(
     adjustmentService,
     prisonService,
     calculateReleaseDatesApiClient,
     unusedDeductionsCalculationResultRepository,
+    adjustmentsDomainEventService,
   )
 
   private val eventService = UnusedDeductionsEventService(
@@ -136,6 +142,16 @@ class UnusedDeductionsEventServiceTest {
         remand = null,
       )
       val adjustments = listOf(remand, taggedBail)
+      val adjustmentsToCreate = listOf(
+        remand.copy(
+          id = null,
+          toDate = null,
+          fromDate = null,
+          days = 100,
+          adjustmentType = AdjustmentType.UNUSED_DEDUCTIONS,
+          remand = null,
+        ),
+      )
 
       whenever(prisonService.getSentencesAndStartDateDetails(person)).thenReturn(defaultSentenceDetail)
       whenever(adjustmentService.findCurrentAdjustments(person, listOf(AdjustmentStatus.ACTIVE), true)).thenReturn(adjustments)
@@ -144,6 +160,9 @@ class UnusedDeductionsEventServiceTest {
           100,
           listOf(expectedValidationMessage),
         ),
+      )
+      whenever(adjustmentService.create(adjustmentsToCreate)).thenReturn(
+        RecordResponse(CreateResponseDto(listOf(UUID.randomUUID())), AdjustmentEventMetadata(listOf(UUID.randomUUID()), person, AdjustmentSource.DPS, AdjustmentType.UNUSED_DEDUCTIONS)),
       )
 
       eventService.handleAdjustmentMessage(
@@ -159,18 +178,7 @@ class UnusedDeductionsEventServiceTest {
 
       verify(adjustmentService).updateEffectiveDays(taggedBail.id!!, AdjustmentEffectiveDaysDto(taggedBail.id!!, 80, person))
       verify(adjustmentService).updateEffectiveDays(remand.id!!, AdjustmentEffectiveDaysDto(remand.id!!, 0, person))
-      verify(adjustmentService).create(
-        listOf(
-          remand.copy(
-            id = null,
-            toDate = null,
-            fromDate = null,
-            days = 100,
-            adjustmentType = AdjustmentType.UNUSED_DEDUCTIONS,
-            remand = null,
-          ),
-        ),
-      )
+      verify(adjustmentService).create(adjustmentsToCreate)
       verify(unusedDeductionsCalculationResultRepository).save(argWhere { it.status == UnusedDeductionsCalculationStatus.CALCULATED })
     }
 
