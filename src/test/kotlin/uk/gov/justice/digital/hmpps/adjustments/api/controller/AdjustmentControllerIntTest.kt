@@ -45,6 +45,7 @@ import uk.gov.justice.digital.hmpps.adjustments.api.listener.UNUSED_DEDUCTIONS_P
 import uk.gov.justice.digital.hmpps.adjustments.api.model.AdditionalDaysAwardedDto
 import uk.gov.justice.digital.hmpps.adjustments.api.model.AdjustmentDto
 import uk.gov.justice.digital.hmpps.adjustments.api.model.AdjustmentEffectiveDaysDto
+import uk.gov.justice.digital.hmpps.adjustments.api.model.AdjustmentEventType
 import uk.gov.justice.digital.hmpps.adjustments.api.model.CreateResponseDto
 import uk.gov.justice.digital.hmpps.adjustments.api.model.LawfullyAtLargeDto
 import uk.gov.justice.digital.hmpps.adjustments.api.model.ManualUnusedDeductionsDto
