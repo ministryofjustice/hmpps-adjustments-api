@@ -16,8 +16,8 @@ import uk.gov.justice.digital.hmpps.adjustments.api.legacy.model.LegacyAdjustmen
 import uk.gov.justice.digital.hmpps.adjustments.api.legacy.model.LegacyAdjustmentCreatedResponse
 import uk.gov.justice.digital.hmpps.adjustments.api.legacy.model.LegacyAdjustmentType
 import uk.gov.justice.digital.hmpps.adjustments.api.legacy.model.LegacyData
+import uk.gov.justice.digital.hmpps.adjustments.api.model.AdjustmentEventType
 import uk.gov.justice.digital.hmpps.adjustments.api.respository.AdjustmentRepository
-import uk.gov.justice.digital.hmpps.adjustments.api.service.EventType
 import uk.gov.justice.digital.hmpps.adjustments.api.wiremock.PrisonApiExtension
 import java.time.LocalDate
 import java.util.UUID
@@ -54,7 +54,7 @@ class LegacyControllerIntTest : SqsIntegrationTestBase() {
     awaitAtMost30Secs untilCallTo { getNumberOfMessagesCurrentlyOnQueue() } matches { it == 1 }
     val latestMessage: String = getLatestMessage()!!.messages()[0].body()
     assertThat(latestMessage).contains(adjustment.id.toString())
-    assertThat(latestMessage).contains(EventType.ADJUSTMENT_CREATED.value)
+    assertThat(latestMessage).contains(AdjustmentEventType.ADJUSTMENT_CREATED.value)
     assertThat(latestMessage).contains(AdjustmentSource.NOMIS.name)
   }
 
@@ -147,7 +147,7 @@ class LegacyControllerIntTest : SqsIntegrationTestBase() {
     awaitAtMost30Secs untilCallTo { getNumberOfMessagesCurrentlyOnQueue() } matches { it == 1 }
     val latestMessage: String = getLatestMessage()!!.messages()[0].body()
     assertThat(latestMessage).contains(adjustment.id.toString())
-    assertThat(latestMessage).contains(EventType.ADJUSTMENT_UPDATED.value)
+    assertThat(latestMessage).contains(AdjustmentEventType.ADJUSTMENT_UPDATED.value)
     assertThat(latestMessage).contains(AdjustmentSource.NOMIS.name)
   }
 
@@ -173,7 +173,7 @@ class LegacyControllerIntTest : SqsIntegrationTestBase() {
     awaitAtMost30Secs untilCallTo { getNumberOfMessagesCurrentlyOnQueue() } matches { it == 1 }
     val latestMessage: String = getLatestMessage()!!.messages()[0].body()
     assertThat(latestMessage).contains(adjustment.id.toString())
-    assertThat(latestMessage).contains(EventType.ADJUSTMENT_DELETED.value)
+    assertThat(latestMessage).contains(AdjustmentEventType.ADJUSTMENT_DELETED.value)
     assertThat(latestMessage).contains(AdjustmentSource.NOMIS.name)
     webTestClient
       .get()

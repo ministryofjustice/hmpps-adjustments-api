@@ -6,6 +6,7 @@ import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Service
 import software.amazon.awssdk.services.sns.model.MessageAttributeValue
 import software.amazon.awssdk.services.sns.model.PublishRequest
+import uk.gov.justice.digital.hmpps.adjustments.api.model.AdjustmentEventType
 import uk.gov.justice.hmpps.sqs.HmppsQueueService
 import java.time.Instant
 import java.time.LocalDateTime
@@ -26,7 +27,7 @@ class SnsService(hmppsQueueService: HmppsQueueService, private val objectMapper:
   private val domaineventsTopicClient by lazy { domaineventsTopic.snsClient }
 
   fun publishDomainEvent(
-    eventType: EventType,
+    eventType: AdjustmentEventType,
     description: String,
     occurredAt: LocalDateTime,
     additionalInformation: AdditionalInformation,
@@ -85,12 +86,6 @@ data class HMPPSDomainEvent(
     occurredAt.toOffsetDateFormat(),
     description,
   )
-}
-
-enum class EventType(val value: String) {
-  ADJUSTMENT_CREATED("release-date-adjustments.adjustment.inserted"),
-  ADJUSTMENT_UPDATED("release-date-adjustments.adjustment.updated"),
-  ADJUSTMENT_DELETED("release-date-adjustments.adjustment.deleted"),
 }
 
 fun Instant.toOffsetDateFormat(): String = atZone(ZoneId.of("Europe/London")).toOffsetDateTime().format(DateTimeFormatter.ISO_OFFSET_DATE_TIME)

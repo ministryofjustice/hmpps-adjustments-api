@@ -1,72 +1,68 @@
 package uk.gov.justice.digital.hmpps.adjustments.api.service
 
 import org.springframework.stereotype.Service
-import uk.gov.justice.digital.hmpps.adjustments.api.entity.AdjustmentSource
 import uk.gov.justice.digital.hmpps.adjustments.api.entity.AdjustmentType
+import uk.gov.justice.digital.hmpps.adjustments.api.model.AdjustmentEventMetadata
+import uk.gov.justice.digital.hmpps.adjustments.api.model.AdjustmentEventType
 import java.time.LocalDateTime
-import java.util.UUID
 
 @Service
 class AdjustmentsDomainEventService(
   private val snsService: SnsService,
 ) {
 
-  fun create(ids: List<UUID>, person: String, source: AdjustmentSource, adjustmentType: AdjustmentType? = null) {
-    ids.forEachIndexed { index, it ->
+  fun raiseAdjustmentEvents(event: AdjustmentEventMetadata) {
+    if (event.eventType == AdjustmentEventType.ADJUSTMENT_CREATED) {
+      event.ids.forEachIndexed { index, it ->
+        snsService.publishDomainEvent(
+          AdjustmentEventType.ADJUSTMENT_CREATED,
+          "An adjustment has been created",
+          LocalDateTime.now(),
+          AdditionalInformation(
+            it,
+            event.person,
+            event.source.toString(),
+            event.adjustmentType == AdjustmentType.UNUSED_DEDUCTIONS,
+            lastEvent = (event.ids.size - 1) == index,
+          ),
+        )
+      }
+    } else if (event.eventType == AdjustmentEventType.ADJUSTMENT_UPDATED) {
       snsService.publishDomainEvent(
-        EventType.ADJUSTMENT_CREATED,
-        "An adjustment has been created",
+        AdjustmentEventType.ADJUSTMENT_UPDATED,
+        "An adjustment has been updated",
         LocalDateTime.now(),
         AdditionalInformation(
-          it,
-          person,
-          source.toString(),
-          adjustmentType == AdjustmentType.UNUSED_DEDUCTIONS,
-          lastEvent = (ids.size - 1) == index,
+          event.ids[0],
+          event.person,
+          event.source.toString(),
+          event.adjustmentType == AdjustmentType.UNUSED_DEDUCTIONS,
+        ),
+      )
+    } else if (event.eventType == AdjustmentEventType.ADJUSTMENT_DELETED) {
+      snsService.publishDomainEvent(
+        AdjustmentEventType.ADJUSTMENT_DELETED,
+        "An adjustment has been deleted",
+        LocalDateTime.now(),
+        AdditionalInformation(
+          event.ids[0],
+          event.person,
+          event.source.toString(),
+          event.adjustmentType == AdjustmentType.UNUSED_DEDUCTIONS,
+        ),
+      )
+    } else if (event.eventType == AdjustmentEventType.ADJUSTMENT_UPDATED_EFFECTIVE_DAYS) {
+      snsService.publishDomainEvent(
+        AdjustmentEventType.ADJUSTMENT_UPDATED_EFFECTIVE_DAYS,
+        "An adjustment's effective calculation days has been updated",
+        LocalDateTime.now(),
+        AdditionalInformation(
+          event.ids[0],
+          event.person,
+          event.source.toString(),
+          true,
         ),
       )
     }
-  }
-
-  fun update(id: UUID, person: String, source: AdjustmentSource, adjustmentType: AdjustmentType? = null) {
-    snsService.publishDomainEvent(
-      EventType.ADJUSTMENT_UPDATED,
-      "An adjustment has been updated",
-      LocalDateTime.now(),
-      AdditionalInformation(
-        id,
-        person,
-        source.toString(),
-        adjustmentType == AdjustmentType.UNUSED_DEDUCTIONS,
-      ),
-    )
-  }
-
-  fun updateEffectiveDays(id: UUID, person: String, source: AdjustmentSource) {
-    snsService.publishDomainEvent(
-      EventType.ADJUSTMENT_UPDATED,
-      "An adjustment's effective calculation days has been updated",
-      LocalDateTime.now(),
-      AdditionalInformation(
-        id,
-        person,
-        source.toString(),
-        true,
-      ),
-    )
-  }
-
-  fun delete(id: UUID?, person: String, source: AdjustmentSource, adjustmentType: AdjustmentType? = null) {
-    snsService.publishDomainEvent(
-      EventType.ADJUSTMENT_DELETED,
-      "An adjustment has been deleted",
-      LocalDateTime.now(),
-      AdditionalInformation(
-        id,
-        person,
-        source.toString(),
-        adjustmentType == AdjustmentType.UNUSED_DEDUCTIONS,
-      ),
-    )
   }
 }

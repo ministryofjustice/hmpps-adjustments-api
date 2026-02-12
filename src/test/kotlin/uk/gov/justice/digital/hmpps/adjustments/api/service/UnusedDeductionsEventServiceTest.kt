@@ -3,6 +3,7 @@ package uk.gov.justice.digital.hmpps.adjustments.api.service
 import org.hibernate.internal.util.collections.CollectionHelper.listOf
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
+import org.mockito.kotlin.any
 import org.mockito.kotlin.argWhere
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.verify
@@ -17,6 +18,7 @@ import uk.gov.justice.digital.hmpps.adjustments.api.entity.UnusedDeductionsCalcu
 import uk.gov.justice.digital.hmpps.adjustments.api.model.AdjustmentDto
 import uk.gov.justice.digital.hmpps.adjustments.api.model.AdjustmentEffectiveDaysDto
 import uk.gov.justice.digital.hmpps.adjustments.api.model.AdjustmentEventMetadata
+import uk.gov.justice.digital.hmpps.adjustments.api.model.AdjustmentEventType
 import uk.gov.justice.digital.hmpps.adjustments.api.model.CreateResponseDto
 import uk.gov.justice.digital.hmpps.adjustments.api.model.RecordResponse
 import uk.gov.justice.digital.hmpps.adjustments.api.model.RemandDto
@@ -42,11 +44,11 @@ class UnusedDeductionsEventServiceTest {
     prisonService,
     calculateReleaseDatesApiClient,
     unusedDeductionsCalculationResultRepository,
-    adjustmentsDomainEventService,
   )
 
   private val eventService = UnusedDeductionsEventService(
     unusedDeductionsService,
+    adjustmentsDomainEventService,
   )
 
   val person = "ABC123"
@@ -71,6 +73,7 @@ class UnusedDeductionsEventServiceTest {
     source = AdjustmentSource.DPS,
     recallId = null,
   )
+  val adjustmentEffectiveDaysDto = AdjustmentEffectiveDaysDto(UUID.randomUUID(), 100, person)
   private val sentenceDate = LocalDate.of(2023, 1, 1)
   private val sentences = listOf(SentenceAndOffences(sentenceDate = sentenceDate, bookingId = 1, sentenceSequence = 1, sentenceCalculationType = "ADIMP", sentenceStatus = "A"))
   private val defaultSentenceDetail = SentenceAndStartDateDetails(
@@ -105,6 +108,30 @@ class UnusedDeductionsEventServiceTest {
       )
       val adjustments = listOf(remand, taggedBail, unusedDeductions)
 
+      whenever(adjustmentService.update(any(), any())).thenReturn(
+        RecordResponse(
+          record = remand,
+          adjustmentEventToEmit = AdjustmentEventMetadata(
+            eventType = AdjustmentEventType.ADJUSTMENT_DELETED,
+            ids = listOf(UUID.randomUUID()),
+            person = "ABC123",
+            source = AdjustmentSource.DPS,
+            adjustmentType = AdjustmentType.UNUSED_DEDUCTIONS,
+          ),
+        ),
+      )
+      whenever(adjustmentService.updateEffectiveDays(any(), any())).thenReturn(
+        RecordResponse(
+          record = adjustmentEffectiveDaysDto,
+          adjustmentEventToEmit = AdjustmentEventMetadata(
+            eventType = AdjustmentEventType.ADJUSTMENT_DELETED,
+            ids = listOf(UUID.randomUUID()),
+            person = "ABC123",
+            source = AdjustmentSource.DPS,
+            adjustmentType = AdjustmentType.UNUSED_DEDUCTIONS,
+          ),
+        ),
+      )
       whenever(prisonService.getSentencesAndStartDateDetails(person)).thenReturn(defaultSentenceDetail)
       whenever(adjustmentService.findCurrentAdjustments(person, listOf(AdjustmentStatus.ACTIVE), true)).thenReturn(adjustments)
       whenever(calculateReleaseDatesApiClient.calculateUnusedDeductions(adjustments, person)).thenReturn(
@@ -153,6 +180,30 @@ class UnusedDeductionsEventServiceTest {
         ),
       )
 
+      whenever(adjustmentService.update(any(), any())).thenReturn(
+        RecordResponse(
+          record = remand,
+          adjustmentEventToEmit = AdjustmentEventMetadata(
+            eventType = AdjustmentEventType.ADJUSTMENT_DELETED,
+            ids = listOf(UUID.randomUUID()),
+            person = "ABC123",
+            source = AdjustmentSource.DPS,
+            adjustmentType = AdjustmentType.UNUSED_DEDUCTIONS,
+          ),
+        ),
+      )
+      whenever(adjustmentService.updateEffectiveDays(any(), any())).thenReturn(
+        RecordResponse(
+          record = adjustmentEffectiveDaysDto,
+          adjustmentEventToEmit = AdjustmentEventMetadata(
+            eventType = AdjustmentEventType.ADJUSTMENT_DELETED,
+            ids = listOf(UUID.randomUUID()),
+            person = "ABC123",
+            source = AdjustmentSource.DPS,
+            adjustmentType = AdjustmentType.UNUSED_DEDUCTIONS,
+          ),
+        ),
+      )
       whenever(prisonService.getSentencesAndStartDateDetails(person)).thenReturn(defaultSentenceDetail)
       whenever(adjustmentService.findCurrentAdjustments(person, listOf(AdjustmentStatus.ACTIVE), true)).thenReturn(adjustments)
       whenever(calculateReleaseDatesApiClient.calculateUnusedDeductions(adjustments, person)).thenReturn(
@@ -162,7 +213,16 @@ class UnusedDeductionsEventServiceTest {
         ),
       )
       whenever(adjustmentService.create(adjustmentsToCreate)).thenReturn(
-        RecordResponse(CreateResponseDto(listOf(UUID.randomUUID())), AdjustmentEventMetadata(listOf(UUID.randomUUID()), person, AdjustmentSource.DPS, AdjustmentType.UNUSED_DEDUCTIONS)),
+        RecordResponse(
+          CreateResponseDto(listOf(UUID.randomUUID())),
+          AdjustmentEventMetadata(
+            AdjustmentEventType.ADJUSTMENT_CREATED,
+            listOf(UUID.randomUUID()),
+            person,
+            AdjustmentSource.DPS,
+            AdjustmentType.UNUSED_DEDUCTIONS,
+          ),
+        ),
       )
 
       eventService.handleAdjustmentMessage(
@@ -202,6 +262,42 @@ class UnusedDeductionsEventServiceTest {
       )
       val adjustments = listOf(remand, taggedBail, unusedDeductions)
 
+      whenever(adjustmentService.update(any(), any())).thenReturn(
+        RecordResponse(
+          record = remand,
+          adjustmentEventToEmit = AdjustmentEventMetadata(
+            eventType = AdjustmentEventType.ADJUSTMENT_DELETED,
+            ids = listOf(UUID.randomUUID()),
+            person = "ABC123",
+            source = AdjustmentSource.DPS,
+            adjustmentType = AdjustmentType.UNUSED_DEDUCTIONS,
+          ),
+        ),
+      )
+      whenever(adjustmentService.delete(any())).thenReturn(
+        RecordResponse(
+          record = remand,
+          adjustmentEventToEmit = AdjustmentEventMetadata(
+            eventType = AdjustmentEventType.ADJUSTMENT_DELETED,
+            ids = listOf(UUID.randomUUID()),
+            person = "ABC123",
+            source = AdjustmentSource.DPS,
+            adjustmentType = AdjustmentType.UNUSED_DEDUCTIONS,
+          ),
+        ),
+      )
+      whenever(adjustmentService.updateEffectiveDays(any(), any())).thenReturn(
+        RecordResponse(
+          record = adjustmentEffectiveDaysDto,
+          adjustmentEventToEmit = AdjustmentEventMetadata(
+            eventType = AdjustmentEventType.ADJUSTMENT_DELETED,
+            ids = listOf(UUID.randomUUID()),
+            person = "ABC123",
+            source = AdjustmentSource.DPS,
+            adjustmentType = AdjustmentType.UNUSED_DEDUCTIONS,
+          ),
+        ),
+      )
       whenever(prisonService.getSentencesAndStartDateDetails(person)).thenReturn(defaultSentenceDetail)
       whenever(adjustmentService.findCurrentAdjustments(person, listOf(AdjustmentStatus.ACTIVE), true)).thenReturn(adjustments)
       whenever(calculateReleaseDatesApiClient.calculateUnusedDeductions(adjustments, person)).thenReturn(
@@ -233,7 +329,40 @@ class UnusedDeductionsEventServiceTest {
         adjustmentType = AdjustmentType.UNUSED_DEDUCTIONS,
       )
       val adjustments = listOf(unusedDeductions)
+      val adjustmentDto = AdjustmentDto(
+        id = UUID.randomUUID(),
+        sentenceSequence = 1,
+        person = "ABC123",
+        adjustmentType = AdjustmentType.REMAND,
+        fromDate = LocalDate.now().minusDays(10),
+        toDate = LocalDate.now(),
+        days = 10,
+        effectiveDays = 10,
+        remand = RemandDto(listOf(1L)),
+        additionalDaysAwarded = null,
+        unlawfullyAtLarge = null,
+        lawfullyAtLarge = null,
+        specialRemission = null,
+        taggedBail = null,
+        timeSpentInCustodyAbroad = null,
+        timeSpentAsAnAppealApplicant = null,
+        source = AdjustmentSource.DPS,
+        recallId = null,
+        bookingId = 123L,
+      )
 
+      whenever(adjustmentService.delete(any())).thenReturn(
+        RecordResponse(
+          record = adjustmentDto,
+          adjustmentEventToEmit = AdjustmentEventMetadata(
+            eventType = AdjustmentEventType.ADJUSTMENT_DELETED,
+            ids = listOf(UUID.randomUUID()),
+            person = "ABC123",
+            source = AdjustmentSource.DPS,
+            adjustmentType = AdjustmentType.UNUSED_DEDUCTIONS,
+          ),
+        ),
+      )
       whenever(prisonService.getSentencesAndStartDateDetails(person)).thenReturn(defaultSentenceDetail)
       whenever(adjustmentService.findCurrentAdjustments(person, listOf(AdjustmentStatus.ACTIVE), true)).thenReturn(adjustments)
       whenever(calculateReleaseDatesApiClient.calculateUnusedDeductions(adjustments, person)).thenReturn(
@@ -334,6 +463,30 @@ class UnusedDeductionsEventServiceTest {
       )
       val adjustments = listOf(remand, taggedBail, unusedDeductions)
 
+      whenever(adjustmentService.updateEffectiveDays(any(), any())).thenReturn(
+        RecordResponse(
+          record = adjustmentEffectiveDaysDto,
+          adjustmentEventToEmit = AdjustmentEventMetadata(
+            eventType = AdjustmentEventType.ADJUSTMENT_DELETED,
+            ids = listOf(UUID.randomUUID()),
+            person = "ABC123",
+            source = AdjustmentSource.DPS,
+            adjustmentType = AdjustmentType.UNUSED_DEDUCTIONS,
+          ),
+        ),
+      )
+      whenever(adjustmentService.update(any(), any())).thenReturn(
+        RecordResponse(
+          record = remand,
+          adjustmentEventToEmit = AdjustmentEventMetadata(
+            eventType = AdjustmentEventType.ADJUSTMENT_DELETED,
+            ids = listOf(UUID.randomUUID()),
+            person = "ABC123",
+            source = AdjustmentSource.DPS,
+            adjustmentType = AdjustmentType.UNUSED_DEDUCTIONS,
+          ),
+        ),
+      )
       whenever(prisonService.getSentencesAndStartDateDetails(person)).thenReturn(defaultSentenceDetail)
       whenever(adjustmentService.findCurrentAdjustments(person, listOf(AdjustmentStatus.ACTIVE), true)).thenReturn(adjustments)
       whenever(calculateReleaseDatesApiClient.calculateUnusedDeductions(adjustments, person)).thenReturn(

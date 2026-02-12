@@ -25,7 +25,9 @@ class CalculateReleaseDatesApiExtension :
   override fun beforeAll(context: ExtensionContext) {
     calculateReleaseDatesApi.start()
     calculateReleaseDatesApi.stubCalculateUnusedDeductions(UNUSED_DEDUCTIONS_PRISONER_ID)
-    calculateReleaseDatesApi.stubCalculateUnusedDeductions(PRISONER_ID)
+    calculateReleaseDatesApi.stubCalculateZeroUnusedDeductions(PRISONER_ID)
+    calculateReleaseDatesApi.stubCalculateZeroUnusedDeductions("TESTDEL")
+    calculateReleaseDatesApi.stubCalculateZeroUnusedDeductions("TESTUPD")
     calculateReleaseDatesApi.stubCalculateUnusedDeductionsError(UNUSED_DEDUCTIONS_ERROR_PRISONER_ID)
   }
 
@@ -52,6 +54,23 @@ class CalculateReleaseDatesApiMockServer : WireMockServer(WIREMOCK_PORT) {
             .withBody(
               """
                 {"unusedDeductions":150}
+              """.trimIndent(),
+            )
+            .withFixedDelay(200)
+            .withStatus(200),
+        ),
+    )
+  }
+
+  fun stubCalculateZeroUnusedDeductions(prisonerId: String) {
+    stubFor(
+      post("/unused-deductions/$prisonerId/calculation")
+        .willReturn(
+          aResponse()
+            .withHeader("Content-Type", "application/json")
+            .withBody(
+              """
+                {"unusedDeductions":0}
               """.trimIndent(),
             )
             .withFixedDelay(200)

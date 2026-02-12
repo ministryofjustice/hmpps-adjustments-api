@@ -17,7 +17,6 @@ import org.springframework.web.bind.annotation.RequestBody
 import org.springframework.web.bind.annotation.RequestMapping
 import org.springframework.web.bind.annotation.ResponseStatus
 import org.springframework.web.bind.annotation.RestController
-import uk.gov.justice.digital.hmpps.adjustments.api.entity.AdjustmentSource
 import uk.gov.justice.digital.hmpps.adjustments.api.legacy.model.LegacyAdjustment
 import uk.gov.justice.digital.hmpps.adjustments.api.legacy.model.LegacyAdjustmentCreatedResponse
 import uk.gov.justice.digital.hmpps.adjustments.api.legacy.service.LegacyService
@@ -45,8 +44,10 @@ class LegacyController(
     ],
   )
   @PreAuthorize("hasRole('SENTENCE_ADJUSTMENTS_SYNCHRONISATION')")
-  fun create(@RequestBody adjustment: LegacyAdjustment): LegacyAdjustmentCreatedResponse = legacyService.create(adjustment, migration = false).also {
-    eventService.create(listOf(it.adjustmentId), adjustment.offenderNo, AdjustmentSource.NOMIS)
+  fun create(@RequestBody adjustment: LegacyAdjustment): LegacyAdjustmentCreatedResponse {
+    val createdEvent = legacyService.create(adjustment, migration = false)
+    eventService.raiseAdjustmentEvents(createdEvent.adjustmentEventToEmit)
+    return createdEvent.record
   }
 
   @PostMapping("/migration")
@@ -63,7 +64,10 @@ class LegacyController(
     ],
   )
   @PreAuthorize("hasRole('SENTENCE_ADJUSTMENTS_SYNCHRONISATION')")
-  fun migration(@RequestBody adjustment: LegacyAdjustment): LegacyAdjustmentCreatedResponse = legacyService.create(adjustment, migration = true)
+  fun migration(@RequestBody adjustment: LegacyAdjustment): LegacyAdjustmentCreatedResponse {
+    val createdEvent = legacyService.create(adjustment, migration = true)
+    return createdEvent.record
+  }
 
   @GetMapping("/{adjustmentId}")
   @Operation(
@@ -103,9 +107,8 @@ class LegacyController(
     adjustmentId: UUID,
     @RequestBody adjustment: LegacyAdjustment,
   ) {
-    legacyService.update(adjustmentId, adjustment).also {
-      eventService.update(adjustmentId, adjustment.offenderNo, AdjustmentSource.NOMIS)
-    }
+    val updatedEvent = legacyService.update(adjustmentId, adjustment)
+    eventService.raiseAdjustmentEvents(updatedEvent.adjustmentEventToEmit)
   }
 
   @DeleteMapping("/{adjustmentId}")
@@ -127,8 +130,8 @@ class LegacyController(
     adjustmentId: UUID,
   ) {
     legacyService.get(adjustmentId).also {
-      legacyService.delete(adjustmentId)
-      eventService.delete(adjustmentId, it.offenderNo, AdjustmentSource.NOMIS)
+      val deletedEvent = legacyService.delete(adjustmentId)
+      eventService.raiseAdjustmentEvents(deletedEvent.adjustmentEventToEmit)
     }
   }
 

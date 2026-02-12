@@ -22,6 +22,9 @@ import uk.gov.justice.digital.hmpps.adjustments.api.legacy.model.LegacyAdjustmen
 import uk.gov.justice.digital.hmpps.adjustments.api.legacy.model.LegacyAdjustmentType
 import uk.gov.justice.digital.hmpps.adjustments.api.legacy.model.LegacyAdjustmentUpdatedResponse
 import uk.gov.justice.digital.hmpps.adjustments.api.legacy.model.LegacyData
+import uk.gov.justice.digital.hmpps.adjustments.api.model.AdjustmentEventMetadata
+import uk.gov.justice.digital.hmpps.adjustments.api.model.AdjustmentEventType
+import uk.gov.justice.digital.hmpps.adjustments.api.model.RecordResponse
 import uk.gov.justice.digital.hmpps.adjustments.api.model.prisonersearchapi.Prisoner
 import uk.gov.justice.digital.hmpps.adjustments.api.respository.AdjustmentRepository
 import java.util.UUID
@@ -41,7 +44,7 @@ class LegacyService(
   }
 
   @Transactional
-  fun create(resource: LegacyAdjustment, migration: Boolean): LegacyAdjustmentCreatedResponse {
+  fun create(resource: LegacyAdjustment, migration: Boolean): RecordResponse<LegacyAdjustmentCreatedResponse> {
     val prisonId = if (migration) null else resource.agencyId
     var adjustment = Adjustment(
       person = resource.offenderNo,
@@ -65,7 +68,16 @@ class LegacyService(
 
     adjustment = adjustmentRepository.save(adjustment)
 
-    return LegacyAdjustmentCreatedResponse(adjustment.id)
+    return return RecordResponse(
+      LegacyAdjustmentCreatedResponse(adjustment.id),
+      AdjustmentEventMetadata(
+        AdjustmentEventType.ADJUSTMENT_CREATED,
+        listOfNotNull(adjustment.id),
+        adjustment.person,
+        AdjustmentSource.NOMIS,
+        null,
+      ),
+    )
   }
 
   fun get(adjustmentId: UUID): LegacyAdjustment {
@@ -92,7 +104,7 @@ class LegacyService(
   }
 
   @Transactional
-  fun update(adjustmentId: UUID, resource: LegacyAdjustment): LegacyAdjustmentUpdatedResponse {
+  fun update(adjustmentId: UUID, resource: LegacyAdjustment): RecordResponse<LegacyAdjustmentUpdatedResponse> {
     val adjustment = adjustmentRepository.findById(adjustmentId)
       .map { if (it.status.isDeleted()) null else it }
       .orElseThrow {
@@ -123,11 +135,20 @@ class LegacyService(
       )
     }
 
-    return LegacyAdjustmentUpdatedResponse(isChangeToDays)
+    return RecordResponse(
+      LegacyAdjustmentUpdatedResponse(isChangeToDays),
+      AdjustmentEventMetadata(
+        AdjustmentEventType.ADJUSTMENT_UPDATED,
+        listOfNotNull(adjustmentId),
+        adjustment.person,
+        AdjustmentSource.NOMIS,
+        null,
+      ),
+    )
   }
 
   @Transactional
-  fun delete(adjustmentId: UUID) {
+  fun delete(adjustmentId: UUID): RecordResponse<Adjustment> {
     val adjustment = adjustmentRepository.findById(adjustmentId)
       .map { if (it.status.isDeleted()) null else it }
       .orElseThrow {
@@ -146,6 +167,17 @@ class LegacyService(
         prisonId = prisonId,
       )
     }
+
+    return RecordResponse(
+      adjustment,
+      AdjustmentEventMetadata(
+        AdjustmentEventType.ADJUSTMENT_DELETED,
+        listOfNotNull(adjustmentId),
+        adjustment.person,
+        AdjustmentSource.NOMIS,
+        null,
+      ),
+    )
   }
 
   fun objectToJson(subject: Any): JsonNode = JacksonUtil.toJsonNode(objectMapper.writeValueAsString(subject))
