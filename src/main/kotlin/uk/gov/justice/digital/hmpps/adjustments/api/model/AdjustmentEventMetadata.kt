@@ -10,7 +10,7 @@ data class AdjustmentEventMetadata(
   val person: String,
   val source: AdjustmentSource,
   val adjustmentType: AdjustmentType? = null,
-  var isLast: Boolean = true
+  var isLast: Boolean = true,
 )
 
 enum class AdjustmentEventType(val value: String, val desc: String) {

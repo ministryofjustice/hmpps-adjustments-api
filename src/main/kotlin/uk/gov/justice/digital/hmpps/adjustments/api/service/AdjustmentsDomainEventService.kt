@@ -12,14 +12,13 @@ class AdjustmentsDomainEventService(
 ) {
 
   fun raiseAdjustmentEvent(event: AdjustmentEventMetadata) {
-
     val isUnusedDeductions = event.adjustmentType == AdjustmentType.UNUSED_DEDUCTIONS
     val additionalInformation = AdditionalInformation(
       event.ids[0],
       event.person,
       event.source.toString(),
       isUnusedDeductions,
-      lastEvent = event.isLast
+      lastEvent = event.isLast,
     )
 
     if (event.eventType == AdjustmentEventType.ADJUSTMENT_UPDATED_EFFECTIVE_DAYS) {

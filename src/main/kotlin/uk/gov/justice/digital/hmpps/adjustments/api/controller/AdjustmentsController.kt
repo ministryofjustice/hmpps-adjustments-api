@@ -61,7 +61,7 @@ class AdjustmentsController(
       val isLast = index == createdEvent.adjustmentEventToEmit.ids.size - 1
       val singleEvent = createdEvent.adjustmentEventToEmit.copy(
         ids = listOf(id),
-        isLast = isLast
+        isLast = isLast,
       )
       adjustmentsDomainEventService.raiseAdjustmentEvent(singleEvent)
     }
