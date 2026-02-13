@@ -32,7 +32,7 @@ class UnusedDeductionsEventService(
     unusedDeductionsService.setStatusToInProgress(person)
     try {
       unusedDeductionsService.recalculateUnusedDeductions(person).forEach { adjustmentEvent ->
-        adjustmentsDomainEventService.raiseAdjustmentEvents(adjustmentEvent)
+        adjustmentsDomainEventService.raiseAdjustmentEvent(adjustmentEvent)
       }
     } finally {
       unusedDeductionsService.removeInProgressStatus(person)

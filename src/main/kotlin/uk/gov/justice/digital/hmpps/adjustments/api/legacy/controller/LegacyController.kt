@@ -46,7 +46,7 @@ class LegacyController(
   @PreAuthorize("hasRole('SENTENCE_ADJUSTMENTS_SYNCHRONISATION')")
   fun create(@RequestBody adjustment: LegacyAdjustment): LegacyAdjustmentCreatedResponse {
     val createdEvent = legacyService.create(adjustment, migration = false)
-    eventService.raiseAdjustmentEvents(createdEvent.adjustmentEventToEmit)
+    eventService.raiseAdjustmentEvent(createdEvent.adjustmentEventToEmit)
     return createdEvent.record
   }
 
@@ -108,7 +108,7 @@ class LegacyController(
     @RequestBody adjustment: LegacyAdjustment,
   ) {
     val updatedEvent = legacyService.update(adjustmentId, adjustment)
-    eventService.raiseAdjustmentEvents(updatedEvent.adjustmentEventToEmit)
+    eventService.raiseAdjustmentEvent(updatedEvent.adjustmentEventToEmit)
   }
 
   @DeleteMapping("/{adjustmentId}")
@@ -131,7 +131,7 @@ class LegacyController(
   ) {
     legacyService.get(adjustmentId).also {
       val deletedEvent = legacyService.delete(adjustmentId)
-      eventService.raiseAdjustmentEvents(deletedEvent.adjustmentEventToEmit)
+      eventService.raiseAdjustmentEvent(deletedEvent.adjustmentEventToEmit)
     }
   }
 

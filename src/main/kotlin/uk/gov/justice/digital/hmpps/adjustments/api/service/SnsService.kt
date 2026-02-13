@@ -28,7 +28,6 @@ class SnsService(hmppsQueueService: HmppsQueueService, private val objectMapper:
 
   fun publishDomainEvent(
     eventType: AdjustmentEventType,
-    description: String,
     occurredAt: LocalDateTime,
     additionalInformation: AdditionalInformation,
   ) {
@@ -37,7 +36,7 @@ class SnsService(hmppsQueueService: HmppsQueueService, private val objectMapper:
         eventType.value,
         additionalInformation,
         occurredAt.atZone(ZoneId.systemDefault()).toInstant(),
-        description,
+        eventType.desc,
       ),
     )
   }
@@ -63,8 +62,8 @@ data class AdditionalInformation(
   val id: UUID? = null,
   val offenderNo: String? = null,
   val source: String? = null,
-  val unusedDeductions: Boolean = false,
-  val lastEvent: Boolean = true,
+  var unusedDeductions: Boolean = false,
+  var lastEvent: Boolean = true,
 )
 
 data class HMPPSDomainEvent(

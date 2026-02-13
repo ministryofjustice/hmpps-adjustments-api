@@ -57,7 +57,14 @@ class AdjustmentsController(
   )
   fun create(@RequestBody adjustments: List<AdjustmentDto>): CreateResponseDto {
     val createdEvent = adjustmentsService.create(adjustments)
-    adjustmentsDomainEventService.raiseAdjustmentEvents(createdEvent.adjustmentEventToEmit)
+    createdEvent.adjustmentEventToEmit.ids.forEachIndexed { index, id ->
+      val isLast = index == createdEvent.adjustmentEventToEmit.ids.size - 1
+      val singleEvent = createdEvent.adjustmentEventToEmit.copy(
+        ids = listOf(id),
+        isLast = isLast
+      )
+      adjustmentsDomainEventService.raiseAdjustmentEvent(singleEvent)
+    }
     return createdEvent.record
   }
 
@@ -131,7 +138,7 @@ class AdjustmentsController(
     @RequestBody adjustment: AdjustmentDto,
   ) {
     val updatedEvent = adjustmentsService.update(adjustmentId, adjustment)
-    adjustmentsDomainEventService.raiseAdjustmentEvents(updatedEvent.adjustmentEventToEmit)
+    adjustmentsDomainEventService.raiseAdjustmentEvent(updatedEvent.adjustmentEventToEmit)
   }
 
   @PostMapping("/restore")
@@ -153,7 +160,7 @@ class AdjustmentsController(
     adjustments: RestoreAdjustmentsDto,
   ) {
     val restoredEvent = adjustmentsService.restore(adjustments)
-    adjustmentsDomainEventService.raiseAdjustmentEvents(restoredEvent.adjustmentEventToEmit)
+    adjustmentsDomainEventService.raiseAdjustmentEvent(restoredEvent.adjustmentEventToEmit)
     restoredEvent.record
   }
 
@@ -177,7 +184,7 @@ class AdjustmentsController(
     @RequestBody adjustment: AdjustmentEffectiveDaysDto,
   ) {
     val updatedEvent = adjustmentsService.updateEffectiveDays(adjustmentId, adjustment)
-    adjustmentsDomainEventService.raiseAdjustmentEvents(updatedEvent.adjustmentEventToEmit)
+    adjustmentsDomainEventService.raiseAdjustmentEvent(updatedEvent.adjustmentEventToEmit)
   }
 
   @PostMapping("/person/{person}/manual-unused-deductions")
@@ -201,7 +208,7 @@ class AdjustmentsController(
   ) {
     val adjustmentEvents = unusedDeductionsService.setUnusedDaysManually(person, manualUnusedDeductionsDto)
     adjustmentEvents.forEach { event ->
-      adjustmentsDomainEventService.raiseAdjustmentEvents(event)
+      adjustmentsDomainEventService.raiseAdjustmentEvent(event)
     }
   }
 
@@ -243,7 +250,7 @@ class AdjustmentsController(
     adjustmentId: UUID,
   ) {
     val deletedEvent = adjustmentsService.delete(adjustmentId)
-    adjustmentsDomainEventService.raiseAdjustmentEvents(deletedEvent.adjustmentEventToEmit)
+    adjustmentsDomainEventService.raiseAdjustmentEvent(deletedEvent.adjustmentEventToEmit)
   }
 
   @PostMapping("/validate")
