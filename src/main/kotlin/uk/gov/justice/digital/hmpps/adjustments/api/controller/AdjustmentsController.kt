@@ -26,6 +26,7 @@ import uk.gov.justice.digital.hmpps.adjustments.api.model.ManualUnusedDeductions
 import uk.gov.justice.digital.hmpps.adjustments.api.model.RestoreAdjustmentsDto
 import uk.gov.justice.digital.hmpps.adjustments.api.model.UnusedDeductionsCalculationResultDto
 import uk.gov.justice.digital.hmpps.adjustments.api.model.ValidationMessage
+import uk.gov.justice.digital.hmpps.adjustments.api.service.AdjustmentsDomainEventService
 import uk.gov.justice.digital.hmpps.adjustments.api.service.AdjustmentsService
 import uk.gov.justice.digital.hmpps.adjustments.api.service.UnusedDeductionsService
 import uk.gov.justice.digital.hmpps.adjustments.api.service.ValidationService
@@ -38,6 +39,7 @@ class AdjustmentsController(
   val adjustmentsService: AdjustmentsService,
   val validationService: ValidationService,
   val unusedDeductionsService: UnusedDeductionsService,
+  val adjustmentsDomainEventService: AdjustmentsDomainEventService,
 ) {
 
   @PostMapping
@@ -53,7 +55,18 @@ class AdjustmentsController(
       ApiResponse(responseCode = "401", description = "Unauthorised, requires a valid Oauth2 token"),
     ],
   )
-  fun create(@RequestBody adjustments: List<AdjustmentDto>): CreateResponseDto = adjustmentsService.create(adjustments)
+  fun create(@RequestBody adjustments: List<AdjustmentDto>): CreateResponseDto {
+    val createdEvent = adjustmentsService.create(adjustments)
+    createdEvent.adjustmentEventToEmit.ids.forEachIndexed { index, id ->
+      val isLast = index == createdEvent.adjustmentEventToEmit.ids.size - 1
+      val singleEvent = createdEvent.adjustmentEventToEmit.copy(
+        ids = listOf(id),
+        isLast = isLast,
+      )
+      adjustmentsDomainEventService.raiseAdjustmentEvent(singleEvent)
+    }
+    return createdEvent.record
+  }
 
   @GetMapping("", params = ["person"])
   @Operation(
@@ -124,7 +137,8 @@ class AdjustmentsController(
     adjustmentId: UUID,
     @RequestBody adjustment: AdjustmentDto,
   ) {
-    adjustmentsService.update(adjustmentId, adjustment)
+    val updatedEvent = adjustmentsService.update(adjustmentId, adjustment)
+    adjustmentsDomainEventService.raiseAdjustmentEvent(updatedEvent.adjustmentEventToEmit)
   }
 
   @PostMapping("/restore")
@@ -145,7 +159,9 @@ class AdjustmentsController(
     @RequestBody
     adjustments: RestoreAdjustmentsDto,
   ) {
-    adjustmentsService.restore(adjustments)
+    val restoredEvent = adjustmentsService.restore(adjustments)
+    adjustmentsDomainEventService.raiseAdjustmentEvent(restoredEvent.adjustmentEventToEmit)
+    restoredEvent.record
   }
 
   @PostMapping("/{adjustmentId}/effective-days")
@@ -167,7 +183,8 @@ class AdjustmentsController(
     adjustmentId: UUID,
     @RequestBody adjustment: AdjustmentEffectiveDaysDto,
   ) {
-    adjustmentsService.updateEffectiveDays(adjustmentId, adjustment)
+    val updatedEvent = adjustmentsService.updateEffectiveDays(adjustmentId, adjustment)
+    adjustmentsDomainEventService.raiseAdjustmentEvent(updatedEvent.adjustmentEventToEmit)
   }
 
   @PostMapping("/person/{person}/manual-unused-deductions")
@@ -189,7 +206,10 @@ class AdjustmentsController(
     person: String,
     @RequestBody manualUnusedDeductionsDto: ManualUnusedDeductionsDto,
   ) {
-    unusedDeductionsService.setUnusedDaysManually(person, manualUnusedDeductionsDto)
+    val adjustmentEvents = unusedDeductionsService.setUnusedDaysManually(person, manualUnusedDeductionsDto)
+    adjustmentEvents.forEach { event ->
+      adjustmentsDomainEventService.raiseAdjustmentEvent(event)
+    }
   }
 
   @GetMapping("/person/{person}/unused-deductions-result")
@@ -229,7 +249,8 @@ class AdjustmentsController(
     @PathVariable("adjustmentId")
     adjustmentId: UUID,
   ) {
-    adjustmentsService.delete(adjustmentId)
+    val deletedEvent = adjustmentsService.delete(adjustmentId)
+    adjustmentsDomainEventService.raiseAdjustmentEvent(deletedEvent.adjustmentEventToEmit)
   }
 
   @PostMapping("/validate")

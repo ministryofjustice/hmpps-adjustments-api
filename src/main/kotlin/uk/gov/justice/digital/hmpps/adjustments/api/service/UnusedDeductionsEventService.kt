@@ -6,6 +6,7 @@ import uk.gov.justice.digital.hmpps.adjustments.api.config.UserContext
 @Service
 class UnusedDeductionsEventService(
   val unusedDeductionsService: UnusedDeductionsService,
+  val adjustmentsDomainEventService: AdjustmentsDomainEventService,
 ) {
 
   fun handleAdjustmentMessage(adjustmentEvent: AdjustmentEvent) {
@@ -30,7 +31,9 @@ class UnusedDeductionsEventService(
   private fun calculateUnusedDeductions(person: String) {
     unusedDeductionsService.setStatusToInProgress(person)
     try {
-      unusedDeductionsService.recalculateUnusedDeductions(person)
+      unusedDeductionsService.recalculateUnusedDeductions(person).forEach { adjustmentEvent ->
+        adjustmentsDomainEventService.raiseAdjustmentEvent(adjustmentEvent)
+      }
     } finally {
       unusedDeductionsService.removeInProgressStatus(person)
     }

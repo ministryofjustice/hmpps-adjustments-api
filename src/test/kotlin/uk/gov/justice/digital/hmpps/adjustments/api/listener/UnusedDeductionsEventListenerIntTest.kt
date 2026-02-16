@@ -36,7 +36,7 @@ class UnusedDeductionsEventListenerIntTest : SqsIntegrationTestBase() {
     "classpath:test_data/insert-unused-deduction-adjustments.sql",
   )
   fun handleAdjustmentEvent() {
-    CalculateReleaseDatesApiExtension.calculateReleaseDatesApi.stubCalculateUnusedDeductions()
+    CalculateReleaseDatesApiExtension.calculateReleaseDatesApi.stubCalculateUnusedDeductions(UNUSED_DEDUCTIONS_PRISONER_ID)
     val eventType = "release-date-adjustments.adjustment.inserted"
     domainEventsTopicSnsClient.publish(
       PublishRequest.builder().topicArn(domainEventsTopicArn)
@@ -95,7 +95,7 @@ class UnusedDeductionsEventListenerIntTest : SqsIntegrationTestBase() {
     "classpath:test_data/insert-unused-deduction-adjustments.sql",
   )
   fun handlePrisonerSearchEvent() {
-    CalculateReleaseDatesApiExtension.calculateReleaseDatesApi.stubCalculateUnusedDeductions()
+    CalculateReleaseDatesApiExtension.calculateReleaseDatesApi.stubCalculateUnusedDeductions(UNUSED_DEDUCTIONS_PRISONER_ID)
     val eventType = "prisoner-offender-search.prisoner.updated"
     domainEventsTopicSnsClient.publish(
       PublishRequest.builder().topicArn(domainEventsTopicArn)
@@ -153,7 +153,7 @@ class UnusedDeductionsEventListenerIntTest : SqsIntegrationTestBase() {
     "classpath:test_data/insert-error-unused-deduction-adjustments.sql",
   )
   fun `handleAdjustmentEvent with an exception`() {
-    CalculateReleaseDatesApiExtension.calculateReleaseDatesApi.stubCalculateUnusedDeductionsError()
+    CalculateReleaseDatesApiExtension.calculateReleaseDatesApi.stubCalculateUnusedDeductionsError(UNUSED_DEDUCTIONS_ERROR_PRISONER_ID)
     val eventType = "release-date-adjustments.adjustment.inserted"
     domainEventsTopicSnsClient.publish(
       PublishRequest.builder().topicArn(domainEventsTopicArn)

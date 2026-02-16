@@ -11,6 +11,7 @@ import uk.gov.justice.digital.hmpps.adjustments.api.entity.AdjustmentType
 import uk.gov.justice.digital.hmpps.adjustments.api.entity.UnusedDeductionsCalculationResult
 import uk.gov.justice.digital.hmpps.adjustments.api.model.AdjustmentDto
 import uk.gov.justice.digital.hmpps.adjustments.api.model.AdjustmentEffectiveDaysDto
+import uk.gov.justice.digital.hmpps.adjustments.api.model.AdjustmentEventMetadata
 import uk.gov.justice.digital.hmpps.adjustments.api.model.ManualUnusedDeductionsDto
 import uk.gov.justice.digital.hmpps.adjustments.api.model.UnusedDeductionsCalculationResultDto
 import uk.gov.justice.digital.hmpps.adjustments.api.model.UnusedDeductionsCalculationStatus
@@ -45,7 +46,8 @@ class UnusedDeductionsService(
   }
 
   @Transactional
-  fun recalculateUnusedDeductions(offenderNo: String) {
+  fun recalculateUnusedDeductions(offenderNo: String): List<AdjustmentEventMetadata> {
+    val adjustmentEvents: MutableList<AdjustmentEventMetadata> = mutableListOf()
     val adjustments = adjustmentService.findCurrentAdjustments(offenderNo, listOf(AdjustmentStatus.ACTIVE), true)
     val anyDpsAdjustments = adjustments.any { it.source == AdjustmentSource.DPS }
     if (anyDpsAdjustments) {
@@ -54,8 +56,8 @@ class UnusedDeductionsService(
         .filter { it.adjustmentType === AdjustmentType.REMAND || it.adjustmentType === AdjustmentType.TAGGED_BAIL }
 
       if (deductions.isEmpty()) {
-        setUnusedDeductions(0, adjustments, deductions)
-        return
+        adjustmentEvents.addAll(setUnusedDeductions(0, adjustments, deductions))
+        return adjustmentEvents
       }
 
       val anyNomisDeductions = deductions.any { it.source == AdjustmentSource.NOMIS }
@@ -76,8 +78,8 @@ class UnusedDeductionsService(
           setUnusedDeductionsResult(offenderNo, UnusedDeductionsCalculationStatus.UNKNOWN)
         } else {
           val unusedDeductions = unusedDeductionsResponse.unusedDeductions
-          setUnusedDeductions(unusedDeductions, adjustments, deductions)
-          setEffectiveDays(unusedDeductions, deductions)
+          adjustmentEvents.addAll(setUnusedDeductions(unusedDeductions, adjustments, deductions))
+          adjustmentEvents.addAll(setEffectiveDays(unusedDeductions, deductions))
           setUnusedDeductionsResult(offenderNo, UnusedDeductionsCalculationStatus.CALCULATED)
         }
       }
@@ -87,40 +89,51 @@ class UnusedDeductionsService(
         setUnusedDeductionsResult(offenderNo, UnusedDeductionsCalculationStatus.NOMIS_ADJUSTMENT)
       }
     }
+    return adjustmentEvents
   }
 
-  private fun setEffectiveDays(unusedDeductions: Int, deductions: List<AdjustmentDto>) {
+  private fun setEffectiveDays(unusedDeductions: Int, deductions: List<AdjustmentDto>): List<AdjustmentEventMetadata> {
     var remainingDeductions = unusedDeductions
+    val adjustmentEvents: MutableList<AdjustmentEventMetadata> = mutableListOf()
     // Remand becomes unused first.
     deductions.sortedWith(compareBy({ it.adjustmentType.name }, { it.createdDate!! })).forEach { adjustment ->
       val effectiveDays = max(adjustment.days!! - remainingDeductions, 0)
       remainingDeductions -= adjustment.days
       remainingDeductions = max(remainingDeductions, 0)
       if (effectiveDays != adjustment.effectiveDays) {
-        adjustmentService.updateEffectiveDays(adjustment.id!!, AdjustmentEffectiveDaysDto(adjustment.id, effectiveDays, adjustment.person))
+        adjustmentEvents.add(
+          adjustmentService.updateEffectiveDays(adjustment.id!!, AdjustmentEffectiveDaysDto(adjustment.id, effectiveDays, adjustment.person)).adjustmentEventToEmit,
+        )
       }
     }
+    return adjustmentEvents
   }
 
   private fun setUnusedDeductions(
     unusedDeductions: Int,
     adjustments: List<AdjustmentDto>,
     deductions: List<AdjustmentDto>,
-  ) {
+  ): List<AdjustmentEventMetadata> {
+    val adjustmentEvents: MutableList<AdjustmentEventMetadata> = mutableListOf()
     val unusedDeductionsAdjustment =
       adjustments.find { it.adjustmentType == AdjustmentType.UNUSED_DEDUCTIONS }
     if (unusedDeductionsAdjustment != null) {
       if (unusedDeductions == 0) {
-        adjustmentService.delete(unusedDeductionsAdjustment.id!!)
+        val deletedAdjustmentEvent = adjustmentService.delete(unusedDeductionsAdjustment.id!!)
+        adjustmentEvents.add(deletedAdjustmentEvent.adjustmentEventToEmit) // Now works
       } else {
         if (unusedDeductionsAdjustment.days != unusedDeductions) {
-          adjustmentService.update(unusedDeductionsAdjustment.id!!, unusedDeductionsAdjustment.copy(days = unusedDeductions, fromDate = null, toDate = null))
+          val updatedAdjustmentEvent = adjustmentService.update(
+            unusedDeductionsAdjustment.id!!,
+            unusedDeductionsAdjustment.copy(days = unusedDeductions, fromDate = null, toDate = null),
+          )
+          adjustmentEvents.add(updatedAdjustmentEvent.adjustmentEventToEmit)
         }
       }
     } else {
       if (unusedDeductions > 0) {
         val aDeduction = deductions[0]
-        adjustmentService.create(
+        val createAdjustmentEvent = adjustmentService.create(
           listOf(
             aDeduction.copy(
               id = null,
@@ -133,16 +146,21 @@ class UnusedDeductionsService(
             ),
           ),
         )
+        adjustmentEvents.add(createAdjustmentEvent.adjustmentEventToEmit)
       }
     }
+    return adjustmentEvents
   }
-  fun setUnusedDaysManually(person: String, manualUnusedDeductionsDto: ManualUnusedDeductionsDto) {
+
+  fun setUnusedDaysManually(person: String, manualUnusedDeductionsDto: ManualUnusedDeductionsDto): List<AdjustmentEventMetadata> {
     val adjustments = adjustmentService.findCurrentAdjustments(person, listOf(AdjustmentStatus.ACTIVE), true, null)
     val deductions = adjustments
-      .filter { it.adjustmentType === AdjustmentType.REMAND || it.adjustmentType === AdjustmentType.TAGGED_BAIL }
+      .filter { it.adjustmentType == AdjustmentType.REMAND || it.adjustmentType == AdjustmentType.TAGGED_BAIL }
 
-    setUnusedDeductions(manualUnusedDeductionsDto.days, adjustments, deductions)
-    setEffectiveDays(manualUnusedDeductionsDto.days, deductions)
+    val adjustmentsEvents: MutableList<AdjustmentEventMetadata> = mutableListOf()
+    adjustmentsEvents.addAll(setUnusedDeductions(manualUnusedDeductionsDto.days, adjustments, deductions))
+    adjustmentsEvents.addAll(setEffectiveDays(manualUnusedDeductionsDto.days, deductions))
+    return adjustmentsEvents
   }
 
   @Transactional(readOnly = true)

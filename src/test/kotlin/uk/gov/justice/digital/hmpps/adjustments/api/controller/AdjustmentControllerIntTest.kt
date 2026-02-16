@@ -45,6 +45,7 @@ import uk.gov.justice.digital.hmpps.adjustments.api.listener.UNUSED_DEDUCTIONS_P
 import uk.gov.justice.digital.hmpps.adjustments.api.model.AdditionalDaysAwardedDto
 import uk.gov.justice.digital.hmpps.adjustments.api.model.AdjustmentDto
 import uk.gov.justice.digital.hmpps.adjustments.api.model.AdjustmentEffectiveDaysDto
+import uk.gov.justice.digital.hmpps.adjustments.api.model.AdjustmentEventType
 import uk.gov.justice.digital.hmpps.adjustments.api.model.CreateResponseDto
 import uk.gov.justice.digital.hmpps.adjustments.api.model.LawfullyAtLargeDto
 import uk.gov.justice.digital.hmpps.adjustments.api.model.ManualUnusedDeductionsDto
@@ -58,7 +59,6 @@ import uk.gov.justice.digital.hmpps.adjustments.api.model.ValidationCode
 import uk.gov.justice.digital.hmpps.adjustments.api.model.ValidationMessage
 import uk.gov.justice.digital.hmpps.adjustments.api.respository.AdjustmentRepository
 import uk.gov.justice.digital.hmpps.adjustments.api.service.AdjustmentsTransactionalService
-import uk.gov.justice.digital.hmpps.adjustments.api.service.EventType
 import uk.gov.justice.digital.hmpps.adjustments.api.wiremock.CalculateReleaseDatesApiExtension
 import uk.gov.justice.digital.hmpps.adjustments.api.wiremock.PrisonApiExtension
 import java.time.LocalDate
@@ -109,7 +109,7 @@ class AdjustmentControllerIntTest : SqsIntegrationTestBase() {
       awaitAtMost30Secs untilCallTo { getNumberOfMessagesCurrentlyOnQueue() } matches { it == 1 }
       val latestMessage: String = getLatestMessage()!!.messages()[0].body()
       assertThat(latestMessage).contains(adjustment.id.toString())
-      assertThat(latestMessage).contains(EventType.ADJUSTMENT_CREATED.value)
+      assertThat(latestMessage).contains(AdjustmentEventType.ADJUSTMENT_CREATED.value)
       assertThat(latestMessage).contains(AdjustmentSource.DPS.name)
       assertThat(latestMessage).contains("\\\"lastEvent\\\":true")
     }
@@ -193,7 +193,7 @@ class AdjustmentControllerIntTest : SqsIntegrationTestBase() {
     @Test
     @Transactional
     fun update() {
-      val id = createAnAdjustment().also {
+      val id = createAnAdjustment(CREATED_ADJUSTMENT.copy(person = "TESTUPD")).also {
         cleanQueue()
       }
       val newFromDate = CREATED_ADJUSTMENT.fromDate!!.minusYears(1)
@@ -237,7 +237,7 @@ class AdjustmentControllerIntTest : SqsIntegrationTestBase() {
       awaitAtMost30Secs untilCallTo { getNumberOfMessagesCurrentlyOnQueue() } matches { it == 1 }
       val latestMessage: String = getLatestMessage()!!.messages()[0].body()
       assertThat(latestMessage).contains(adjustment.id.toString())
-      assertThat(latestMessage).contains(EventType.ADJUSTMENT_UPDATED.value)
+      assertThat(latestMessage).contains(AdjustmentEventType.ADJUSTMENT_UPDATED.value)
       assertThat(latestMessage).contains(AdjustmentSource.DPS.name)
       assertThat(latestMessage).contains("\\\"lastEvent\\\":true")
     }
@@ -295,7 +295,7 @@ class AdjustmentControllerIntTest : SqsIntegrationTestBase() {
       awaitAtMost30Secs untilCallTo { getNumberOfMessagesCurrentlyOnQueue() } matches { it == 1 }
       val latestMessage: String = getLatestMessage()!!.messages()[0].body()
       assertThat(latestMessage).contains(adjustment.id.toString())
-      assertThat(latestMessage).contains(EventType.ADJUSTMENT_UPDATED.value)
+      assertThat(latestMessage).contains(AdjustmentEventType.ADJUSTMENT_UPDATED.value)
       assertThat(latestMessage).contains(AdjustmentSource.DPS.name)
       assertThat(latestMessage).contains("\\\"unusedDeductions\\\":true")
       assertThat(latestMessage).contains("\\\"lastEvent\\\":true")
@@ -358,9 +358,8 @@ class AdjustmentControllerIntTest : SqsIntegrationTestBase() {
     }
 
     @Test
-    @Transactional
     fun delete() {
-      val id = createAnAdjustment().also {
+      val id = createAnAdjustment(CREATED_ADJUSTMENT.copy(person = "TESTDEL")).also {
         cleanQueue()
       }
       webTestClient
@@ -390,7 +389,7 @@ class AdjustmentControllerIntTest : SqsIntegrationTestBase() {
       awaitAtMost30Secs untilCallTo { getNumberOfMessagesCurrentlyOnQueue() } matches { it == 1 }
       val latestMessage: String = getLatestMessage()!!.messages()[0].body()
       assertThat(latestMessage).contains(adjustment.id.toString())
-      assertThat(latestMessage).contains(EventType.ADJUSTMENT_DELETED.value)
+      assertThat(latestMessage).contains(AdjustmentEventType.ADJUSTMENT_DELETED.value)
       assertThat(latestMessage).contains(AdjustmentSource.DPS.name)
       assertThat(latestMessage).contains("\\\"lastEvent\\\":true")
     }
@@ -418,12 +417,13 @@ class AdjustmentControllerIntTest : SqsIntegrationTestBase() {
       "classpath:test_data/reset-data.sql",
     )
     fun findByPerson() {
-      val id = createAnAdjustment().also {
+      val adjustment = CREATED_ADJUSTMENT.copy(person = "TFBR")
+      val id = createAnAdjustment(adjustment).also {
         cleanQueue()
       }
       val result = webTestClient
         .get()
-        .uri("/adjustments?person=${PrisonApiExtension.PRISONER_ID}")
+        .uri("/adjustments?person=TFBR")
         .headers(
           setAdjustmentsRWAuth(),
         )
@@ -440,7 +440,7 @@ class AdjustmentControllerIntTest : SqsIntegrationTestBase() {
         .isEqualTo(
           CREATED_ADJUSTMENT.copy(
             id = id,
-            person = PrisonApiExtension.PRISONER_ID,
+            person = "TFBR",
             effectiveDays = 4,
             lastUpdatedBy = "Test User",
             status = ACTIVE,

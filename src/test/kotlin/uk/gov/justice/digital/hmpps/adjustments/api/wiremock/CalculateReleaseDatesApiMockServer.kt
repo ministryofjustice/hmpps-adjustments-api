@@ -9,6 +9,7 @@ import org.junit.jupiter.api.extension.BeforeEachCallback
 import org.junit.jupiter.api.extension.ExtensionContext
 import uk.gov.justice.digital.hmpps.adjustments.api.listener.UNUSED_DEDUCTIONS_ERROR_PRISONER_ID
 import uk.gov.justice.digital.hmpps.adjustments.api.listener.UNUSED_DEDUCTIONS_PRISONER_ID
+import uk.gov.justice.digital.hmpps.adjustments.api.wiremock.PrisonApiExtension.Companion.PRISONER_ID
 
 /*
     This class mocks the calculate release dates api.
@@ -23,7 +24,11 @@ class CalculateReleaseDatesApiExtension :
   }
   override fun beforeAll(context: ExtensionContext) {
     calculateReleaseDatesApi.start()
-    calculateReleaseDatesApi.stubCalculateUnusedDeductions()
+    calculateReleaseDatesApi.stubCalculateUnusedDeductions(UNUSED_DEDUCTIONS_PRISONER_ID)
+    calculateReleaseDatesApi.stubCalculateZeroUnusedDeductions(PRISONER_ID)
+    calculateReleaseDatesApi.stubCalculateZeroUnusedDeductions("TESTDEL")
+    calculateReleaseDatesApi.stubCalculateZeroUnusedDeductions("TESTUPD")
+    calculateReleaseDatesApi.stubCalculateUnusedDeductionsError(UNUSED_DEDUCTIONS_ERROR_PRISONER_ID)
   }
 
   override fun beforeEach(context: ExtensionContext) {
@@ -40,9 +45,9 @@ class CalculateReleaseDatesApiMockServer : WireMockServer(WIREMOCK_PORT) {
     private const val WIREMOCK_PORT = 8334
   }
 
-  fun stubCalculateUnusedDeductions() {
+  fun stubCalculateUnusedDeductions(prisonerId: String) {
     stubFor(
-      post("/unused-deductions/$UNUSED_DEDUCTIONS_PRISONER_ID/calculation")
+      post("/unused-deductions/$prisonerId/calculation")
         .willReturn(
           aResponse()
             .withHeader("Content-Type", "application/json")
@@ -57,9 +62,26 @@ class CalculateReleaseDatesApiMockServer : WireMockServer(WIREMOCK_PORT) {
     )
   }
 
-  fun stubCalculateUnusedDeductionsError() {
+  fun stubCalculateZeroUnusedDeductions(prisonerId: String) {
     stubFor(
-      post("/unused-deductions/$UNUSED_DEDUCTIONS_ERROR_PRISONER_ID/calculation")
+      post("/unused-deductions/$prisonerId/calculation")
+        .willReturn(
+          aResponse()
+            .withHeader("Content-Type", "application/json")
+            .withBody(
+              """
+                {"unusedDeductions":0}
+              """.trimIndent(),
+            )
+            .withFixedDelay(200)
+            .withStatus(200),
+        ),
+    )
+  }
+
+  fun stubCalculateUnusedDeductionsError(prisonerId: String) {
+    stubFor(
+      post("/unused-deductions/$prisonerId/calculation")
         .willReturn(
           aResponse()
             .withHeader("Content-Type", "application/json")

@@ -8,6 +8,7 @@ import jakarta.persistence.Column
 import jakarta.persistence.Entity
 import jakarta.persistence.EnumType
 import jakarta.persistence.Enumerated
+import jakarta.persistence.FetchType
 import jakarta.persistence.Id
 import jakarta.persistence.OneToMany
 import jakarta.persistence.OneToOne
@@ -58,7 +59,7 @@ data class Adjustment(
   @Enumerated(EnumType.STRING)
   var status: AdjustmentStatus = AdjustmentStatus.ACTIVE,
 
-  @OneToMany(mappedBy = "adjustment", cascade = [CascadeType.ALL])
+  @OneToMany(mappedBy = "adjustment", fetch = FetchType.EAGER, cascade = [CascadeType.ALL])
   @JsonIgnore
   var adjustmentHistory: List<AdjustmentHistory> = ArrayList(),
 
