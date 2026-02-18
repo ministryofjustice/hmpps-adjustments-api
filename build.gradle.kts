@@ -3,8 +3,8 @@ import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
 plugins {
   id("uk.gov.justice.hmpps.gradle-spring-boot") version "9.3.0"
-  kotlin("plugin.spring") version "2.3.0"
-  kotlin("plugin.jpa") version "2.3.0"
+  kotlin("plugin.spring") version "2.3.10"
+  kotlin("plugin.jpa") version "2.3.10"
   id("se.patrikerdes.use-latest-versions") version "0.2.19"
 }
 
@@ -27,14 +27,14 @@ dependencies {
   implementation("org.springframework.boot:spring-boot-starter-data-jpa")
   implementation("org.springframework.boot:spring-boot-starter-actuator")
 
-  implementation("io.hypersistence:hypersistence-utils-hibernate-63:3.14.1")
+  implementation("io.hypersistence:hypersistence-utils-hibernate-63:3.15.2")
 
   // Enable kotlin reflect
-  implementation("org.jetbrains.kotlin:kotlin-reflect:2.3.0")
+  implementation("org.jetbrains.kotlin:kotlin-reflect:2.3.10")
 
   implementation("uk.gov.justice.service.hmpps:hmpps-sqs-spring-boot-starter:5.6.3")
 
-  implementation("org.springframework:spring-jms:7.0.3")
+  implementation("org.springframework:spring-jms:7.0.5")
 
   // Database dependencies
   runtimeOnly("org.flywaydb:flyway-core")
@@ -51,9 +51,9 @@ dependencies {
   testImplementation("org.awaitility:awaitility-kotlin:4.3.0")
   testImplementation("io.jsonwebtoken:jjwt:0.13.0")
   testImplementation("net.javacrumbs.json-unit:json-unit-assertj:5.1.0")
-  testImplementation("io.swagger.parser.v3:swagger-parser-v2-converter:2.1.37")
+  testImplementation("io.swagger.parser.v3:swagger-parser-v2-converter:2.1.38")
   testImplementation("org.mockito:mockito-inline:5.2.0")
-  testImplementation("org.junit.jupiter:junit-jupiter:6.0.2")
+  testImplementation("org.junit.jupiter:junit-jupiter:6.0.3")
   testImplementation("org.testcontainers:localstack:1.21.4")
   testImplementation("org.testcontainers:postgresql:1.21.4")
 }
