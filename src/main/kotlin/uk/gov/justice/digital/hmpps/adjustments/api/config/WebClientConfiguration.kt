@@ -23,7 +23,7 @@ class WebClientConfiguration(
   @Value("\${prison.api.url}") private val prisonApiUri: String,
   @Value("\${prison.api.timeout-seconds:90}") private val prisonApiTimeoutSeconds: Long,
   @Value("\${adjudications.api.url}") private val adjudicationsApiUri: String,
-  @Value("\${adjudications.api.timeout-seconds:90}") private val adjudicationsApiTimeoutSeconds: Long,
+  @Value("\${adjudications.api.timeout-seconds:1}") private val adjudicationsApiTimeoutSeconds: Long,
   @Value("\${calculate-release-dates.api.url}") private val calculateReleaseDatesApiUrl: String,
   @Value("\${calculate-release-dates.api.timeout-seconds:90}") private val calculateReleaseDatesApiTimeoutSeconds: Long,
   @Value("\${remand-and-sentencing.api.url}") private val remandAndSentencingApiUrl: String,
