@@ -54,27 +54,27 @@ class ReviewPreviousUalService(
     val prisoner = prisonerSearchApiClient.findByPrisonerNumber(person)
     val username = adjustmentsTransactionalService.getCurrentAuthenticationUsername()
     val prison = prisoner.prisonId
-    request.rejectedAdjustmentIds.forEach { rejectedAdjustmentUuid ->
-      reviewPreviousUalResultRepository.save(
+    reviewPreviousUalResultRepository.saveAll(
+      request.rejectedAdjustmentIds.map { rejectedAdjustmentUuid ->
         ReviewPreviousUalResult.rejected(
           adjustmentId = rejectedAdjustmentUuid,
           person = person,
           username = username,
           prison = prison,
-        ),
-      )
-    }
-    val adjustmentsToCreate = request.acceptedAdjustmentIds
-      .onEach { acceptedAdjustmentUuid ->
-        reviewPreviousUalResultRepository.save(
-          ReviewPreviousUalResult.accepted(
-            adjustmentId = acceptedAdjustmentUuid,
-            person = person,
-            username = username,
-            prison = prison,
-          ),
         )
-      }
+      },
+    )
+    reviewPreviousUalResultRepository.saveAll(
+      request.acceptedAdjustmentIds.map { acceptedAdjustmentUuid ->
+        ReviewPreviousUalResult.accepted(
+          adjustmentId = acceptedAdjustmentUuid,
+          person = person,
+          username = username,
+          prison = prison,
+        )
+      },
+    )
+    val adjustmentsToCreate = request.acceptedAdjustmentIds
       .map { acceptedAdjustmentUuid ->
         val existing = adjustmentRepository.getReferenceById(acceptedAdjustmentUuid)
         AdjustmentDto(

@@ -2,6 +2,7 @@ package uk.gov.justice.digital.hmpps.adjustments.api.service
 
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
+import org.mockito.ArgumentMatchers.anyList
 import org.mockito.kotlin.any
 import org.mockito.kotlin.argumentCaptor
 import org.mockito.kotlin.mock
@@ -128,7 +129,7 @@ class ReviewPreviousUalServiceTest {
 
     whenever(adjustmentsTransactionalService.getCurrentAuthenticationUsername()).thenReturn("USER1")
     whenever(prisonerSearchApiClient.findByPrisonerNumber(PERSON_ID)).thenReturn(PRISONER)
-    whenever(reviewPreviousUalResultRepository.save(any())).then { invocation -> invocation.arguments[0] }
+    whenever(reviewPreviousUalResultRepository.saveAll(anyList())).then { invocation -> invocation.arguments[0] }
     whenever(adjustmentRepository.getReferenceById(firstAcceptId)).thenReturn(
       Adjustment(
         id = firstAcceptId,
@@ -245,8 +246,8 @@ class ReviewPreviousUalServiceTest {
     firstAcceptId: UUID,
     secondAcceptId: UUID,
   ) {
-    val reviewCaptor = argumentCaptor<ReviewPreviousUalResult>()
-    verify(reviewPreviousUalResultRepository, times(4)).save(reviewCaptor.capture())
+    val reviewCaptor = argumentCaptor<List<ReviewPreviousUalResult>>()
+    verify(reviewPreviousUalResultRepository, times(2)).saveAll(reviewCaptor.capture())
     val baseResult = ReviewPreviousUalResult(
       id = UUID.randomUUID(),
       adjustmentId = UUID.randomUUID(),
@@ -256,7 +257,7 @@ class ReviewPreviousUalServiceTest {
       reviewedByPrisonId = PRISON_ID,
       reviewedAt = LocalDateTime.now(),
     )
-    assertThat(reviewCaptor.allValues).usingRecursiveFieldByFieldElementComparatorIgnoringFields("id", "reviewedAt")
+    assertThat(reviewCaptor.allValues.flatten()).usingRecursiveFieldByFieldElementComparatorIgnoringFields("id", "reviewedAt")
       .containsExactlyInAnyOrder(
         baseResult.copy(adjustmentId = firstRejectId, status = ReviewPreviousUalStatus.REJECTED),
         baseResult.copy(adjustmentId = secondRejectId, status = ReviewPreviousUalStatus.REJECTED),
