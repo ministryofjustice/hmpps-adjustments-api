@@ -44,6 +44,7 @@ class PrisonApiExtension :
     prisonApi.stubSentencesAndOffences()
     prisonApi.stubGetUnusedDeductionsPrisonerDetails()
     prisonApi.stubGetPrison("LDS", "Leeds")
+    prisonApi.stubGetPrison("DNI", "DNI Prison")
     prisonApi.stubGetPrison("MRG", "Moorgate")
     prisonApi.stubGetPrison("KMI", "Kirkham (HMP)")
     prisonApi.stubGetPrison("PNI", "Preston (HMP)")
