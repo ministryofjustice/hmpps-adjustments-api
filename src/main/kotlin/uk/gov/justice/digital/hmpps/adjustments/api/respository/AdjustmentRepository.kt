@@ -34,4 +34,11 @@ interface AdjustmentRepository : JpaRepository<Adjustment, UUID> {
   ): List<Adjustment>
 
   fun findByPersonAndAdjustmentTypeAndStatusAndCurrentPeriodOfCustody(person: String, adjustmentType: AdjustmentType, status: AdjustmentStatus = ACTIVE, currentPeriodOfCustody: Boolean = true): List<Adjustment>
+
+  fun findByPersonAndAdjustmentTypeAndStatusInAndCurrentPeriodOfCustody(
+    person: String,
+    adjustmentType: AdjustmentType,
+    statuses: List<AdjustmentStatus>,
+    currentPeriodOfCustody: Boolean,
+  ): List<Adjustment>
 }

@@ -4,6 +4,9 @@ import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
+import org.mockito.ArgumentMatchers.anyList
+import org.mockito.ArgumentMatchers.eq
+import org.mockito.kotlin.any
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.whenever
 import uk.gov.justice.digital.hmpps.adjustments.api.client.AdjudicationApiClient
@@ -21,6 +24,7 @@ import uk.gov.justice.digital.hmpps.adjustments.api.enums.InterceptType.FIRST_TI
 import uk.gov.justice.digital.hmpps.adjustments.api.enums.InterceptType.NONE
 import uk.gov.justice.digital.hmpps.adjustments.api.enums.InterceptType.PADA
 import uk.gov.justice.digital.hmpps.adjustments.api.enums.InterceptType.PADAS
+import uk.gov.justice.digital.hmpps.adjustments.api.enums.InterceptType.POTENTIAL
 import uk.gov.justice.digital.hmpps.adjustments.api.enums.InterceptType.UPDATE
 import uk.gov.justice.digital.hmpps.adjustments.api.model.additionaldays.Ada
 import uk.gov.justice.digital.hmpps.adjustments.api.model.additionaldays.AdaAdjudicationDetails
@@ -39,6 +43,7 @@ import uk.gov.justice.digital.hmpps.adjustments.api.respository.AdjustmentReposi
 import uk.gov.justice.digital.hmpps.adjustments.api.respository.ProspectiveAdaRejectionRepository
 import java.time.LocalDate
 import java.time.LocalDateTime
+import java.util.UUID
 
 class AdditionalDaysAwardedServiceTest {
 
@@ -339,6 +344,69 @@ class AdditionalDaysAwardedServiceTest {
       ).isEqualTo(
         AdaAdjudicationDetails(
           intercept = AdaIntercept(NONE, 0, false, emptyList()),
+          earliestNonRecallSentenceDate = null,
+          showExistingAdaMessage = true,
+          earliestRecallDate = recallDate,
+        ),
+      )
+    }
+
+    @Test
+    fun `Returns Potential Ada adjudication details`() {
+      whenever(
+        adjustmentRepository.findByPersonAndAdjustmentTypeAndStatusAndCurrentPeriodOfCustody(
+          NOMS_ID,
+          ADDITIONAL_DAYS_AWARDED,
+        ),
+      ).thenReturn(emptyList())
+      whenever(
+        adjustmentRepository.findByPersonAndAdjustmentTypeAndStatusInAndCurrentPeriodOfCustody(
+          any(),
+          any(),
+          anyList(),
+          eq(false),
+        ),
+      ).thenReturn(
+        listOf(
+          BASE_10_DAY_ADJUSTMENT.copy(
+            id = UUID.fromString("e30264cd-6bf8-42f1-abe7-23d0c2b724ee"),
+            additionalDaysAwarded = AdditionalDaysAwarded(adjudicationCharges = mutableListOf(AdjudicationCharges("MOR-1525916"))),
+            effectiveDays = 5,
+          ),
+        ),
+      )
+
+      whenever(adjudicationApiClient.getAdjudications(NOMS_ID)).thenReturn(AdjudicationResponse(listOf(adjudicationOne)))
+      whenever(prospectiveAdaRejectionRepository.findByPerson(NOMS_ID)).thenReturn(emptyList())
+      whenever(prisonService.getSentencesAndStartDateDetails(NOMS_ID)).thenReturn(hdcRecallSentenceDetail)
+
+      val adaAdjudicationDetails = additionalDaysAwardedService.getAdaAdjudicationDetails(NOMS_ID)
+
+      assertThat(
+        adaAdjudicationDetails,
+      ).isEqualTo(
+        AdaAdjudicationDetails(
+          totalPotential = 5,
+          potential = listOf(
+            AdasByDateCharged(
+              dateChargeProved = LocalDate.of(2023, 8, 3),
+              charges = mutableListOf(
+                Ada(
+                  dateChargeProved = LocalDate.of(2023, 8, 3),
+                  chargeNumber = "MOR-1525916",
+                  toBeServed = "Forthwith",
+                  heardAt = "Moorland (HMP & YOI)",
+                  status = ChargeStatus.AWARDED_OR_PENDING,
+                  days = 5,
+                  consecutiveToChargeNumber = null,
+                ),
+              ),
+              total = 5,
+              status = AdaStatus.POTENTIAL,
+              adjustmentId = UUID.fromString("e30264cd-6bf8-42f1-abe7-23d0c2b724ee"),
+            ),
+          ),
+          intercept = AdaIntercept(POTENTIAL, 1, false, emptyList()),
           earliestNonRecallSentenceDate = null,
           showExistingAdaMessage = true,
           earliestRecallDate = recallDate,
@@ -778,6 +846,48 @@ class AdditionalDaysAwardedServiceTest {
     }
 
     @Test
+    fun `Should intercept if only potential Adas`() {
+      whenever(
+        adjustmentRepository.findByPersonAndAdjustmentTypeAndStatusAndCurrentPeriodOfCustody(
+          NOMS_ID,
+          ADDITIONAL_DAYS_AWARDED,
+        ),
+      ).thenReturn(
+        emptyList(),
+      )
+      whenever(
+        adjustmentRepository.findByPersonAndAdjustmentTypeAndStatusInAndCurrentPeriodOfCustody(
+          any(),
+          any(),
+          anyList(),
+          eq(false),
+        ),
+      ).thenReturn(
+        listOf(
+          BASE_10_DAY_ADJUSTMENT.copy(
+            id = UUID.fromString("e30264cd-6bf8-42f1-abe7-23d0c2b724ee"),
+            additionalDaysAwarded = AdditionalDaysAwarded(adjudicationCharges = mutableListOf(AdjudicationCharges("MOR-1525916"))),
+            effectiveDays = 5,
+          ),
+        ),
+      )
+      whenever(adjudicationApiClient.getAdjudications(NOMS_ID)).thenReturn(AdjudicationResponse(listOf(adjudicationOne)))
+      whenever(prospectiveAdaRejectionRepository.findByPerson(NOMS_ID)).thenReturn(emptyList())
+      whenever(prisonService.getSentencesAndStartDateDetails(NOMS_ID)).thenReturn(hdcRecallSentenceDetail)
+
+      val intercept = additionalDaysAwardedService.getAdaAdjudicationDetails(NOMS_ID).intercept
+
+      assertThat(intercept).isEqualTo(
+        AdaIntercept(
+          POTENTIAL,
+          1,
+          false,
+        ),
+      )
+      assertThat(intercept.message).isEqualTo("These ADAs can potentially have an impact on HDC recall calculations.")
+    }
+
+    @Test
     fun `Should intercept if any multiple prospective`() {
       whenever(
         adjustmentRepository.findByPersonAndAdjustmentTypeAndStatusAndCurrentPeriodOfCustody(
@@ -1127,6 +1237,7 @@ class AdditionalDaysAwardedServiceTest {
     private val recallDate = LocalDate.of(2024, 1, 1)
     private val sentences = listOf(SentenceAndOffences(sentenceDate = sentenceDate, bookingId = 1, sentenceSequence = 1, sentenceCalculationType = "ADIMP", sentenceStatus = "A"))
     private val recallSentences = listOf(SentenceAndOffences(sentenceDate = recallSentenceDate, bookingId = 1, sentenceSequence = 1, sentenceCalculationType = "LR", sentenceStatus = "A"))
+    private val hdcRecallSentences = listOf(SentenceAndOffences(sentenceDate = recallSentenceDate, bookingId = 1, sentenceSequence = 1, sentenceCalculationType = "CUR", sentenceStatus = "A"))
 
     private val defaultSentenceDetail = SentenceAndStartDateDetails(
       sentences,
@@ -1138,6 +1249,14 @@ class AdditionalDaysAwardedServiceTest {
     )
     private val recallSentenceDetail = SentenceAndStartDateDetails(
       recallSentences,
+      earliestRecallDate = recallDate,
+      latestSentenceDate = sentenceDate,
+      earliestNonRecallSentenceDate = null,
+      hasRecall = true,
+      earliestSentenceDate = recallSentenceDate,
+    )
+    private val hdcRecallSentenceDetail = SentenceAndStartDateDetails(
+      hdcRecallSentences,
       earliestRecallDate = recallDate,
       latestSentenceDate = sentenceDate,
       earliestNonRecallSentenceDate = null,

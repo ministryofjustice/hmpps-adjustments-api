@@ -20,4 +20,6 @@ data class AdaAdjudicationDetails(
   val recallWithMissingOutcome: Boolean = false,
   val earliestNonRecallSentenceDate: LocalDate? = null,
   val earliestRecallDate: LocalDate? = null,
+  val potential: List<AdasByDateCharged> = listOf(),
+  val totalPotential: Int = 0,
 )
