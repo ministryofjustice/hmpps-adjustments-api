@@ -50,7 +50,6 @@ interface AdjustmentRepository : JpaRepository<Adjustment, UUID> {
     adjustmentType: AdjustmentType = AdjustmentType.UNLAWFULLY_AT_LARGE,
   ): List<Adjustment>
 
-
   fun findByPersonAndAdjustmentTypeAndStatusInAndCurrentPeriodOfCustody(
     person: String,
     adjustmentType: AdjustmentType,
