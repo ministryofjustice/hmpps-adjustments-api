@@ -888,6 +888,41 @@ class AdditionalDaysAwardedServiceTest {
     }
 
     @Test
+    fun `Should not intercept if HDC Recall and no potential Adas`() {
+      whenever(
+        adjustmentRepository.findByPersonAndAdjustmentTypeAndStatusAndCurrentPeriodOfCustody(
+          NOMS_ID,
+          ADDITIONAL_DAYS_AWARDED,
+        ),
+      ).thenReturn(
+        emptyList(),
+      )
+      whenever(
+        adjustmentRepository.findByPersonAndAdjustmentTypeAndStatusInAndCurrentPeriodOfCustody(
+          any(),
+          any(),
+          anyList(),
+          eq(false),
+        ),
+      ).thenReturn(
+        emptyList(),
+      )
+      whenever(adjudicationApiClient.getAdjudications(NOMS_ID)).thenReturn(AdjudicationResponse(listOf(adjudicationOne)))
+      whenever(prospectiveAdaRejectionRepository.findByPerson(NOMS_ID)).thenReturn(emptyList())
+      whenever(prisonService.getSentencesAndStartDateDetails(NOMS_ID)).thenReturn(hdcRecallSentenceDetail)
+
+      val intercept = additionalDaysAwardedService.getAdaAdjudicationDetails(NOMS_ID).intercept
+
+      assertThat(intercept).isEqualTo(
+        AdaIntercept(
+          NONE,
+          0,
+          false,
+        ),
+      )
+    }
+
+    @Test
     fun `Should intercept if any multiple prospective`() {
       whenever(
         adjustmentRepository.findByPersonAndAdjustmentTypeAndStatusAndCurrentPeriodOfCustody(
