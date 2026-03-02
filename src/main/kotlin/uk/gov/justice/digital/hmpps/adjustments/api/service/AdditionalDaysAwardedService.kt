@@ -43,12 +43,20 @@ class AdditionalDaysAwardedService(
   private val adjudicationsLookupService: AdjudicationsLookupService,
 ) {
 
+  private val hdcRecallSentenceTypes: Set<String> = setOf(
+    "14FTRHDC_ORA",
+    "CUR",
+    "CUR_ORA",
+    "FTR_HDC",
+    "FTR_HDC_ORA",
+    "HDR",
+    "HDR_ORA",
+  )
+
   @Transactional
   fun rejectProspectiveAda(prospectiveAdaRejectionDto: ProspectiveAdaRejectionDto) {
     prospectiveAdaRejectionRepository.save(ProspectiveAdaRejection(person = prospectiveAdaRejectionDto.person, dateChargeProved = prospectiveAdaRejectionDto.dateChargeProved, days = prospectiveAdaRejectionDto.days))
   }
-
-  fun getHDCSentenceTypes(): Set<String> = setOf("14FTRHDC_ORA", "CUR", "CUR_ORA", "FTR_HDC", "FTR_HDC_ORA", "HDR", "HDR_ORA")
 
   fun getAdaAdjudicationDetails(nomsId: String, selectedProspectiveAdaDates: List<String> = listOf()): AdaAdjudicationDetails {
     val sentenceDetail = prisonService.getSentencesAndStartDateDetails(nomsId)
@@ -62,11 +70,11 @@ class AdditionalDaysAwardedService(
       sentenceDetail.earliestRecallDate ?: sentenceDetail.earliestSentenceDate!!
     }
     val adaAdjustments = adjustmentRepository.findByPersonAndAdjustmentTypeAndStatusAndCurrentPeriodOfCustody(nomsId, ADDITIONAL_DAYS_AWARDED)
-    val previousAdaAdjustments = adjustmentRepository.findByPersonAndAdjustmentTypeAndStatusInAndCurrentPeriodOfCustody(nomsId, ADDITIONAL_DAYS_AWARDED, listOf(AdjustmentStatus.INACTIVE, AdjustmentStatus.ACTIVE), false)
     val unFilteredAdas = adjudicationsLookupService.lookupAdas(nomsId)
     val adas = adjudicationsLookupService.filterAdasByStartOfSentenceEnvelope(unFilteredAdas, adaFilterDate, true)
-    val hasHDCRecall = sentenceDetail.sentences.any { it.sentenceCalculationType in getHDCSentenceTypes() }
+    val hasHDCRecall = sentenceDetail.sentences.any { it.sentenceCalculationType in hdcRecallSentenceTypes }
     val potentialAdas = if (hasHDCRecall) {
+      val previousAdaAdjustments = adjustmentRepository.findByPersonAndAdjustmentTypeAndStatusInAndCurrentPeriodOfCustody(nomsId, ADDITIONAL_DAYS_AWARDED, listOf(AdjustmentStatus.INACTIVE, AdjustmentStatus.ACTIVE), false)
       val previousAdas = getAdasByDateCharged(adjudicationsLookupService.filterAdasByStartOfSentenceEnvelope(unFilteredAdas, adaFilterDate, false), AWARDED_OR_PENDING)
       previousAdas.mapNotNull { adasByDate ->
         previousAdaAdjustments.find { adjustmentMatchesAdjudication(adasByDate, it) }?.let { adjustment ->
