@@ -17,7 +17,7 @@ class AdjudicationsLookupService(
   private val prisonApiClient: PrisonApiClient,
 ) {
 
-  fun lookupAdas(nomsId: String, startOfSentenceEnvelope: LocalDate): List<Ada> {
+  fun lookupAdas(nomsId: String): List<Ada> {
     val adjudications = adjudicationApiClient.getAdjudications(nomsId)
     val agencies = mutableMapOf<String, String>()
 
@@ -36,17 +36,23 @@ class AdjudicationsLookupService(
           heardAt = outcome.hearing.agencyId,
           status = deriveChargeStatus(it, punishment),
         )
-      }.filter {
-        if (it.status == ChargeStatus.PROSPECTIVE) {
-          true
-        } else {
-          it.dateChargeProved.isAfter(startOfSentenceEnvelope)
-        }
       }.map {
         it.copy(
           heardAt = fromAgencyId(it.heardAt, agencies),
         )
       }
+  }
+
+  public fun filterAdasByStartOfSentenceEnvelope(adas: List<Ada>, startOfSentenceEnvelope: LocalDate, isAfter: Boolean): List<Ada> = adas.filter {
+    if (it.status == ChargeStatus.PROSPECTIVE) {
+      true
+    } else {
+      if (isAfter) {
+        it.dateChargeProved.isAfter(startOfSentenceEnvelope)
+      } else {
+        it.dateChargeProved.isBefore(startOfSentenceEnvelope)
+      }
+    }
   }
 
   private fun getPunishment(it: Adjudication): Punishment? = it.punishments.lastOrNull { pun -> pun.type == "PROSPECTIVE_DAYS" || pun.type == "ADDITIONAL_DAYS" }

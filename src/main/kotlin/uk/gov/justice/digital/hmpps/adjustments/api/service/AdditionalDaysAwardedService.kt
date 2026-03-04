@@ -4,7 +4,9 @@ import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import uk.gov.justice.digital.hmpps.adjustments.api.client.PrisonApiClient
 import uk.gov.justice.digital.hmpps.adjustments.api.client.PrisonerSearchApiClient
+import uk.gov.justice.digital.hmpps.adjustments.api.config.FeatureToggles
 import uk.gov.justice.digital.hmpps.adjustments.api.entity.Adjustment
+import uk.gov.justice.digital.hmpps.adjustments.api.entity.AdjustmentStatus
 import uk.gov.justice.digital.hmpps.adjustments.api.entity.AdjustmentType.ADDITIONAL_DAYS_AWARDED
 import uk.gov.justice.digital.hmpps.adjustments.api.entity.ProspectiveAdaRejection
 import uk.gov.justice.digital.hmpps.adjustments.api.enums.AdaStatus
@@ -20,6 +22,7 @@ import uk.gov.justice.digital.hmpps.adjustments.api.enums.InterceptType.FIRST_TI
 import uk.gov.justice.digital.hmpps.adjustments.api.enums.InterceptType.NONE
 import uk.gov.justice.digital.hmpps.adjustments.api.enums.InterceptType.PADA
 import uk.gov.justice.digital.hmpps.adjustments.api.enums.InterceptType.PADAS
+import uk.gov.justice.digital.hmpps.adjustments.api.enums.InterceptType.POTENTIAL
 import uk.gov.justice.digital.hmpps.adjustments.api.enums.InterceptType.UPDATE
 import uk.gov.justice.digital.hmpps.adjustments.api.model.ProspectiveAdaRejectionDto
 import uk.gov.justice.digital.hmpps.adjustments.api.model.additionaldays.Ada
@@ -39,7 +42,18 @@ class AdditionalDaysAwardedService(
   private val prisonApiClient: PrisonApiClient,
   private val prisonerSearchApiClient: PrisonerSearchApiClient,
   private val adjudicationsLookupService: AdjudicationsLookupService,
+  private val featureToggles: FeatureToggles,
 ) {
+
+  private val hdcRecallSentenceTypes: Set<String> = setOf(
+    "14FTRHDC_ORA",
+    "CUR",
+    "CUR_ORA",
+    "FTR_HDC",
+    "FTR_HDC_ORA",
+    "HDR",
+    "HDR_ORA",
+  )
 
   @Transactional
   fun rejectProspectiveAda(prospectiveAdaRejectionDto: ProspectiveAdaRejectionDto) {
@@ -58,7 +72,20 @@ class AdditionalDaysAwardedService(
       sentenceDetail.earliestRecallDate ?: sentenceDetail.earliestSentenceDate!!
     }
     val adaAdjustments = adjustmentRepository.findByPersonAndAdjustmentTypeAndStatusAndCurrentPeriodOfCustody(nomsId, ADDITIONAL_DAYS_AWARDED)
-    val adas = adjudicationsLookupService.lookupAdas(nomsId, adaFilterDate)
+    val unFilteredAdas = adjudicationsLookupService.lookupAdas(nomsId)
+    val adas = adjudicationsLookupService.filterAdasByStartOfSentenceEnvelope(unFilteredAdas, adaFilterDate, true)
+    val hasHDCRecall = sentenceDetail.sentences.any { it.sentenceCalculationType in hdcRecallSentenceTypes }
+    val potentialAdas = if (hasHDCRecall && featureToggles.displayPotentialAdas) {
+      val previousAdaAdjustments = adjustmentRepository.findByPersonAndAdjustmentTypeAndStatusInAndCurrentPeriodOfCustody(nomsId, ADDITIONAL_DAYS_AWARDED, listOf(AdjustmentStatus.INACTIVE, AdjustmentStatus.ACTIVE), false)
+      val previousAdas = getAdasByDateCharged(adjudicationsLookupService.filterAdasByStartOfSentenceEnvelope(unFilteredAdas, adaFilterDate, false), AWARDED_OR_PENDING)
+      previousAdas.mapNotNull { adasByDate ->
+        previousAdaAdjustments.find { adjustmentMatchesAdjudication(adasByDate, it) }?.let { adjustment ->
+          adasByDate.copy(status = AdaStatus.POTENTIAL, adjustmentId = adjustment.id)
+        }
+      }
+    } else {
+      listOf()
+    }
 
     if (sentenceDetail.hasRecall && sentenceDetail.earliestRecallDate == null) {
       val hasAdaAfterRecallSentenceDateBeforeParallel = if (sentenceDetail.earliestNonRecallSentenceDate != null) {
@@ -131,6 +158,7 @@ class AdditionalDaysAwardedService(
         quashed,
         adaAdjustments,
         awarded,
+        potentialAdas,
         sentenceDetail.latestSentenceDate!!,
         padaRejections,
         showExistingAdaMessage,
@@ -139,7 +167,8 @@ class AdditionalDaysAwardedService(
       showExistingAdaMessage,
       earliestNonRecallSentenceDate = sentenceDetail.earliestNonRecallSentenceDate,
       earliestRecallDate = sentenceDetail.earliestRecallDate,
-
+      potential = potentialAdas,
+      totalPotential = getTotalDays(potentialAdas),
     )
   }
 
@@ -161,6 +190,7 @@ class AdditionalDaysAwardedService(
     quashed: List<AdasByDateCharged>,
     adaAdjustments: List<Adjustment>,
     allAwarded: List<AdasByDateCharged>,
+    potential: List<AdasByDateCharged>,
     latestSentenceDate: LocalDate,
     padaRejections: List<ProspectiveAdaRejection>,
     showExistingAdaMessage: Boolean,
@@ -191,6 +221,7 @@ class AdditionalDaysAwardedService(
 
       numProspective == 1 -> AdaIntercept(PADA, numProspective, true, getMessageParams(nomsId))
       numProspective > 1 -> AdaIntercept(PADAS, numProspective, true, getMessageParams(nomsId))
+      potential.isNotEmpty() -> AdaIntercept(POTENTIAL, potential.size, false)
       else -> AdaIntercept(NONE, 0, false)
     }
   }

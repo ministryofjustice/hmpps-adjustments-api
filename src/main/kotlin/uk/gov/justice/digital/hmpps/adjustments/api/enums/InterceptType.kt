@@ -7,4 +7,5 @@ enum class InterceptType(val message: String? = null) {
   UPDATE("Updates have been made to ADA (Additional days awarded) information, which need to be approved."),
   PADAS("There are PADAs (Prospective additional days awarded) recorded for %s. Review the PADAs and approve the ones that are relevant to the current sentence."),
   PADA("There is a PADA (Prospective additional days awarded) recorded for %s. Review the PADA and approve if it's relevant to the current sentence."),
+  POTENTIAL("These ADAs can potentially have an impact on HDC recall calculations."),
 }

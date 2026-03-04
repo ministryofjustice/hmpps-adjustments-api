@@ -49,4 +49,11 @@ interface AdjustmentRepository : JpaRepository<Adjustment, UUID> {
     status: List<AdjustmentStatus> = listOf(ACTIVE, INACTIVE),
     adjustmentType: AdjustmentType = AdjustmentType.UNLAWFULLY_AT_LARGE,
   ): List<Adjustment>
+
+  fun findByPersonAndAdjustmentTypeAndStatusInAndCurrentPeriodOfCustody(
+    person: String,
+    adjustmentType: AdjustmentType,
+    statuses: List<AdjustmentStatus>,
+    currentPeriodOfCustody: Boolean,
+  ): List<Adjustment>
 }
