@@ -4,6 +4,7 @@ import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import uk.gov.justice.digital.hmpps.adjustments.api.client.PrisonApiClient
 import uk.gov.justice.digital.hmpps.adjustments.api.client.PrisonerSearchApiClient
+import uk.gov.justice.digital.hmpps.adjustments.api.config.FeatureToggles
 import uk.gov.justice.digital.hmpps.adjustments.api.entity.Adjustment
 import uk.gov.justice.digital.hmpps.adjustments.api.entity.AdjustmentStatus
 import uk.gov.justice.digital.hmpps.adjustments.api.entity.AdjustmentType.ADDITIONAL_DAYS_AWARDED
@@ -41,6 +42,7 @@ class AdditionalDaysAwardedService(
   private val prisonApiClient: PrisonApiClient,
   private val prisonerSearchApiClient: PrisonerSearchApiClient,
   private val adjudicationsLookupService: AdjudicationsLookupService,
+  private val featureToggles: FeatureToggles,
 ) {
 
   private val hdcRecallSentenceTypes: Set<String> = setOf(
@@ -73,7 +75,7 @@ class AdditionalDaysAwardedService(
     val unFilteredAdas = adjudicationsLookupService.lookupAdas(nomsId)
     val adas = adjudicationsLookupService.filterAdasByStartOfSentenceEnvelope(unFilteredAdas, adaFilterDate, true)
     val hasHDCRecall = sentenceDetail.sentences.any { it.sentenceCalculationType in hdcRecallSentenceTypes }
-    val potentialAdas = if (hasHDCRecall) {
+    val potentialAdas = if (hasHDCRecall && featureToggles.displayPotentialAdas) {
       val previousAdaAdjustments = adjustmentRepository.findByPersonAndAdjustmentTypeAndStatusInAndCurrentPeriodOfCustody(nomsId, ADDITIONAL_DAYS_AWARDED, listOf(AdjustmentStatus.INACTIVE, AdjustmentStatus.ACTIVE), false)
       val previousAdas = getAdasByDateCharged(adjudicationsLookupService.filterAdasByStartOfSentenceEnvelope(unFilteredAdas, adaFilterDate, false), AWARDED_OR_PENDING)
       previousAdas.mapNotNull { adasByDate ->

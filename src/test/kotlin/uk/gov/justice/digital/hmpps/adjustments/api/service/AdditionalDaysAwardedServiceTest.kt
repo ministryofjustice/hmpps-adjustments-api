@@ -12,6 +12,7 @@ import org.mockito.kotlin.whenever
 import uk.gov.justice.digital.hmpps.adjustments.api.client.AdjudicationApiClient
 import uk.gov.justice.digital.hmpps.adjustments.api.client.PrisonApiClient
 import uk.gov.justice.digital.hmpps.adjustments.api.client.PrisonerSearchApiClient
+import uk.gov.justice.digital.hmpps.adjustments.api.config.FeatureToggles
 import uk.gov.justice.digital.hmpps.adjustments.api.entity.AdditionalDaysAwarded
 import uk.gov.justice.digital.hmpps.adjustments.api.entity.AdjudicationCharges
 import uk.gov.justice.digital.hmpps.adjustments.api.entity.Adjustment
@@ -56,7 +57,7 @@ class AdditionalDaysAwardedServiceTest {
   private val adjudicationsLookupService = AdjudicationsLookupService(adjudicationApiClient, prisonApiClient)
 
   private val additionalDaysAwardedService =
-    AdditionalDaysAwardedService(prisonService, adjustmentRepository, prospectiveAdaRejectionRepository, prisonApiClient, prisonerSearchApiClient, adjudicationsLookupService)
+    AdditionalDaysAwardedService(prisonService, adjustmentRepository, prospectiveAdaRejectionRepository, prisonApiClient, prisonerSearchApiClient, adjudicationsLookupService, FeatureToggles(true))
 
   @BeforeEach
   fun setup() {
@@ -885,6 +886,50 @@ class AdditionalDaysAwardedServiceTest {
         ),
       )
       assertThat(intercept.message).isEqualTo("These ADAs can potentially have an impact on HDC recall calculations.")
+    }
+
+    @Test
+    fun `Should not intercept if HDC with only potential Adas and toggle off`() {
+      val additionalDaysAwardedServiceTest =
+        AdditionalDaysAwardedService(prisonService, adjustmentRepository, prospectiveAdaRejectionRepository, prisonApiClient, prisonerSearchApiClient, adjudicationsLookupService, FeatureToggles(false))
+
+      whenever(
+        adjustmentRepository.findByPersonAndAdjustmentTypeAndStatusAndCurrentPeriodOfCustody(
+          NOMS_ID,
+          ADDITIONAL_DAYS_AWARDED,
+        ),
+      ).thenReturn(
+        emptyList(),
+      )
+      whenever(
+        adjustmentRepository.findByPersonAndAdjustmentTypeAndStatusInAndCurrentPeriodOfCustody(
+          any(),
+          any(),
+          anyList(),
+          eq(false),
+        ),
+      ).thenReturn(
+        listOf(
+          BASE_10_DAY_ADJUSTMENT.copy(
+            id = UUID.fromString("e30264cd-6bf8-42f1-abe7-23d0c2b724ee"),
+            additionalDaysAwarded = AdditionalDaysAwarded(adjudicationCharges = mutableListOf(AdjudicationCharges("MOR-1525916"))),
+            effectiveDays = 5,
+          ),
+        ),
+      )
+      whenever(adjudicationApiClient.getAdjudications(NOMS_ID)).thenReturn(AdjudicationResponse(listOf(adjudicationOne)))
+      whenever(prospectiveAdaRejectionRepository.findByPerson(NOMS_ID)).thenReturn(emptyList())
+      whenever(prisonService.getSentencesAndStartDateDetails(NOMS_ID)).thenReturn(hdcRecallSentenceDetail)
+
+      val intercept = additionalDaysAwardedServiceTest.getAdaAdjudicationDetails(NOMS_ID).intercept
+
+      assertThat(intercept).isEqualTo(
+        AdaIntercept(
+          NONE,
+          0,
+          false,
+        ),
+      )
     }
 
     @Test
