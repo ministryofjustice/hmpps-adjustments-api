@@ -26,13 +26,12 @@ class ThingsToDoService(
     if (ada.intercept.type != NONE) {
       thingsToDo = thingsToDo.copy(thingsToDo = thingsToDo.thingsToDo + ADA_INTERCEPT, adaIntercept = ada.intercept)
     }
-    val previousUalForReview = if (featureToggles.checkForPreviousPeriodsOfUal) {
-      reviewPreviousUalService.findPreviousUalToReview(prisonerId, sentenceAndStartDateDetails)
-    } else {
-      emptyList()
-    }
-    if (previousUalForReview.isNotEmpty()) {
-      thingsToDo = thingsToDo.copy(thingsToDo = thingsToDo.thingsToDo + PREVIOUS_PERIOD_OF_UAL_FOR_REVIEW)
+
+    if (featureToggles.checkForPreviousPeriodsOfUal) {
+      val previousUalForReview = reviewPreviousUalService.findPreviousUalToReview(prisonerId, sentenceAndStartDateDetails)
+      if (previousUalForReview.isNotEmpty()) {
+        thingsToDo = thingsToDo.copy(thingsToDo = thingsToDo.thingsToDo + PREVIOUS_PERIOD_OF_UAL_FOR_REVIEW)
+      }
     }
 
     return thingsToDo
