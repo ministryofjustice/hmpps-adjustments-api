@@ -4,7 +4,6 @@ import jakarta.transaction.Transactional
 import org.springframework.stereotype.Component
 import uk.gov.justice.digital.hmpps.adjustments.api.client.PrisonApiClient
 import uk.gov.justice.digital.hmpps.adjustments.api.client.PrisonerSearchApiClient
-import uk.gov.justice.digital.hmpps.adjustments.api.entity.Adjustment
 import uk.gov.justice.digital.hmpps.adjustments.api.entity.AdjustmentSource
 import uk.gov.justice.digital.hmpps.adjustments.api.entity.AdjustmentType
 import uk.gov.justice.digital.hmpps.adjustments.api.entity.ChangeType
@@ -28,8 +27,18 @@ class ReviewPreviousUalService(
   private val adjustmentsTransactionalService: AdjustmentsTransactionalService,
 ) {
 
-  fun findPreviousUalToReview(person: String): List<PreviousUnlawfullyAtLargeAdjustmentForReview> {
-    val unreviewedPreviousUal = getUnreviewedUalFromPreviousPeriodThatOverlapsTheCurrentPeriod(person)
+  fun findPreviousUalToReview(
+    person: String,
+    sentenceAndStartDateDetails: SentenceAndStartDateDetails? = null,
+  ): List<PreviousUnlawfullyAtLargeAdjustmentForReview> {
+    val sentenceDetail = sentenceAndStartDateDetails ?: prisonService.getSentencesAndStartDateDetails(person)
+    if (sentenceDetail.sentences.isEmpty()) {
+      return emptyList()
+    }
+    val unreviewedPreviousUal = adjustmentRepository.findUnreviewedPreviousUALOverlappingSentenceDate(
+      person = person,
+      startOfSentenceEnvelope = sentenceDetail.earliestSentenceDate!!,
+    )
     return unreviewedPreviousUal.map { ual ->
       val latestHistory = ual.adjustmentHistory.sortedBy { it.changeAt }
         .last { it.changeType !in listOf(ChangeType.MERGE, ChangeType.RELEASE, ChangeType.ADMISSION) }
@@ -108,13 +117,5 @@ class ReviewPreviousUalService(
         isLast = index == createdAdjustmentIds.size - 1,
       )
     }
-  }
-
-  private fun getUnreviewedUalFromPreviousPeriodThatOverlapsTheCurrentPeriod(person: String): List<Adjustment> {
-    val bookingId = prisonerSearchApiClient.findByPrisonerNumber(person).bookingId
-    val startOfSentenceEnvelope = prisonService.getStartOfSentenceEnvelope(bookingId)
-    val unreviewedPreviousUal =
-      adjustmentRepository.findUnreviewedPreviousUALOverlappingSentenceDate(person, startOfSentenceEnvelope)
-    return unreviewedPreviousUal
   }
 }

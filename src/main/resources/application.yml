@@ -97,4 +97,5 @@ management:
 
 feature-toggles:
   display-potential-adas: ${display-potential-adas-feature-toggle:false}
+  check-for-previous-periods-of-ual: ${check-for-previous-periods-of-ual-feature-toggle:false}
 

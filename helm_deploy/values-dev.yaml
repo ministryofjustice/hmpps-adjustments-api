@@ -17,6 +17,8 @@ generic-service:
     REMANDANDSENTENCING_API_URL: https://remand-and-sentencing-api-dev.hmpps.service.justice.gov.uk
     PRISONER_SEARCH_API_URL: https://prisoner-search-dev.prison.service.justice.gov.uk
     DISPLAY_POTENTIAL_ADAS_FEATURE_TOGGLE: "true"
+    CHECK_FOR_PREVIOUS_PERIODS_OF_UAL_FEATURE_TOGGLE: "true"
+
   # Switches off the allow list in the DEV env only.
   allowlist: null
 

@@ -60,8 +60,12 @@ class AdditionalDaysAwardedService(
     prospectiveAdaRejectionRepository.save(ProspectiveAdaRejection(person = prospectiveAdaRejectionDto.person, dateChargeProved = prospectiveAdaRejectionDto.dateChargeProved, days = prospectiveAdaRejectionDto.days))
   }
 
-  fun getAdaAdjudicationDetails(nomsId: String, selectedProspectiveAdaDates: List<String> = listOf()): AdaAdjudicationDetails {
-    val sentenceDetail = prisonService.getSentencesAndStartDateDetails(nomsId)
+  fun getAdaAdjudicationDetails(
+    nomsId: String,
+    selectedProspectiveAdaDates: List<String> = listOf(),
+    sentenceAndStartDateDetails: SentenceAndStartDateDetails? = null,
+  ): AdaAdjudicationDetails {
+    val sentenceDetail = sentenceAndStartDateDetails ?: prisonService.getSentencesAndStartDateDetails(nomsId)
     if (sentenceDetail.sentences.isEmpty()) {
       return AdaAdjudicationDetails()
     }
