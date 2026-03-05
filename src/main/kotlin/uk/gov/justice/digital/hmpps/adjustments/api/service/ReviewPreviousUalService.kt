@@ -107,7 +107,16 @@ class ReviewPreviousUalService(
         )
       }
     val createdAdjustmentIds = adjustmentsTransactionalService.create(adjustmentsToCreate).adjustmentIds
-    return createdAdjustmentIds.mapIndexed { index, id ->
+
+    val reviewedEvent = AdjustmentEventMetadata(
+      eventType = AdjustmentEventType.ADJUSTMENT_REVIEWED_PREVIOUS_UAL_PERIODS,
+      ids = emptyList(),
+      person = person,
+      source = AdjustmentSource.DPS,
+      isLast = false,
+    )
+
+    return listOf(reviewedEvent) + createdAdjustmentIds.mapIndexed { index, id ->
       AdjustmentEventMetadata(
         eventType = AdjustmentEventType.ADJUSTMENT_CREATED,
         ids = listOf(id),

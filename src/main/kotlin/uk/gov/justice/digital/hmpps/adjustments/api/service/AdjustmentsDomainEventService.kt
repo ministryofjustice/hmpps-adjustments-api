@@ -14,7 +14,7 @@ class AdjustmentsDomainEventService(
   fun raiseAdjustmentEvent(event: AdjustmentEventMetadata) {
     val isUnusedDeductions = event.adjustmentType == AdjustmentType.UNUSED_DEDUCTIONS
     val additionalInformation = AdditionalInformation(
-      event.ids[0],
+      if (event.ids.isNotEmpty()) event.ids[0] else null,
       event.person,
       event.source.toString(),
       isUnusedDeductions,

@@ -139,7 +139,7 @@ class LegacyControllerIntTest : SqsIntegrationTestBase() {
     assertThat(adjustment.fromDate).isEqualTo(newFromDate)
     assertThat(adjustment.toDate).isEqualTo(newFromDate.plusDays(4))
     assertThat(adjustment.effectiveDays).isEqualTo(5)
-    assertThat(adjustment.days).isEqualTo(null)
+    assertThat(adjustment.days).isNull()
 
     val legacyData = objectMapper.convertValue(adjustment.legacyData, LegacyData::class.java)
     assertThat(legacyData).isEqualTo(LegacyData(bookingId = 1, sentenceSequence = 1, postedDate = LocalDate.now(), comment = "Updated", type = LegacyAdjustmentType.RX, migration = false))

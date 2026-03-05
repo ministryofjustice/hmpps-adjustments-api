@@ -1,6 +1,8 @@
 package uk.gov.justice.digital.hmpps.adjustments.api.controller
 
 import org.assertj.core.api.Assertions.assertThat
+import org.awaitility.kotlin.matches
+import org.awaitility.kotlin.untilCallTo
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.CsvSource
@@ -17,6 +19,7 @@ import uk.gov.justice.digital.hmpps.adjustments.api.entity.ChangeType
 import uk.gov.justice.digital.hmpps.adjustments.api.entity.UnlawfullyAtLarge
 import uk.gov.justice.digital.hmpps.adjustments.api.enums.UnlawfullyAtLargeType
 import uk.gov.justice.digital.hmpps.adjustments.api.integration.SqsIntegrationTestBase
+import uk.gov.justice.digital.hmpps.adjustments.api.model.AdjustmentEventType
 import uk.gov.justice.digital.hmpps.adjustments.api.model.previousual.PreviousUnlawfullyAtLargeAdjustmentForReview
 import uk.gov.justice.digital.hmpps.adjustments.api.model.previousual.PreviousUnlawfullyAtLargeReviewRequest
 import uk.gov.justice.digital.hmpps.adjustments.api.respository.AdjustmentRepository
@@ -267,6 +270,69 @@ class ReviewPreviousUalIntTest : SqsIntegrationTestBase() {
       .expectStatus().isAccepted
 
     assertThat(getPreviousUalToReview()).hasSize(0)
+
+    awaitAtMost30Secs untilCallTo { getNumberOfMessagesCurrentlyOnQueue() } matches { it == 2 }
+
+    val messages = getLatestMessage()!!.messages()
+    assertThat(messages.find { it.body().contains(AdjustmentEventType.ADJUSTMENT_CREATED.value) }).describedAs { "created event" }.isNotNull
+    assertThat(messages.find { it.body().contains(AdjustmentEventType.ADJUSTMENT_REVIEWED_PREVIOUS_UAL_PERIODS.value) }).describedAs { "reviewed event" }.isNotNull
+  }
+
+  @Test
+  fun `rejecting all adjustments still generates an event to clear things to do cache`() {
+    val firstAdjustment = adjustmentRepository.save(
+      Adjustment(
+        id = UUID.randomUUID(),
+        person = PrisonApiExtension.PRISONER_ID,
+        fromDate = LocalDate.parse(PrisonApiExtension.EARLIEST_SENTENCE_DATE).plusDays(10),
+        toDate = LocalDate.parse(PrisonApiExtension.EARLIEST_SENTENCE_DATE).plusDays(20),
+        effectiveDays = 9,
+        adjustmentType = AdjustmentType.UNLAWFULLY_AT_LARGE,
+        currentPeriodOfCustody = false,
+        status = AdjustmentStatus.INACTIVE,
+        source = AdjustmentSource.DPS,
+        unlawfullyAtLarge = UnlawfullyAtLarge(type = UnlawfullyAtLargeType.RECALL),
+        adjustmentHistory = listOf(AdjustmentHistory(changeType = ChangeType.CREATE)),
+      ),
+    )
+    val secondAdjustment = adjustmentRepository.save(
+      Adjustment(
+        id = UUID.randomUUID(),
+        person = PrisonApiExtension.PRISONER_ID,
+        fromDate = LocalDate.parse(PrisonApiExtension.EARLIEST_SENTENCE_DATE).plusDays(20),
+        toDate = LocalDate.parse(PrisonApiExtension.EARLIEST_SENTENCE_DATE).plusDays(30),
+        effectiveDays = 9,
+        adjustmentType = AdjustmentType.UNLAWFULLY_AT_LARGE,
+        currentPeriodOfCustody = false,
+        status = AdjustmentStatus.ACTIVE,
+        source = AdjustmentSource.DPS,
+        unlawfullyAtLarge = UnlawfullyAtLarge(type = UnlawfullyAtLargeType.ESCAPE),
+        adjustmentHistory = listOf(AdjustmentHistory(changeType = ChangeType.CREATE)),
+      ),
+    )
+
+    assertThat(getPreviousUalToReview()).hasSize(2)
+
+    webTestClient
+      .put()
+      .uri("/adjustments/person/${PrisonApiExtension.PRISONER_ID}/review-previous-ual")
+      .headers(setAdjustmentsRWAuth())
+      .contentType(MediaType.APPLICATION_JSON)
+      .bodyValue(
+        PreviousUnlawfullyAtLargeReviewRequest(
+          acceptedAdjustmentIds = listOf(),
+          rejectedAdjustmentIds = listOf(firstAdjustment.id, secondAdjustment.id),
+        ),
+      )
+      .exchange()
+      .expectStatus().isAccepted
+
+    assertThat(getPreviousUalToReview()).hasSize(0)
+
+    awaitAtMost30Secs untilCallTo { getNumberOfMessagesCurrentlyOnQueue() } matches { it == 1 }
+
+    val messages = getLatestMessage()!!.messages()
+    assertThat(messages.find { it.body().contains(AdjustmentEventType.ADJUSTMENT_REVIEWED_PREVIOUS_UAL_PERIODS.value) }).describedAs { "reviewed event" }.isNotNull
   }
 
   private fun getPreviousUalToReview(): List<PreviousUnlawfullyAtLargeAdjustmentForReview?>? = webTestClient

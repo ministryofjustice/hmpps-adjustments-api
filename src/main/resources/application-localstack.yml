@@ -12,7 +12,7 @@ hmpps.sqs:
       queueName: adjustments-test-event-queue
       dlqName: adjustments-test-event-dlq
       subscribeTopicId: domainevents
-      subscribeFilter: '{"eventType":[ "release-date-adjustments.adjustment.inserted", "release-date-adjustments.adjustment.updated", "release-date-adjustments.adjustment.deleted" ] }'
+      subscribeFilter: '{"eventType":[ "release-date-adjustments.adjustment.inserted", "release-date-adjustments.adjustment.updated", "release-date-adjustments.adjustment.deleted", "release-date-adjustments.adjustment.reviewed-previous-ual-periods" ] }'
     unuseddeductions:
       queueName: "unuseddeductions-${random.uuid}"
       dlqName: "unuseddeductions-dlq-${random.uuid}"

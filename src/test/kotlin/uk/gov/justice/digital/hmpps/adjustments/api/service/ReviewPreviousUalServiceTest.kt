@@ -266,6 +266,14 @@ class ReviewPreviousUalServiceTest {
     assertThat(result).isEqualTo(
       listOf(
         AdjustmentEventMetadata(
+          eventType = AdjustmentEventType.ADJUSTMENT_REVIEWED_PREVIOUS_UAL_PERIODS,
+          ids = emptyList(),
+          person = PERSON_ID,
+          source = AdjustmentSource.DPS,
+          adjustmentType = null,
+          isLast = false,
+        ),
+        AdjustmentEventMetadata(
           eventType = AdjustmentEventType.ADJUSTMENT_CREATED,
           ids = listOf(firstCreatedId),
           person = PERSON_ID,
