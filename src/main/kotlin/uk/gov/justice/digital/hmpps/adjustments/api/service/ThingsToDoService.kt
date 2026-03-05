@@ -1,27 +1,39 @@
 package uk.gov.justice.digital.hmpps.adjustments.api.service
 
 import org.springframework.stereotype.Service
+import uk.gov.justice.digital.hmpps.adjustments.api.config.FeatureToggles
 import uk.gov.justice.digital.hmpps.adjustments.api.enums.InterceptType.NONE
 import uk.gov.justice.digital.hmpps.adjustments.api.enums.ToDoType.ADA_INTERCEPT
+import uk.gov.justice.digital.hmpps.adjustments.api.enums.ToDoType.PREVIOUS_PERIOD_OF_UAL_FOR_REVIEW
 import uk.gov.justice.digital.hmpps.adjustments.api.model.ThingsToDo
 
 @Service
 class ThingsToDoService(
   private val additionalDaysAwardedService: AdditionalDaysAwardedService,
+  private val reviewPreviousUalService: ReviewPreviousUalService,
+  private val prisonService: PrisonService,
+  private val featureToggles: FeatureToggles,
 ) {
   fun getToDoList(prisonerId: String): ThingsToDo {
-    val ada = additionalDaysAwardedService.getAdaAdjudicationDetails(prisonerId)
-    if (ada.intercept.type != NONE) {
-      return ThingsToDo(
-        prisonerId = prisonerId,
-        thingsToDo = listOf(ADA_INTERCEPT),
-        adaIntercept = ada.intercept,
-      )
-    }
-
-    return ThingsToDo(
+    var thingsToDo = ThingsToDo(
       prisonerId = prisonerId,
       thingsToDo = emptyList(),
+      adaIntercept = null,
     )
+    val sentenceAndStartDateDetails = prisonService.getSentencesAndStartDateDetails(prisonerId)
+    val ada = additionalDaysAwardedService.getAdaAdjudicationDetails(nomsId = prisonerId, sentenceAndStartDateDetails = sentenceAndStartDateDetails)
+
+    if (ada.intercept.type != NONE) {
+      thingsToDo = thingsToDo.copy(thingsToDo = thingsToDo.thingsToDo + ADA_INTERCEPT, adaIntercept = ada.intercept)
+    }
+
+    if (featureToggles.checkForPreviousPeriodsOfUal) {
+      val previousUalForReview = reviewPreviousUalService.findPreviousUalToReview(prisonerId, sentenceAndStartDateDetails)
+      if (previousUalForReview.isNotEmpty()) {
+        thingsToDo = thingsToDo.copy(thingsToDo = thingsToDo.thingsToDo + PREVIOUS_PERIOD_OF_UAL_FOR_REVIEW)
+      }
+    }
+
+    return thingsToDo
   }
 }

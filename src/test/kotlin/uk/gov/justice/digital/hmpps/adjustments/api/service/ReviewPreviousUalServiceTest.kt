@@ -6,6 +6,7 @@ import org.mockito.ArgumentMatchers.anyList
 import org.mockito.kotlin.any
 import org.mockito.kotlin.argumentCaptor
 import org.mockito.kotlin.mock
+import org.mockito.kotlin.never
 import org.mockito.kotlin.times
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
@@ -30,6 +31,7 @@ import uk.gov.justice.digital.hmpps.adjustments.api.model.UnlawfullyAtLargeDto
 import uk.gov.justice.digital.hmpps.adjustments.api.model.previousual.PreviousUnlawfullyAtLargeAdjustmentForReview
 import uk.gov.justice.digital.hmpps.adjustments.api.model.previousual.PreviousUnlawfullyAtLargeReviewRequest
 import uk.gov.justice.digital.hmpps.adjustments.api.model.prisonapi.Prison
+import uk.gov.justice.digital.hmpps.adjustments.api.model.prisonapi.SentenceAndOffences
 import uk.gov.justice.digital.hmpps.adjustments.api.model.prisonersearchapi.Prisoner
 import uk.gov.justice.digital.hmpps.adjustments.api.respository.AdjustmentRepository
 import uk.gov.justice.digital.hmpps.adjustments.api.respository.ReviewPreviousUalResultRepository
@@ -56,7 +58,7 @@ class ReviewPreviousUalServiceTest {
     )
 
   @Test
-  fun `should get previous UAL and enrich with prison names if the adjustment had one`() {
+  fun `should get previous UAL and enrich with prison names if the adjustment while looking up the sentence date if not passed in`() {
     val adjustmentWithAPrison = Adjustment(
       fromDate = LocalDate.of(2021, 1, 1),
       toDate = LocalDate.of(2021, 1, 11),
@@ -75,12 +77,11 @@ class ReviewPreviousUalServiceTest {
       adjustmentHistory = listOf(AdjustmentHistory(changeType = ChangeType.CREATE, prisonId = null)),
     )
 
-    whenever(prisonerSearchApiClient.findByPrisonerNumber(PERSON_ID)).thenReturn(PRISONER)
-    whenever(prisonService.getStartOfSentenceEnvelope(BOOKING_ID)).thenReturn(ENVELOPE_START_DATE)
+    whenever(prisonService.getSentencesAndStartDateDetails(PERSON_ID)).thenReturn(SENTENCE_DETAILS)
     whenever(
       adjustmentRepository.findUnreviewedPreviousUALOverlappingSentenceDate(
         person = PERSON_ID,
-        startOfSentenceEnvelope = ENVELOPE_START_DATE,
+        startOfSentenceEnvelope = SENTENCE_DATE,
         status = listOf(ACTIVE, INACTIVE),
         adjustmentType = AdjustmentType.UNLAWFULLY_AT_LARGE,
       ),
@@ -110,6 +111,50 @@ class ReviewPreviousUalServiceTest {
           prisonId = null,
         ),
       ),
+    )
+    verify(prisonService).getSentencesAndStartDateDetails(PERSON_ID)
+  }
+
+  @Test
+  fun `Use passed in sentence details if present to avoid loading sentences twice for things to do`() {
+    val adjustment = Adjustment(
+      fromDate = LocalDate.of(2021, 1, 1),
+      toDate = LocalDate.of(2021, 1, 11),
+      effectiveDays = 10,
+      adjustmentType = AdjustmentType.UNLAWFULLY_AT_LARGE,
+      unlawfullyAtLarge = UnlawfullyAtLarge(type = UnlawfullyAtLargeType.RELEASE_IN_ERROR),
+      adjustmentHistory = listOf(AdjustmentHistory(changeType = ChangeType.CREATE, prisonId = PRISON_ID)),
+    )
+
+    whenever(prisonService.getSentencesAndStartDateDetails(PERSON_ID)).thenReturn(SENTENCE_DETAILS)
+    whenever(
+      adjustmentRepository.findUnreviewedPreviousUALOverlappingSentenceDate(
+        person = PERSON_ID,
+        startOfSentenceEnvelope = SENTENCE_DATE,
+        status = listOf(ACTIVE, INACTIVE),
+        adjustmentType = AdjustmentType.UNLAWFULLY_AT_LARGE,
+      ),
+    ).thenReturn(listOf(adjustment))
+    whenever(prisonApiClient.getPrison(PRISON_ID)).thenReturn(Prison(PRISON_ID, "Brixton (HMP)"))
+
+    val result = service.findPreviousUalToReview(PERSON_ID, SENTENCE_DETAILS)
+
+    assertThat(result).hasSize(1)
+    verify(prisonService, never()).getSentencesAndStartDateDetails(PERSON_ID)
+  }
+
+  @Test
+  fun `Return nothing without lookup in the database if there are no sentences`() {
+    whenever(prisonService.getSentencesAndStartDateDetails(PERSON_ID)).thenReturn(SentenceAndStartDateDetails())
+
+    val result = service.findPreviousUalToReview(PERSON_ID)
+
+    assertThat(result).hasSize(0)
+    verify(adjustmentRepository, never()).findUnreviewedPreviousUALOverlappingSentenceDate(
+      person = PERSON_ID,
+      startOfSentenceEnvelope = SENTENCE_DATE,
+      status = listOf(ACTIVE, INACTIVE),
+      adjustmentType = AdjustmentType.UNLAWFULLY_AT_LARGE,
     )
   }
 
@@ -270,7 +315,8 @@ class ReviewPreviousUalServiceTest {
     private const val PERSON_ID = "A1234BC"
     private const val PRISON_ID = "BXI"
     private const val BOOKING_ID = 12345L
-    private val ENVELOPE_START_DATE = LocalDate.of(2025, 6, 7)
+    private val SENTENCE_DATE = LocalDate.of(2025, 6, 7)
+    private val SENTENCE_DETAILS = SentenceAndStartDateDetails(sentences = listOf(SentenceAndOffences(sentenceDate = SENTENCE_DATE, bookingId = 1, sentenceSequence = 1, sentenceCalculationType = "ADIMP", sentenceStatus = "A")), earliestSentenceDate = SENTENCE_DATE)
 
     private val PRISONER =
       Prisoner(
