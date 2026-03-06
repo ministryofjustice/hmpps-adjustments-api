@@ -143,6 +143,52 @@ class ReviewPreviousUalIntTest : SqsIntegrationTestBase() {
   }
 
   @Test
+  fun `do not show previous UAL when the effective days is 0 as some legacy UAL start and end on the same day`() {
+    adjustmentRepository.save(
+      Adjustment(
+        id = UUID.randomUUID(),
+        person = PrisonApiExtension.PRISONER_ID,
+        fromDate = LocalDate.parse(PrisonApiExtension.EARLIEST_SENTENCE_DATE).plusDays(10),
+        toDate = LocalDate.parse(PrisonApiExtension.EARLIEST_SENTENCE_DATE).plusDays(10),
+        effectiveDays = 0,
+        adjustmentType = AdjustmentType.UNLAWFULLY_AT_LARGE,
+        currentPeriodOfCustody = false,
+        status = AdjustmentStatus.INACTIVE,
+        source = AdjustmentSource.DPS,
+        unlawfullyAtLarge = UnlawfullyAtLarge(type = UnlawfullyAtLargeType.RECALL),
+        adjustmentHistory = listOf(AdjustmentHistory(changeType = ChangeType.CREATE)),
+      ),
+    )
+
+    val previousUalToReview = getPreviousUalToReview()
+
+    assertThat(previousUalToReview).isEmpty()
+  }
+
+  @Test
+  fun `do not show previous UAL when the effective days is negative as some legacy UAL have invalid days`() {
+    adjustmentRepository.save(
+      Adjustment(
+        id = UUID.randomUUID(),
+        person = PrisonApiExtension.PRISONER_ID,
+        fromDate = LocalDate.parse(PrisonApiExtension.EARLIEST_SENTENCE_DATE).plusDays(10),
+        toDate = LocalDate.parse(PrisonApiExtension.EARLIEST_SENTENCE_DATE).plusDays(9),
+        effectiveDays = -1,
+        adjustmentType = AdjustmentType.UNLAWFULLY_AT_LARGE,
+        currentPeriodOfCustody = false,
+        status = AdjustmentStatus.INACTIVE,
+        source = AdjustmentSource.DPS,
+        unlawfullyAtLarge = UnlawfullyAtLarge(type = UnlawfullyAtLargeType.RECALL),
+        adjustmentHistory = listOf(AdjustmentHistory(changeType = ChangeType.CREATE)),
+      ),
+    )
+
+    val previousUalToReview = getPreviousUalToReview()
+
+    assertThat(previousUalToReview).isEmpty()
+  }
+
+  @Test
   fun `show previous UAL when it starts and ends after the earliest sentence date`() {
     val previousUalEntity = adjustmentRepository.save(
       Adjustment(
@@ -228,7 +274,7 @@ class ReviewPreviousUalIntTest : SqsIntegrationTestBase() {
         person = PrisonApiExtension.PRISONER_ID,
         fromDate = LocalDate.parse(PrisonApiExtension.EARLIEST_SENTENCE_DATE).plusDays(10),
         toDate = LocalDate.parse(PrisonApiExtension.EARLIEST_SENTENCE_DATE).plusDays(20),
-        effectiveDays = 9,
+        effectiveDays = 11,
         adjustmentType = AdjustmentType.UNLAWFULLY_AT_LARGE,
         currentPeriodOfCustody = false,
         status = AdjustmentStatus.INACTIVE,
@@ -243,7 +289,7 @@ class ReviewPreviousUalIntTest : SqsIntegrationTestBase() {
         person = PrisonApiExtension.PRISONER_ID,
         fromDate = LocalDate.parse(PrisonApiExtension.EARLIEST_SENTENCE_DATE).plusDays(20),
         toDate = LocalDate.parse(PrisonApiExtension.EARLIEST_SENTENCE_DATE).plusDays(30),
-        effectiveDays = 9,
+        effectiveDays = 11,
         adjustmentType = AdjustmentType.UNLAWFULLY_AT_LARGE,
         currentPeriodOfCustody = false,
         status = AdjustmentStatus.ACTIVE,
@@ -276,6 +322,63 @@ class ReviewPreviousUalIntTest : SqsIntegrationTestBase() {
     val messages = getLatestMessage()!!.messages()
     assertThat(messages.find { it.body().contains(AdjustmentEventType.ADJUSTMENT_CREATED.value) }).describedAs { "created event" }.isNotNull
     assertThat(messages.find { it.body().contains(AdjustmentEventType.ADJUSTMENT_REVIEWED_PREVIOUS_UAL_PERIODS.value) }).describedAs { "reviewed event" }.isNotNull
+    val newUal = adjustmentRepository.findByPersonAndAdjustmentTypeAndStatusAndCurrentPeriodOfCustody(PrisonApiExtension.PRISONER_ID, AdjustmentType.UNLAWFULLY_AT_LARGE)
+    assertThat(newUal).hasSize(1)
+    assertThat(newUal[0].fromDate).isEqualTo(adjustmentToKeepEntity.fromDate)
+    assertThat(newUal[0].toDate).isEqualTo(adjustmentToKeepEntity.toDate)
+    assertThat(newUal[0].effectiveDays).isEqualTo(adjustmentToKeepEntity.effectiveDays)
+    assertThat(newUal[0].unlawfullyAtLarge?.type).isEqualTo(UnlawfullyAtLargeType.RECALL)
+    assertThat(newUal[0].currentPeriodOfCustody).isTrue
+  }
+
+  @Test
+  fun `can accept legacy UAL that didn't have a type`() {
+    val legacyEntity = adjustmentRepository.save(
+      Adjustment(
+        id = UUID.randomUUID(),
+        person = PrisonApiExtension.PRISONER_ID,
+        fromDate = LocalDate.parse(PrisonApiExtension.EARLIEST_SENTENCE_DATE).plusDays(10),
+        toDate = LocalDate.parse(PrisonApiExtension.EARLIEST_SENTENCE_DATE).plusDays(20),
+        effectiveDays = 11,
+        adjustmentType = AdjustmentType.UNLAWFULLY_AT_LARGE,
+        currentPeriodOfCustody = false,
+        status = AdjustmentStatus.INACTIVE,
+        source = AdjustmentSource.DPS,
+        unlawfullyAtLarge = null,
+        adjustmentHistory = listOf(AdjustmentHistory(changeType = ChangeType.CREATE)),
+      ),
+    )
+
+    assertThat(getPreviousUalToReview()).hasSize(1)
+
+    webTestClient
+      .put()
+      .uri("/adjustments/person/${PrisonApiExtension.PRISONER_ID}/review-previous-ual")
+      .headers(setAdjustmentsRWAuth())
+      .contentType(MediaType.APPLICATION_JSON)
+      .bodyValue(
+        PreviousUnlawfullyAtLargeReviewRequest(
+          acceptedAdjustmentIds = listOf(legacyEntity.id),
+          rejectedAdjustmentIds = emptyList(),
+        ),
+      )
+      .exchange()
+      .expectStatus().isAccepted
+
+    assertThat(getPreviousUalToReview()).hasSize(0)
+
+    awaitAtMost30Secs untilCallTo { getNumberOfMessagesCurrentlyOnQueue() } matches { it == 2 }
+
+    val messages = getLatestMessage()!!.messages()
+    assertThat(messages.find { it.body().contains(AdjustmentEventType.ADJUSTMENT_CREATED.value) }).describedAs { "created event" }.isNotNull
+    assertThat(messages.find { it.body().contains(AdjustmentEventType.ADJUSTMENT_REVIEWED_PREVIOUS_UAL_PERIODS.value) }).describedAs { "reviewed event" }.isNotNull
+    val newUal = adjustmentRepository.findByPersonAndAdjustmentTypeAndStatusAndCurrentPeriodOfCustody(PrisonApiExtension.PRISONER_ID, AdjustmentType.UNLAWFULLY_AT_LARGE)
+    assertThat(newUal).hasSize(1)
+    assertThat(newUal[0].fromDate).isEqualTo(legacyEntity.fromDate)
+    assertThat(newUal[0].toDate).isEqualTo(legacyEntity.toDate)
+    assertThat(newUal[0].effectiveDays).isEqualTo(legacyEntity.effectiveDays)
+    assertThat(newUal[0].unlawfullyAtLarge).isNull()
+    assertThat(newUal[0].currentPeriodOfCustody).isTrue
   }
 
   @Test

@@ -41,6 +41,7 @@ interface AdjustmentRepository : JpaRepository<Adjustment, UUID> {
       AND a.adjustmentType = :adjustmentType
       AND a.toDate IS NOT NULL AND a.toDate > :startOfSentenceEnvelope
       AND a.id NOT IN (SELECT r.adjustmentId FROM ReviewPreviousUalResult r WHERE r.person = :person)
+      AND a.effectiveDays > 0
       """,
   )
   fun findUnreviewedPreviousUALOverlappingSentenceDate(
