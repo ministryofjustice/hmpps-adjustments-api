@@ -18,4 +18,5 @@ enum class AdjustmentEventType(val value: String, val desc: String) {
   ADJUSTMENT_UPDATED("release-date-adjustments.adjustment.updated", "An adjustment has been updated"),
   ADJUSTMENT_UPDATED_EFFECTIVE_DAYS("release-date-adjustments.adjustment.updated", desc = "An adjustment's effective calculation days has been updated"),
   ADJUSTMENT_DELETED("release-date-adjustments.adjustment.deleted", "An adjustment has been deleted"),
+  ADJUSTMENT_REVIEWED_PREVIOUS_UAL_PERIODS("release-date-adjustments.adjustment.reviewed-previous-ual-periods", "Previous UAL periods have been reviewed"),
 }
