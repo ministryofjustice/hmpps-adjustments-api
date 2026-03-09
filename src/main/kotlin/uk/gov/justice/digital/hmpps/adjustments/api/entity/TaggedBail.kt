@@ -14,7 +14,7 @@ data class TaggedBail(
   @Id
   val adjustmentId: UUID = UUID.randomUUID(),
 
-  var courtCaseUuid: UUID,
+  var courtCaseUuid: UUID? = null,
 
   @OneToOne
   @MapsId

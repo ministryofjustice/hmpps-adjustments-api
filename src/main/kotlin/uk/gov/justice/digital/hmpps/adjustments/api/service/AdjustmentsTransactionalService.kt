@@ -181,7 +181,7 @@ class AdjustmentsTransactionalService(
     UnlawfullyAtLarge()
   }
 
-  private fun taggedBail(adjustmentDto: AdjustmentDto): TaggedBail? {
+  private fun taggedBail(adjustmentDto: AdjustmentDto, adjustment: Adjustment? = null): TaggedBail? {
     val courtCase: CourtCase?
     if (adjustmentDto.adjustmentType == TAGGED_BAIL && adjustmentDto.taggedBail?.courtCaseUuid != null) {
       try {
@@ -190,10 +190,20 @@ class AdjustmentsTransactionalService(
         throw ApiValidationException("No court case found with id ${adjustmentDto.taggedBail.courtCaseUuid}")
       }
       if (courtCase != null) {
-        return TaggedBail(courtCaseUuid = adjustmentDto.taggedBail.courtCaseUuid)
+        return getTaggedBail(adjustment).apply {
+          courtCaseUuid = adjustmentDto.taggedBail.courtCaseUuid
+        }
       }
     }
     return null
+  }
+
+  private fun getTaggedBail(adjustment: Adjustment?) = if (adjustment?.taggedBail != null) {
+    adjustment.taggedBail!!
+  } else if (adjustment != null) {
+    TaggedBail(adjustment = adjustment)
+  } else {
+    TaggedBail()
   }
 
   private fun lawfullyAtLarge(adjustmentDto: AdjustmentDto, adjustment: Adjustment? = null): LawfullyAtLarge? = if (adjustmentDto.adjustmentType == LAWFULLY_AT_LARGE && adjustmentDto.lawfullyAtLarge != null) {
@@ -360,7 +370,7 @@ class AdjustmentsTransactionalService(
       unlawfullyAtLarge = unlawfullyAtLarge(resource, this)
       lawfullyAtLarge = lawfullyAtLarge(resource, this)
       specialRemission = specialRemission(resource, this)
-      taggedBail = taggedBail(resource)
+      taggedBail = taggedBail(resource, this)
       timeSpentInCustodyAbroad = timeSpentInCustodyAbroad(resource, this)
       adjustmentHistory += AdjustmentHistory(
         changeByUsername = getCurrentAuthenticationUsername(),

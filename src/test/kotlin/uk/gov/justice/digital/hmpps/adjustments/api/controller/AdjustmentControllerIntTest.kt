@@ -74,10 +74,10 @@ class AdjustmentControllerIntTest : SqsIntegrationTestBase() {
   lateinit var entityManager: EntityManager
 
   @Nested
-  inner class GeneralTests {
+  open inner class GeneralTests {
     @Test
     @Transactional
-    fun create() {
+    open fun create() {
       val id = createAnAdjustment()
       val adjustment = adjustmentRepository.findById(id).get()
 
@@ -116,7 +116,7 @@ class AdjustmentControllerIntTest : SqsIntegrationTestBase() {
 
     @Test
     @Transactional
-    fun `creating without a booking id will create using the latest booking id from prisoner search`() {
+    open fun `creating without a booking id will create using the latest booking id from prisoner search`() {
       val id = createAnAdjustment(CREATED_ADJUSTMENT.copy(bookingId = null))
       val adjustment = adjustmentRepository.findById(id).get()
 
@@ -192,7 +192,7 @@ class AdjustmentControllerIntTest : SqsIntegrationTestBase() {
 
     @Test
     @Transactional
-    fun update() {
+    open fun update() {
       val id = createAnAdjustment(CREATED_ADJUSTMENT.copy(person = "TESTUPD")).also {
         cleanQueue()
       }
@@ -244,7 +244,7 @@ class AdjustmentControllerIntTest : SqsIntegrationTestBase() {
 
     @Test
     @Transactional
-    fun `updating without a booking id will use the latest booking id`() {
+    open fun `updating without a booking id will use the latest booking id`() {
       val id = createAnAdjustment(CREATED_ADJUSTMENT.copy(bookingId = PrisonApiExtension.RECALL_BOOKING_ID)).also {
         cleanQueue()
       }
@@ -275,7 +275,7 @@ class AdjustmentControllerIntTest : SqsIntegrationTestBase() {
 
     @Test
     @Transactional
-    fun updateEffectiveDays() {
+    open fun updateEffectiveDays() {
       val id = createAnAdjustment().also {
         cleanQueue()
       }
@@ -566,10 +566,10 @@ class AdjustmentControllerIntTest : SqsIntegrationTestBase() {
   }
 
   @Nested
-  inner class AdaTests {
+  open inner class AdaTests {
     @Test
     @Transactional
-    fun adaAdjustments() {
+    open fun adaAdjustments() {
       val earliestSentenceDate = LocalDate.parse(PrisonApiExtension.EARLIEST_SENTENCE_DATE, DateTimeFormatter.ISO_LOCAL_DATE)
       val beforeEarliestSentence = earliestSentenceDate.minusDays(1)
       val createDto = CREATED_ADJUSTMENT.copy(
@@ -1246,7 +1246,7 @@ class AdjustmentControllerIntTest : SqsIntegrationTestBase() {
     .expectStatus().isOk
     .expectBodyList<AdjustmentDto>()
     .returnResult()
-    .responseBody
+    .responseBody!!
 
   private fun postCreateAdjustments(adjustmentDtos: List<AdjustmentDto>) = webTestClient
     .post()
