@@ -338,7 +338,7 @@ class LegacyAndAdjustmentsControllerIntTest : SqsIntegrationTestBase() {
     .expectStatus().isOk
     .expectBodyList<AdjustmentDto>()
     .returnResult()
-    .responseBody
+    .responseBody!!
 
   private fun deleteLegacyAdjustment(id: UUID) = webTestClient
     .delete()

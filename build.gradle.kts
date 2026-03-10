@@ -1,8 +1,6 @@
-import org.jetbrains.kotlin.gradle.dsl.JvmTarget
-import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
 plugins {
-  id("uk.gov.justice.hmpps.gradle-spring-boot") version "9.4.0"
+  id("uk.gov.justice.hmpps.gradle-spring-boot") version "10.0.4"
   kotlin("plugin.spring") version "2.3.10"
   kotlin("plugin.jpa") version "2.3.10"
   id("se.patrikerdes.use-latest-versions") version "0.2.19"
@@ -12,12 +10,10 @@ configurations {
   testImplementation { exclude(group = "org.junit.vintage") }
 }
 
-ext["hibernate.version"] = "6.5.3.Final"
-
 dependencies {
   annotationProcessor("org.springframework.boot:spring-boot-configuration-processor")
 
-  implementation("uk.gov.justice.service.hmpps:hmpps-kotlin-spring-boot-starter:1.8.2")
+  implementation("uk.gov.justice.service.hmpps:hmpps-kotlin-spring-boot-starter:2.0.2")
 
   // Spring boot dependencies
   implementation("org.springframework.boot:spring-boot-starter-security")
@@ -26,13 +22,15 @@ dependencies {
   implementation("org.springframework.boot:spring-boot-starter-oauth2-resource-server")
   implementation("org.springframework.boot:spring-boot-starter-data-jpa")
   implementation("org.springframework.boot:spring-boot-starter-actuator")
+  implementation("org.springframework.boot:spring-boot-starter-webclient")
+  implementation("org.springframework.boot:spring-boot-starter-flyway")
 
-  implementation("io.hypersistence:hypersistence-utils-hibernate-63:3.15.2")
+  implementation("io.hypersistence:hypersistence-utils-hibernate-71:3.15.2")
 
   // Enable kotlin reflect
   implementation("org.jetbrains.kotlin:kotlin-reflect:2.3.10")
 
-  implementation("uk.gov.justice.service.hmpps:hmpps-sqs-spring-boot-starter:5.6.3")
+  implementation("uk.gov.justice.service.hmpps:hmpps-sqs-spring-boot-starter:7.0.1")
 
   implementation("org.springframework:spring-jms:7.0.5")
 
@@ -42,12 +40,15 @@ dependencies {
   runtimeOnly("org.postgresql:postgresql")
 
   // OpenAPI
-  implementation("org.springdoc:springdoc-openapi-starter-webmvc-ui:2.8.16")
+  implementation("org.springdoc:springdoc-openapi-starter-webmvc-ui:3.0.2")
 
   // Test dependencies
   testImplementation("org.awaitility:awaitility-kotlin")
-  testImplementation("com.github.tomakehurst:wiremock-jre8-standalone:3.0.1")
+  testImplementation("org.wiremock:wiremock-standalone:3.13.2")
   testImplementation("org.springframework.security:spring-security-test")
+  testImplementation("org.springframework.boot:spring-boot-starter-webmvc-test")
+  testImplementation("org.springframework.boot:spring-boot-starter-security-test")
+  testImplementation("org.springframework.boot:spring-boot-webtestclient")
   testImplementation("org.awaitility:awaitility-kotlin:4.3.0")
   testImplementation("io.jsonwebtoken:jjwt:0.13.0")
   testImplementation("net.javacrumbs.json-unit:json-unit-assertj:5.1.0")
@@ -59,11 +60,11 @@ dependencies {
 }
 
 kotlin {
-  jvmToolchain(21)
+  jvmToolchain(25)
 }
 
-tasks.withType<KotlinCompile>().configureEach {
-  compilerOptions {
-    jvmTarget.set(JvmTarget.JVM_21)
+java {
+  toolchain {
+    languageVersion.set(JavaLanguageVersion.of(25))
   }
 }

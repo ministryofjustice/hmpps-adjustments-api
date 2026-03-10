@@ -4,6 +4,7 @@ import org.junit.jupiter.api.extension.ExtendWith
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.context.SpringBootTest
 import org.springframework.boot.test.context.SpringBootTest.WebEnvironment.RANDOM_PORT
+import org.springframework.boot.webtestclient.autoconfigure.AutoConfigureWebTestClient
 import org.springframework.http.HttpHeaders
 import org.springframework.test.context.ActiveProfiles
 import org.springframework.test.context.DynamicPropertyRegistry
@@ -21,6 +22,7 @@ import uk.gov.justice.digital.hmpps.adjustments.api.wiremock.RemandAndSentencing
 @SpringBootTest(webEnvironment = RANDOM_PORT)
 @ActiveProfiles("test")
 @ExtendWith(PrisonerSearchApiExtension::class, PrisonApiExtension::class, HmppsAuthApiExtension::class, AdjudicationApiExtension::class, CalculateReleaseDatesApiExtension::class, RemandAndSentencingApiExtension::class)
+@AutoConfigureWebTestClient
 abstract class IntegrationTestBase {
 
   @Suppress("SpringJavaInjectionPointsAutowiringInspection")

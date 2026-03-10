@@ -11,7 +11,7 @@ import uk.gov.justice.digital.hmpps.adjustments.api.model.UnusedDeductionCalcula
 @Service
 class CalculateReleaseDatesApiClient(@Qualifier("calculateReleaseDatesApiWebClient") private val webClient: WebClient) {
   private val log = LoggerFactory.getLogger(this::class.java)
-  private inline fun <reified T> typeReference() = object : ParameterizedTypeReference<T>() {}
+  private inline fun <reified T : Any> typeReference() = object : ParameterizedTypeReference<T>() {}
 
   fun calculateUnusedDeductions(adjustments: List<AdjustmentDto>, prisonerId: String): UnusedDeductionCalculationResponse {
     log.info("Calculating unused deductions for $prisonerId")

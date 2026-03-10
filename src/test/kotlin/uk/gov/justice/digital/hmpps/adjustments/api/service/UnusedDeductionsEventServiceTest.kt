@@ -152,8 +152,8 @@ class UnusedDeductionsEventServiceTest {
         ),
       )
 
-      verify(adjustmentService).updateEffectiveDays(taggedBail.id!!, AdjustmentEffectiveDaysDto(taggedBail.id!!, 80, person))
-      verify(adjustmentService).updateEffectiveDays(remand.id!!, AdjustmentEffectiveDaysDto(remand.id!!, 0, person))
+      verify(adjustmentService).updateEffectiveDays(taggedBail.id!!, AdjustmentEffectiveDaysDto(taggedBail.id, 80, person))
+      verify(adjustmentService).updateEffectiveDays(remand.id!!, AdjustmentEffectiveDaysDto(remand.id, 0, person))
       verify(adjustmentService).update(unusedDeductions.id!!, unusedDeductions.copy(days = 100))
       verify(unusedDeductionsCalculationResultRepository).save(argWhere { it.status == UnusedDeductionsCalculationStatus.CALCULATED })
     }
@@ -236,8 +236,8 @@ class UnusedDeductionsEventServiceTest {
         ),
       )
 
-      verify(adjustmentService).updateEffectiveDays(taggedBail.id!!, AdjustmentEffectiveDaysDto(taggedBail.id!!, 80, person))
-      verify(adjustmentService).updateEffectiveDays(remand.id!!, AdjustmentEffectiveDaysDto(remand.id!!, 0, person))
+      verify(adjustmentService).updateEffectiveDays(taggedBail.id!!, AdjustmentEffectiveDaysDto(taggedBail.id, 80, person))
+      verify(adjustmentService).updateEffectiveDays(remand.id!!, AdjustmentEffectiveDaysDto(remand.id, 0, person))
       verify(adjustmentService).create(adjustmentsToCreate)
       verify(unusedDeductionsCalculationResultRepository).save(argWhere { it.status == UnusedDeductionsCalculationStatus.CALCULATED })
     }
@@ -316,8 +316,8 @@ class UnusedDeductionsEventServiceTest {
         ),
       )
 
-      verify(adjustmentService).updateEffectiveDays(taggedBail.id!!, AdjustmentEffectiveDaysDto(taggedBail.id!!, 90, person))
-      verify(adjustmentService).updateEffectiveDays(remand.id!!, AdjustmentEffectiveDaysDto(remand.id!!, 90, person))
+      verify(adjustmentService).updateEffectiveDays(taggedBail.id!!, AdjustmentEffectiveDaysDto(taggedBail.id, 90, person))
+      verify(adjustmentService).updateEffectiveDays(remand.id!!, AdjustmentEffectiveDaysDto(remand.id, 90, person))
       verify(adjustmentService).delete(unusedDeductions.id!!)
       verify(unusedDeductionsCalculationResultRepository).save(argWhere { it.status == UnusedDeductionsCalculationStatus.CALCULATED })
     }
@@ -502,8 +502,8 @@ class UnusedDeductionsEventServiceTest {
         ),
       )
 
-      verify(adjustmentService).updateEffectiveDays(taggedBail.id!!, AdjustmentEffectiveDaysDto(taggedBail.id!!, 80, person))
-      verify(adjustmentService).updateEffectiveDays(remand.id!!, AdjustmentEffectiveDaysDto(remand.id!!, 0, person))
+      verify(adjustmentService).updateEffectiveDays(taggedBail.id!!, AdjustmentEffectiveDaysDto(taggedBail.id, 80, person))
+      verify(adjustmentService).updateEffectiveDays(remand.id!!, AdjustmentEffectiveDaysDto(remand.id, 0, person))
       verify(adjustmentService).update(unusedDeductions.id!!, unusedDeductions.copy(days = 100))
       verify(unusedDeductionsCalculationResultRepository).save(argWhere { it.status == UnusedDeductionsCalculationStatus.CALCULATED })
     }
