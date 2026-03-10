@@ -128,11 +128,15 @@ class LegacyControllerIntTest : SqsIntegrationTestBase() {
 
     assertThat(adjustment.adjustmentType).isEqualTo(AdjustmentType.REMAND)
     assertThat(adjustment.adjustmentHistory.size).isEqualTo(2)
-    assertThat(adjustment.adjustmentHistory[1].changeType).isEqualTo(ChangeType.UPDATE)
-    assertThat(adjustment.adjustmentHistory[1].changeByUsername).isEqualTo("NOMIS")
-    assertThat(adjustment.adjustmentHistory[1].changeSource).isEqualTo(AdjustmentSource.NOMIS)
-    assertThat(adjustment.adjustmentHistory[1].change.toString()).contains("Created")
-    assertThat(adjustment.adjustmentHistory[1].prisonId).isEqualTo("LDS")
+    val createHistoryItem = adjustment.adjustmentHistory.find { it.changeType == ChangeType.CREATE }
+    assertThat(createHistoryItem).describedAs("create history item").isNotNull
+    val updateHistoryItem = adjustment.adjustmentHistory.find { it.changeType == ChangeType.UPDATE }
+    assertThat(updateHistoryItem).describedAs("update history item").isNotNull
+    assertThat(updateHistoryItem!!.changeType).isEqualTo(ChangeType.UPDATE)
+    assertThat(updateHistoryItem.changeByUsername).isEqualTo("NOMIS")
+    assertThat(updateHistoryItem.changeSource).isEqualTo(AdjustmentSource.NOMIS)
+    assertThat(updateHistoryItem.change.toString()).contains("Created")
+    assertThat(updateHistoryItem.prisonId).isEqualTo("LDS")
     assertThat(adjustment.status).isEqualTo(AdjustmentStatus.ACTIVE)
     assertThat(adjustment.source).isEqualTo(AdjustmentSource.NOMIS)
 
