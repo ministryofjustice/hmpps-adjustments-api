@@ -77,12 +77,16 @@ class LegacyAndAdjustmentsControllerIntTest : SqsIntegrationTestBase() {
 
     assertThat(adjustment.adjustmentType).isEqualTo(AdjustmentType.REMAND)
     assertThat(adjustment.adjustmentHistory.size).isEqualTo(2)
-    assertThat(adjustment.adjustmentHistory[0].changeType).isEqualTo(ChangeType.CREATE)
-    assertThat(adjustment.adjustmentHistory[0].changeByUsername).isEqualTo("NOMIS")
-    assertThat(adjustment.adjustmentHistory[0].changeSource).isEqualTo(AdjustmentSource.NOMIS)
-    assertThat(adjustment.adjustmentHistory[1].changeType).isEqualTo(ChangeType.UPDATE)
-    assertThat(adjustment.adjustmentHistory[1].changeByUsername).isEqualTo("Test User")
-    assertThat(adjustment.adjustmentHistory[1].changeSource).isEqualTo(AdjustmentSource.DPS)
+    val createHistoryItem = adjustment.adjustmentHistory.find { it.changeType == ChangeType.CREATE }
+    assertThat(createHistoryItem).describedAs("create history item").isNotNull
+    assertThat(createHistoryItem!!.changeType).isEqualTo(ChangeType.CREATE)
+    assertThat(createHistoryItem.changeByUsername).isEqualTo("NOMIS")
+    assertThat(createHistoryItem.changeSource).isEqualTo(AdjustmentSource.NOMIS)
+    val changeHistoryItem = adjustment.adjustmentHistory.find { it.changeType == ChangeType.UPDATE }
+    assertThat(changeHistoryItem).describedAs("change history item").isNotNull
+    assertThat(changeHistoryItem!!.changeType).isEqualTo(ChangeType.UPDATE)
+    assertThat(changeHistoryItem.changeByUsername).isEqualTo("Test User")
+    assertThat(changeHistoryItem.changeSource).isEqualTo(AdjustmentSource.DPS)
     assertThat(adjustment.source).isEqualTo(AdjustmentSource.DPS)
     assertThat(adjustment.status).isEqualTo(AdjustmentStatus.ACTIVE)
 

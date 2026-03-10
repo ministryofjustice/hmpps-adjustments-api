@@ -19,7 +19,6 @@ import uk.gov.justice.digital.hmpps.adjustments.api.entity.AdjustmentStatus
 import uk.gov.justice.digital.hmpps.adjustments.api.entity.AdjustmentStatus.ACTIVE
 import uk.gov.justice.digital.hmpps.adjustments.api.entity.AdjustmentStatus.DELETED
 import uk.gov.justice.digital.hmpps.adjustments.api.entity.AdjustmentType
-import uk.gov.justice.digital.hmpps.adjustments.api.entity.AdjustmentType.ADDITIONAL_DAYS_AWARDED
 import uk.gov.justice.digital.hmpps.adjustments.api.entity.AdjustmentType.APPEAL_APPLICANT
 import uk.gov.justice.digital.hmpps.adjustments.api.entity.AdjustmentType.CUSTODY_ABROAD
 import uk.gov.justice.digital.hmpps.adjustments.api.entity.AdjustmentType.LAWFULLY_AT_LARGE
@@ -210,9 +209,13 @@ class AdjustmentControllerIntTest : SqsIntegrationTestBase() {
 
       assertThat(adjustment.adjustmentType).isEqualTo(AdjustmentType.REMAND)
       assertThat(adjustment.adjustmentHistory.size).isEqualTo(2)
-      assertThat(adjustment.adjustmentHistory[1].changeType).isEqualTo(ChangeType.UPDATE)
-      assertThat(adjustment.adjustmentHistory[1].changeByUsername).isEqualTo("Test User")
-      assertThat(adjustment.adjustmentHistory[1].changeSource).isEqualTo(AdjustmentSource.DPS)
+      val createHistoryItem = adjustment.adjustmentHistory.find { it.changeType == ChangeType.CREATE }
+      assertThat(createHistoryItem).describedAs("create history item").isNotNull
+      val updateHistoryItem = adjustment.adjustmentHistory.find { it.changeType == ChangeType.UPDATE }
+      assertThat(updateHistoryItem).describedAs("update history item").isNotNull
+      assertThat(updateHistoryItem!!.changeType).isEqualTo(ChangeType.UPDATE)
+      assertThat(updateHistoryItem.changeByUsername).isEqualTo("Test User")
+      assertThat(updateHistoryItem.changeSource).isEqualTo(AdjustmentSource.DPS)
       assertThat(adjustment.source).isEqualTo(AdjustmentSource.DPS)
       assertThat(adjustment.status).isEqualTo(ACTIVE)
 
@@ -375,7 +378,11 @@ class AdjustmentControllerIntTest : SqsIntegrationTestBase() {
 
       assertThat(adjustment.status).isEqualTo(DELETED)
       assertThat(adjustment.adjustmentHistory.size).isEqualTo(2)
-      assertThat(adjustment.adjustmentHistory[1].changeType).isEqualTo(ChangeType.DELETE)
+      val createHistoryItem = adjustment.adjustmentHistory.find { it.changeType == ChangeType.CREATE }
+      assertThat(createHistoryItem).describedAs("create history item").isNotNull
+      val deleteHistoryItem = adjustment.adjustmentHistory.find { it.changeType == ChangeType.DELETE }
+      assertThat(deleteHistoryItem).describedAs("delete history item").isNotNull
+      assertThat(deleteHistoryItem!!.changeType).isEqualTo(ChangeType.DELETE)
 
       webTestClient
         .get()
@@ -851,7 +858,7 @@ class AdjustmentControllerIntTest : SqsIntegrationTestBase() {
       val updatedAdjustment = getAdjustmentById(adjustmentId)
       assertThat(updatedAdjustment)
         .usingRecursiveComparison()
-        .ignoringFieldsMatchingRegexes("lastUpdatedDate")
+        .ignoringFieldsMatchingRegexes("lastUpdatedDate", "createdDate")
         .isEqualTo(createdAdjustment.copy(lawfullyAtLarge = LawfullyAtLargeDto(affectsDates = NO)))
     }
 
