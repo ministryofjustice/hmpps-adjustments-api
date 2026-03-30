@@ -19,7 +19,8 @@ class PrisonApiClient(@Qualifier("prisonApiWebClient") private val webClient: We
     return webClient.get()
       .uri("/api/court-date-results/by-charge/$prisonerId")
       .retrieve()
-      .bodyToMono(typeReference<List<CourtDateChargeAndOutcomes>>())
+      .bodyToFlux(CourtDateChargeAndOutcomes::class.java)
+      .collectList()
       .block()!!
   }
 

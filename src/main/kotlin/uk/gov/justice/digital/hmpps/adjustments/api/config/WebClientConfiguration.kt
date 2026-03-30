@@ -32,6 +32,8 @@ class WebClientConfiguration(
   @Value("\${prisoner.search.api.timeout-seconds:90}") private val prisonerSearchApiTimeoutSeconds: Long,
 ) {
 
+  val customMemorySize = 4 * 1024 * 1024
+
   @Bean
   fun prisonerSearchApiWebClient(authorizedClientManager: OAuth2AuthorizedClientManager, builder: WebClient.Builder): WebClient = builder.authorisedWebClient(
     authorizedClientManager = authorizedClientManager,
@@ -41,12 +43,22 @@ class WebClientConfiguration(
   )
 
   @Bean
-  fun prisonApiWebClient(authorizedClientManager: OAuth2AuthorizedClientManager, builder: WebClient.Builder): WebClient = builder.authorisedWebClient(
-    authorizedClientManager = authorizedClientManager,
-    registrationId = "hmpps-api",
-    url = prisonApiUri,
-    timeout = Duration.ofSeconds(prisonApiTimeoutSeconds),
-  )
+  fun prisonApiWebClient(
+    authorizedClientManager: OAuth2AuthorizedClientManager,
+    builder: WebClient.Builder,
+  ): WebClient {
+    val strategies = ExchangeStrategies.builder()
+      .codecs { it.defaultCodecs().maxInMemorySize(customMemorySize) }
+      .build()
+    return builder
+      .exchangeStrategies(strategies)
+      .authorisedWebClient(
+        authorizedClientManager = authorizedClientManager,
+        registrationId = "hmpps-api",
+        url = prisonApiUri,
+        timeout = Duration.ofSeconds(prisonApiTimeoutSeconds),
+      )
+  }
 
   @Bean
   fun calculateReleaseDatesApiWebClient(authorizedClientManager: OAuth2AuthorizedClientManager, builder: WebClient.Builder): WebClient = builder.authorisedWebClient(
@@ -66,9 +78,8 @@ class WebClientConfiguration(
 
   @Bean
   fun adjudicationApiWebClient(authorizedClientManager: OAuth2AuthorizedClientManager, builder: WebClient.Builder): WebClient {
-    val size = 4 * 1024 * 1024
     val strategies = ExchangeStrategies.builder()
-      .codecs { it.defaultCodecs().maxInMemorySize(size) }
+      .codecs { it.defaultCodecs().maxInMemorySize(customMemorySize) }
       .build()
     return builder
       .exchangeStrategies(strategies)
