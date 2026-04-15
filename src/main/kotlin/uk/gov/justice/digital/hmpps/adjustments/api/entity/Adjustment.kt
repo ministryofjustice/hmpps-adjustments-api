@@ -99,7 +99,7 @@ data class Adjustment(
 
 ) {
   init {
-    adjustmentHistory.forEach { it.adjustment = this }
+    adjustmentHistory?.forEach { it.adjustment = this }
     unlawfullyAtLarge?.adjustment = this
     lawfullyAtLarge?.adjustment = this
     specialRemission?.adjustment = this
