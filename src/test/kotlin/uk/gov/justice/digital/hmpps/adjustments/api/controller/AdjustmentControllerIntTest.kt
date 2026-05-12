@@ -940,7 +940,7 @@ class AdjustmentControllerIntTest : SqsIntegrationTestBase() {
       val updatedAdjustment = getAdjustmentById(adjustmentId)
       assertThat(updatedAdjustment)
         .usingRecursiveComparison()
-        .ignoringFieldsMatchingRegexes("lastUpdatedDate", "createDate")
+        .ignoringFieldsMatchingRegexes("lastUpdatedDate", "createdDate")
         .isEqualTo(createdAdjustment.copy(specialRemission = SpecialRemissionDto(type = RELEASE_DATE_CALCULATED_TOO_EARLY)))
     }
 
