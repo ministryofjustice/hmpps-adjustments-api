@@ -753,7 +753,7 @@ class AdjustmentControllerIntTest : SqsIntegrationTestBase() {
       val updatedAdjustment = getAdjustmentById(adjustmentId)
       assertThat(updatedAdjustment)
         .usingRecursiveComparison()
-        .ignoringFieldsMatchingRegexes("lastUpdatedDate", "createDate")
+        .ignoringFields("lastUpdatedDate", "createdDate")
         .isEqualTo(createdAdjustment.copy(effectiveDays = 986, days = 986))
     }
 
