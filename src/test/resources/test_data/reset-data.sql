@@ -1,3 +1,4 @@
+DELETE FROM prospective_ada_rejection;
 DELETE FROM adjudication_charges;
 DELETE FROM additional_days_awarded;
 DELETE FROM unlawfully_at_large;

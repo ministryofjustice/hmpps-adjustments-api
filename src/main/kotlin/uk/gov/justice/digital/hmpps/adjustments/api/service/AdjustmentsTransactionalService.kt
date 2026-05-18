@@ -4,6 +4,8 @@ import com.fasterxml.jackson.databind.JsonNode
 import com.fasterxml.jackson.databind.ObjectMapper
 import io.hypersistence.utils.hibernate.type.json.internal.JacksonUtil
 import jakarta.persistence.EntityNotFoundException
+import org.slf4j.Logger
+import org.slf4j.LoggerFactory
 import org.springframework.security.core.context.SecurityContextHolder
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
@@ -318,6 +320,28 @@ class AdjustmentsTransactionalService(
   ).map { mapToDto(it) }
 
   @Transactional
+  fun unlinkFromRecall(recallId: UUID): List<AdjustmentDto> = adjustmentRepository
+    .findByRecallIdAndAdjustmentTypeAndStatus(recallId, UNLAWFULLY_AT_LARGE, ACTIVE)
+    .map { unlinkFromRecall(it) }
+
+  private fun unlinkFromRecall(adjustment: Adjustment): AdjustmentDto {
+    val linkedRecallId = adjustment.recallId
+    log.info("Unlinking UAL adjustment {} from recall {}", adjustment.id, linkedRecallId)
+    val change = objectToJson(adjustment)
+    adjustment.apply {
+      recallId = null
+      adjustmentHistory += AdjustmentHistory(
+        changeByUsername = getCurrentAuthenticationUsername(),
+        changeType = ChangeType.UPDATE,
+        change = change,
+        changeSource = AdjustmentSource.DPS,
+        adjustment = adjustment,
+      )
+    }
+    return mapToDto(adjustment)
+  }
+
+  @Transactional
   fun update(adjustmentId: UUID, resource: AdjustmentDto) {
     val adjustment = adjustmentRepository.findById(adjustmentId)
       .map { if (it.status.isDeleted()) null else it }
@@ -583,6 +607,8 @@ class AdjustmentsTransactionalService(
   }
 
   companion object {
+    private val log: Logger = LoggerFactory.getLogger(this::class.java)
+
     fun daysBetween(from: LocalDate?, to: LocalDate?): Int? = from?.let { fromDate -> to?.let { toDate -> (ChronoUnit.DAYS.between(fromDate, toDate) + 1).toInt() } }
   }
 }

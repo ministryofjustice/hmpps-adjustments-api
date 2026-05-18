@@ -8,6 +8,7 @@ import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.core.ParameterizedTypeReference
+import org.springframework.http.HttpHeaders
 import org.springframework.http.MediaType
 import org.springframework.test.context.jdbc.Sql
 import org.springframework.test.web.reactive.server.expectBodyList
@@ -1239,6 +1240,35 @@ class AdjustmentControllerIntTest : SqsIntegrationTestBase() {
           ),
         )
     }
+
+    @Test
+    @Sql(
+      "classpath:test_data/reset-data.sql",
+      "classpath:test_data/insert-adjustment-with-recall-id.sql",
+    )
+    fun `Unlink recall-generated UAL from recall`() {
+      val adjustmentId = UUID.fromString("3f8a973b-c16e-46ef-8a02-07ac378d990e")
+      val recallId = UUID.fromString("2ea3ae97-c469-491e-ae93-bdcda9d8ac91")
+      val fromDate = LocalDate.parse("2023-07-27")
+      val toDate = LocalDate.parse("2023-07-29")
+
+      postUnlinkFromRecall(recallId)
+
+      val adjustment = adjustmentRepository.findById(adjustmentId).get()
+      assertThat(adjustment.recallId).isNull()
+      assertThat(adjustment.fromDate).isEqualTo(fromDate)
+      assertThat(adjustment.toDate).isEqualTo(toDate)
+      assertThat(adjustment.effectiveDays).isEqualTo(3)
+      assertThat(adjustment.adjustmentHistory).hasSize(2)
+      assertThat(adjustment.adjustmentHistory.map { it.changeType }).contains(ChangeType.UPDATE)
+
+      assertThat(getAdjustmentsByPerson("BCDEFG", recallId = recallId)).isEmpty()
+
+      awaitAtMost30Secs untilCallTo { getNumberOfMessagesCurrentlyOnQueue() } matches { it == 1 }
+      val latestMessage: String = getLatestMessage()!!.messages()[0].body()
+      assertThat(latestMessage).contains(adjustmentId.toString())
+      assertThat(latestMessage).contains(AdjustmentEventType.ADJUSTMENT_UPDATED.value)
+    }
   }
 
   private fun getAdjustmentsByPerson(
@@ -1314,6 +1344,19 @@ class AdjustmentControllerIntTest : SqsIntegrationTestBase() {
     assertThat(validationMessages.size).isEqualTo(2)
     assertThat(validationMessages[0]).isEqualTo(ValidationMessage(ValidationCode.MORE_RADAS_THAN_ADAS))
     assertThat(validationMessages[1]).isEqualTo(ValidationMessage(ValidationCode.RADA_DATE_CANNOT_BE_FUTURE))
+  }
+
+  private fun postUnlinkFromRecall(
+    recallId: UUID,
+    auth: (HttpHeaders) -> Unit = setRecallsRWAuth(),
+  ) {
+    webTestClient
+      .post()
+      .uri("/adjustments/recall/$recallId/unlink")
+      .headers(auth)
+      .exchange()
+      .expectStatus().isOk
+      .expectBody().isEmpty
   }
 
   private fun putAdjustmentUpdate(

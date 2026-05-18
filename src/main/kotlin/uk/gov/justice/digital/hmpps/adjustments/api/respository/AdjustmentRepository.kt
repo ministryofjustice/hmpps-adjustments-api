@@ -57,4 +57,10 @@ interface AdjustmentRepository : JpaRepository<Adjustment, UUID> {
     statuses: List<AdjustmentStatus>,
     currentPeriodOfCustody: Boolean,
   ): List<Adjustment>
+
+  fun findByRecallIdAndAdjustmentTypeAndStatus(
+    recallId: UUID,
+    adjustmentType: AdjustmentType,
+    status: AdjustmentStatus,
+  ): List<Adjustment>
 }

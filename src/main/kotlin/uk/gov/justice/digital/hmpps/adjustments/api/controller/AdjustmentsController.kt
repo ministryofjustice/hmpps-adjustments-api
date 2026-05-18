@@ -141,6 +141,33 @@ class AdjustmentsController(
     adjustmentsDomainEventService.raiseAdjustmentEvent(updatedEvent.adjustmentEventToEmit)
   }
 
+  @PostMapping("/recall/{recallId}/unlink")
+  @Operation(
+    summary = "Unlink recall-generated UAL from a recall",
+    description = "Sets recallId to null on active UAL adjustments linked to the given recall. UAL dates and values are unchanged.",
+  )
+  @ApiResponses(
+    value = [
+      ApiResponse(responseCode = "200", description = "Adjustments unlinked from recall"),
+      ApiResponse(responseCode = "401", description = "Unauthorised, requires a valid Oauth2 token"),
+    ],
+  )
+  @PreAuthorize("hasAnyRole('ADJUSTMENTS__RECALLS__RW')")
+  fun unlinkFromRecall(
+    @PathVariable @Parameter(required = true, description = "The recall UUID")
+    recallId: UUID,
+  ) {
+    val unlinkedEvent = adjustmentsService.unlinkFromRecall(recallId)
+    unlinkedEvent.adjustmentEventToEmit.ids.forEachIndexed { index, id ->
+      val isLast = index == unlinkedEvent.adjustmentEventToEmit.ids.size - 1
+      val singleEvent = unlinkedEvent.adjustmentEventToEmit.copy(
+        ids = listOf(id),
+        isLast = isLast,
+      )
+      adjustmentsDomainEventService.raiseAdjustmentEvent(singleEvent)
+    }
+  }
+
   @PostMapping("/restore")
   @Operation(
     summary = "Restore a deleted adjustment",
