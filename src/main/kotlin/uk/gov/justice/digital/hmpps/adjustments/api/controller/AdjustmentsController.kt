@@ -152,7 +152,7 @@ class AdjustmentsController(
       ApiResponse(responseCode = "401", description = "Unauthorised, requires a valid Oauth2 token"),
     ],
   )
-  @PreAuthorize("hasAnyRole('ADJUSTMENTS__RECALLS__RW')")
+  @PreAuthorize("hasAnyRole('ADJUSTMENTS__ADJUSTMENTS_RW')")
   fun unlinkFromRecall(
     @PathVariable @Parameter(required = true, description = "The recall UUID")
     recallId: UUID,

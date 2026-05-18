@@ -40,10 +40,6 @@ abstract class IntegrationTestBase {
     user: String = "Test User",
     roles: List<String> = listOf("ROLE_ADJUSTMENTS__ADJUSTMENTS_RO"),
   ): (HttpHeaders) -> Unit = jwtAuthHelper.setAuthorisation(user, roles)
-  internal fun setRecallsRWAuth(
-    user: String = "Test User",
-    roles: List<String> = listOf("ROLE_ADJUSTMENTS__RECALLS__RW"),
-  ): (HttpHeaders) -> Unit = jwtAuthHelper.setAuthorisation(user, roles)
   internal fun setLegacySynchronisationAuth(
     user: String = "Test User",
     roles: List<String> = listOf("ROLE_SENTENCE_ADJUSTMENTS_SYNCHRONISATION"),

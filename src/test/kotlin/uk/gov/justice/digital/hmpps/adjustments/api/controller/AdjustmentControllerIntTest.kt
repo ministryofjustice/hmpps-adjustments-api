@@ -1348,7 +1348,7 @@ class AdjustmentControllerIntTest : SqsIntegrationTestBase() {
 
   private fun postUnlinkFromRecall(
     recallId: UUID,
-    auth: (HttpHeaders) -> Unit = setRecallsRWAuth(),
+    auth: (HttpHeaders) -> Unit = setAdjustmentsRWAuth(),
   ) {
     webTestClient
       .post()
