@@ -5,6 +5,7 @@ import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Service
 import uk.gov.justice.digital.hmpps.adjustments.api.entity.AdjustmentSource
 import uk.gov.justice.digital.hmpps.adjustments.api.entity.AdjustmentStatus
+import uk.gov.justice.digital.hmpps.adjustments.api.entity.AdjustmentType.UNLAWFULLY_AT_LARGE
 import uk.gov.justice.digital.hmpps.adjustments.api.model.AdjustmentDto
 import uk.gov.justice.digital.hmpps.adjustments.api.model.AdjustmentEffectiveDaysDto
 import uk.gov.justice.digital.hmpps.adjustments.api.model.AdjustmentEventMetadata
@@ -83,6 +84,20 @@ class AdjustmentsService(
         adjustment.person,
         AdjustmentSource.DPS,
         adjustment.adjustmentType,
+      ),
+    )
+  }
+
+  fun unlinkFromRecall(recallId: UUID): RecordResponse<Unit> {
+    val unlinked = adjustmentsTransactionalService.unlinkFromRecall(recallId)
+    return RecordResponse(
+      Unit,
+      AdjustmentEventMetadata(
+        AdjustmentEventType.ADJUSTMENT_UPDATED,
+        unlinked.mapNotNull { it.id },
+        unlinked.firstOrNull()?.person ?: "",
+        AdjustmentSource.DPS,
+        UNLAWFULLY_AT_LARGE,
       ),
     )
   }

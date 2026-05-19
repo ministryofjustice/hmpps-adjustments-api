@@ -3,6 +3,7 @@ package uk.gov.justice.digital.hmpps.adjustments.api.controller
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
 import org.springframework.http.MediaType
+import org.springframework.test.context.jdbc.Sql
 import uk.gov.justice.digital.hmpps.adjustments.api.enums.InterceptType
 import uk.gov.justice.digital.hmpps.adjustments.api.integration.SqsIntegrationTestBase
 import uk.gov.justice.digital.hmpps.adjustments.api.model.ProspectiveAdaRejectionDto
@@ -10,6 +11,7 @@ import uk.gov.justice.digital.hmpps.adjustments.api.model.additionaldays.AdaAdju
 import uk.gov.justice.digital.hmpps.adjustments.api.wiremock.PrisonApiExtension
 import java.time.LocalDate
 
+@Sql("classpath:test_data/reset-data.sql")
 class AdaAdjudicationControllerIntTest : SqsIntegrationTestBase() {
 
   @Test
