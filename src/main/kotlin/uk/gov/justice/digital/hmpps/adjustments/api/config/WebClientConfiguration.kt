@@ -3,18 +3,10 @@ package uk.gov.justice.digital.hmpps.adjustments.api.config
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
-import org.springframework.http.HttpHeaders
-import org.springframework.security.oauth2.client.AuthorizedClientServiceOAuth2AuthorizedClientManager
 import org.springframework.security.oauth2.client.OAuth2AuthorizedClientManager
-import org.springframework.security.oauth2.client.OAuth2AuthorizedClientProviderBuilder
-import org.springframework.security.oauth2.client.registration.ClientRegistrationRepository
-import org.springframework.web.reactive.function.client.ClientRequest
-import org.springframework.web.reactive.function.client.ExchangeFilterFunction
-import org.springframework.web.reactive.function.client.ExchangeFunction
 import org.springframework.web.reactive.function.client.ExchangeStrategies
 import org.springframework.web.reactive.function.client.WebClient
 import uk.gov.justice.hmpps.kotlin.auth.authorisedWebClient
-import uk.gov.justice.hmpps.kotlin.auth.service.GlobalPrincipalOAuth2AuthorizedClientService
 import java.time.Duration
 
 @Configuration
@@ -89,26 +81,6 @@ class WebClientConfiguration(
         url = adjudicationsApiUri,
         timeout = Duration.ofSeconds(adjudicationsApiTimeoutSeconds),
       )
-  }
-
-  private fun addAuthHeaderFilterFunction(): ExchangeFilterFunction = ExchangeFilterFunction { request: ClientRequest, next: ExchangeFunction ->
-    val filtered = ClientRequest.from(request)
-      .header(HttpHeaders.AUTHORIZATION, UserContext.getAuthToken())
-      .build()
-    next.exchange(filtered)
-  }
-
-  @Bean
-  fun authorizedClientManager(
-    clientRegistrationRepository: ClientRegistrationRepository,
-  ): OAuth2AuthorizedClientManager {
-    val authorizedClientProvider = OAuth2AuthorizedClientProviderBuilder.builder().clientCredentials().build()
-    val authorizedClientManager = AuthorizedClientServiceOAuth2AuthorizedClientManager(
-      clientRegistrationRepository,
-      GlobalPrincipalOAuth2AuthorizedClientService(clientRegistrationRepository),
-    )
-    authorizedClientManager.setAuthorizedClientProvider(authorizedClientProvider)
-    return authorizedClientManager
   }
 
   @Bean
