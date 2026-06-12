@@ -591,7 +591,7 @@ class AdjustmentControllerIntTest : SqsIntegrationTestBase() {
       )
       val adjustmentId = postCreateAdjustments(listOf(createDto))[0]
 
-      val adjustment = adjustmentRepository.findById(adjustmentId).get()
+      var adjustment = adjustmentRepository.findById(adjustmentId).get()
       assertThat(adjustment.additionalDaysAwarded!!.adjudicationCharges).containsAll(
         listOf(
           AdjudicationCharges(
@@ -601,6 +601,9 @@ class AdjustmentControllerIntTest : SqsIntegrationTestBase() {
         ),
       )
       assertThat(adjustment.additionalDaysAwarded!!.prospective).isTrue
+
+      entityManager.flush()
+      entityManager.clear()
 
       var adjustmentDto = getAdjustmentById(adjustmentId)
       assertThat(adjustmentDto.additionalDaysAwarded).isEqualTo(
@@ -626,10 +629,11 @@ class AdjustmentControllerIntTest : SqsIntegrationTestBase() {
       )
       putAdjustmentUpdate(adjustmentId, updateDto)
 
+      adjustment = adjustmentRepository.findById(adjustmentId).get()
+
       adjustmentDto = getAdjustmentById(adjustmentId)
       assertThat(adjustmentDto.additionalDaysAwarded).isEqualTo(AdditionalDaysAwardedDto(listOf("32415555"), false))
 
-      entityManager.refresh(adjustment)
       assertThat(adjustment.additionalDaysAwarded!!.adjudicationCharges).containsAll(listOf(AdjudicationCharges("32415555")))
       assertThat(adjustment.additionalDaysAwarded!!.prospective).isFalse
     }
