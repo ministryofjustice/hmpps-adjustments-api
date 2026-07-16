@@ -1,6 +1,6 @@
 
 plugins {
-  id("uk.gov.justice.hmpps.gradle-spring-boot") version "10.5.3"
+  id("uk.gov.justice.hmpps.gradle-spring-boot") version "11.0.0-beta2"
   kotlin("plugin.spring") version "2.4.0"
   kotlin("plugin.jpa") version "2.4.0"
   id("se.patrikerdes.use-latest-versions") version "0.2.19"
@@ -13,7 +13,7 @@ configurations {
 dependencies {
   annotationProcessor("org.springframework.boot:spring-boot-configuration-processor")
 
-  implementation("uk.gov.justice.service.hmpps:hmpps-kotlin-spring-boot-starter:2.5.0")
+  implementation("uk.gov.justice.service.hmpps:hmpps-kotlin-spring-boot-starter:3.0.0-beta")
 
   // Spring boot dependencies
   implementation("org.springframework.boot:spring-boot-starter-security")
