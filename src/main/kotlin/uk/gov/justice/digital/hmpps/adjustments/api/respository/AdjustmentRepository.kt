@@ -2,6 +2,7 @@ package uk.gov.justice.digital.hmpps.adjustments.api.respository
 
 import org.springframework.data.jpa.repository.JpaRepository
 import org.springframework.data.jpa.repository.Query
+import org.springframework.data.repository.query.Param
 import org.springframework.stereotype.Repository
 import uk.gov.justice.digital.hmpps.adjustments.api.entity.Adjustment
 import uk.gov.justice.digital.hmpps.adjustments.api.entity.AdjustmentStatus
@@ -63,4 +64,15 @@ interface AdjustmentRepository : JpaRepository<Adjustment, UUID> {
     adjustmentType: AdjustmentType,
     status: AdjustmentStatus,
   ): List<Adjustment>
+
+  // Postgres advisory locks only accept bigint/int keys. Adjustment.id is a UUID, so hash it.
+  @Query(
+    value = """
+      select pg_try_advisory_xact_lock(hashtextextended(cast(a.id as text), 0))
+      from adjustment a
+      where a.id = :adjustmentId
+    """,
+    nativeQuery = true,
+  )
+  fun acquireAdjustmentTransactionLock(@Param("adjustmentId") adjustmentId: UUID)
 }

@@ -1273,6 +1273,28 @@ class AdjustmentControllerIntTest : SqsIntegrationTestBase() {
       assertThat(latestMessage).contains(adjustmentId.toString())
       assertThat(latestMessage).contains(AdjustmentEventType.ADJUSTMENT_UPDATED.value)
     }
+
+    @Test
+    @Sql(
+      "classpath:test_data/reset-data.sql",
+      "classpath:test_data/insert-adjustment-with-recall-id.sql",
+    )
+    fun `Deactivate then unlink leaves adjustment inactive and unlinked`() {
+      val adjustmentId = UUID.fromString("3f8a973b-c16e-46ef-8a02-07ac378d990e")
+      val recallId = UUID.fromString("2ea3ae97-c469-491e-ae93-bdcda9d8ac91")
+
+      val before = adjustmentRepository.findById(adjustmentId).get()
+      assertThat(before.status).isEqualTo(ACTIVE)
+      assertThat(before.recallId).isEqualTo(recallId)
+
+      val legacy = getLegacyAdjustment(adjustmentId)
+      updateLegacyAdjustment(adjustmentId, legacy.copy(active = false))
+      postUnlinkFromRecall(recallId)
+
+      val adjustment = adjustmentRepository.findById(adjustmentId).get()
+      assertThat(adjustment.status).isEqualTo(AdjustmentStatus.INACTIVE)
+      assertThat(adjustment.recallId).isNull()
+    }
   }
 
   private fun getAdjustmentsByPerson(
