@@ -64,6 +64,7 @@ import uk.gov.justice.digital.hmpps.adjustments.api.wiremock.PrisonApiExtension
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
 import java.util.UUID
+import java.util.concurrent.CompletableFuture
 
 class AdjustmentControllerIntTest : SqsIntegrationTestBase() {
 
@@ -1272,6 +1273,45 @@ class AdjustmentControllerIntTest : SqsIntegrationTestBase() {
       val latestMessage: String = getLatestMessage()!!.messages()[0].body()
       assertThat(latestMessage).contains(adjustmentId.toString())
       assertThat(latestMessage).contains(AdjustmentEventType.ADJUSTMENT_UPDATED.value)
+    }
+
+    @Test
+    @Sql(
+      "classpath:test_data/reset-data.sql",
+      "classpath:test_data/insert-adjustment-with-recall-id.sql",
+    )
+    fun `Race condition - concurrent deactivate and unlink leaves adjustment inactive`() {
+      val adjustmentId = UUID.fromString("3f8a973b-c16e-46ef-8a02-07ac378d990e")
+      val recallId = UUID.fromString("2ea3ae97-c469-491e-ae93-bdcda9d8ac91")
+
+      val before = adjustmentRepository.findById(adjustmentId).get()
+      assertThat(before.status).isEqualTo(ACTIVE)
+      assertThat(before.recallId).isEqualTo(recallId)
+
+      val legacy = getLegacyAdjustment(adjustmentId)
+      val deactivateCall = CompletableFuture.supplyAsync {
+        webTestClient
+          .put()
+          .uri("/legacy/adjustments/$adjustmentId")
+          .headers(setLegacySynchronisationAuth())
+          .header("Content-Type", LegacyController.LEGACY_CONTENT_TYPE)
+          .bodyValue(legacy.copy(active = false))
+          .exchange()
+          .expectStatus().isOk
+      }
+      val unlinkCall = CompletableFuture.supplyAsync {
+        webTestClient
+          .post()
+          .uri("/adjustments/recall/$recallId/unlink")
+          .headers(setAdjustmentsRWAuth())
+          .exchange()
+          .expectStatus().isOk
+          .expectBody().isEmpty
+      }
+      deactivateCall.thenCombine(unlinkCall) { a, b -> a to b }.join()
+
+      val adjustment = adjustmentRepository.findById(adjustmentId).get()
+      assertThat(adjustment.status).isEqualTo(AdjustmentStatus.INACTIVE)
     }
   }
 

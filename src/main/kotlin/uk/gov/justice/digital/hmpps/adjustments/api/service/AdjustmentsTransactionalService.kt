@@ -4,10 +4,17 @@ import com.fasterxml.jackson.databind.JsonNode
 import com.fasterxml.jackson.databind.ObjectMapper
 import io.hypersistence.utils.hibernate.type.json.internal.JacksonUtil
 import jakarta.persistence.EntityNotFoundException
+import org.hibernate.exception.LockAcquisitionException
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
+import org.springframework.dao.CannotAcquireLockException
+import org.springframework.orm.ObjectOptimisticLockingFailureException
+import org.springframework.retry.annotation.Retryable
+import org.springframework.retry.support.RetrySynchronizationManager
 import org.springframework.security.core.context.SecurityContextHolder
 import org.springframework.stereotype.Service
+import org.springframework.transaction.annotation.Isolation
+import org.springframework.transaction.annotation.Propagation
 import org.springframework.transaction.annotation.Transactional
 import org.springframework.web.reactive.function.client.WebClientResponseException
 import uk.gov.justice.digital.hmpps.adjustments.api.client.PrisonApiClient
@@ -319,12 +326,21 @@ class AdjustmentsTransactionalService(
     recallId,
   ).map { mapToDto(it) }
 
-  @Transactional
-  fun unlinkFromRecall(recallId: UUID): List<AdjustmentDto> = adjustmentRepository
-    .findByRecallIdAndAdjustmentTypeAndStatus(recallId, UNLAWFULLY_AT_LARGE, ACTIVE)
-    .map { unlinkFromRecall(it) }
+  @Retryable(maxAttempts = 3, retryFor = [ObjectOptimisticLockingFailureException::class, CannotAcquireLockException::class, LockAcquisitionException::class])
+  @Transactional(propagation = Propagation.REQUIRES_NEW, isolation = Isolation.SERIALIZABLE)
+  fun unlinkFromRecall(recallId: UUID): List<AdjustmentDto> {
+    RetrySynchronizationManager.getContext()?.let { retryContext ->
+      if (retryContext.retryCount > 0) {
+        log.info("adjustment unlinkFromRecall retry with context: count = ${retryContext.retryCount}, lastException = ${retryContext.lastThrowable?.javaClass?.name}, exhausted=${retryContext.isExhaustedOnly}")
+      }
+    }
+    return adjustmentRepository
+      .findByRecallIdAndAdjustmentTypeAndStatus(recallId, UNLAWFULLY_AT_LARGE, ACTIVE)
+      .map { unlinkFromRecall(it) }
+  }
 
   private fun unlinkFromRecall(adjustment: Adjustment): AdjustmentDto {
+    adjustmentRepository.acquireAdjustmentTransactionLock(adjustment.id)
     val linkedRecallId = adjustment.recallId
     log.info("Unlinking UAL adjustment {} from recall {}", adjustment.id, linkedRecallId)
     val change = objectToJson(adjustment)

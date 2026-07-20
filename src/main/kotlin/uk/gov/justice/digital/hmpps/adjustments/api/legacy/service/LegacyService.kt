@@ -4,7 +4,16 @@ import com.fasterxml.jackson.databind.JsonNode
 import com.fasterxml.jackson.databind.ObjectMapper
 import io.hypersistence.utils.hibernate.type.json.internal.JacksonUtil
 import jakarta.persistence.EntityNotFoundException
+import org.hibernate.exception.LockAcquisitionException
+import org.slf4j.Logger
+import org.slf4j.LoggerFactory
+import org.springframework.dao.CannotAcquireLockException
+import org.springframework.orm.ObjectOptimisticLockingFailureException
+import org.springframework.retry.annotation.Retryable
+import org.springframework.retry.support.RetrySynchronizationManager
 import org.springframework.stereotype.Service
+import org.springframework.transaction.annotation.Isolation
+import org.springframework.transaction.annotation.Propagation
 import org.springframework.transaction.annotation.Transactional
 import uk.gov.justice.digital.hmpps.adjustments.api.client.PrisonApiClient
 import uk.gov.justice.digital.hmpps.adjustments.api.client.PrisonerSearchApiClient
@@ -103,8 +112,15 @@ class LegacyService(
     )
   }
 
-  @Transactional
+  @Retryable(maxAttempts = 3, retryFor = [ObjectOptimisticLockingFailureException::class, CannotAcquireLockException::class, LockAcquisitionException::class])
+  @Transactional(propagation = Propagation.REQUIRES_NEW, isolation = Isolation.SERIALIZABLE)
   fun update(adjustmentId: UUID, resource: LegacyAdjustment): RecordResponse<LegacyAdjustmentUpdatedResponse> {
+    RetrySynchronizationManager.getContext()?.let { retryContext ->
+      if (retryContext.retryCount > 0) {
+        log.info("adjustment update retry with context: count = ${retryContext.retryCount}, lastException = ${retryContext.lastThrowable?.javaClass?.name}, exhausted=${retryContext.isExhaustedOnly}")
+      }
+    }
+    adjustmentRepository.acquireAdjustmentTransactionLock(adjustmentId)
     val adjustment = adjustmentRepository.findById(adjustmentId)
       .map { if (it.status.isDeleted()) null else it }
       .orElseThrow {
@@ -279,5 +295,9 @@ class LegacyService(
         )
       }
     }
+  }
+
+  companion object {
+    private val log: Logger = LoggerFactory.getLogger(LegacyService::class.java)
   }
 }
