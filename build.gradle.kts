@@ -1,6 +1,6 @@
 
 plugins {
-  id("uk.gov.justice.hmpps.gradle-spring-boot") version "11.0.1"
+  id("uk.gov.justice.hmpps.gradle-spring-boot") version "11.0.5"
   kotlin("plugin.spring") version "2.4.10"
   kotlin("plugin.jpa") version "2.4.10"
   id("se.patrikerdes.use-latest-versions") version "0.2.19"
@@ -40,7 +40,7 @@ dependencies {
   runtimeOnly("org.postgresql:postgresql:42.7.13")
 
   // OpenAPI
-  implementation("org.springdoc:springdoc-openapi-starter-webmvc-ui:3.0.3")
+  implementation("org.springdoc:springdoc-openapi-starter-webmvc-ui:3.1.0")
 
   // Test dependencies
   testImplementation("org.awaitility:awaitility-kotlin")
