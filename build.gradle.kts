@@ -1,6 +1,6 @@
 
 plugins {
-  id("uk.gov.justice.hmpps.gradle-spring-boot") version "11.0.6"
+  id("uk.gov.justice.hmpps.gradle-spring-boot") version "11.0.7"
   kotlin("plugin.spring") version "2.4.10"
   kotlin("plugin.jpa") version "2.4.10"
   id("se.patrikerdes.use-latest-versions") version "0.2.19"
@@ -13,7 +13,7 @@ configurations {
 dependencies {
   annotationProcessor("org.springframework.boot:spring-boot-configuration-processor")
 
-  implementation("uk.gov.justice.service.hmpps:hmpps-kotlin-spring-boot-starter:3.0.0")
+  implementation("uk.gov.justice.service.hmpps:hmpps-kotlin-spring-boot-starter:3.0.1")
 
   // Spring boot dependencies
   implementation("org.springframework.boot:spring-boot-starter-security")
@@ -25,14 +25,14 @@ dependencies {
   implementation("org.springframework.boot:spring-boot-starter-webclient")
   implementation("org.springframework.boot:spring-boot-starter-flyway")
 
-  implementation("io.hypersistence:hypersistence-utils-hibernate-71:3.15.4")
+  implementation("io.hypersistence:hypersistence-utils-hibernate-71:3.15.5")
 
   // Enable kotlin reflect
   implementation("org.jetbrains.kotlin:kotlin-reflect:2.4.10")
 
-  implementation("uk.gov.justice.service.hmpps:hmpps-sqs-spring-boot-starter:7.4.0")
+  implementation("uk.gov.justice.service.hmpps:hmpps-sqs-spring-boot-starter:7.4.1")
 
-  implementation("org.springframework:spring-jms:7.0.8")
+  implementation("org.springframework:spring-jms:7.0.9")
 
   // Database dependencies
   runtimeOnly("org.flywaydb:flyway-core")
@@ -52,9 +52,9 @@ dependencies {
   testImplementation("org.awaitility:awaitility-kotlin:4.3.0")
   testImplementation("io.jsonwebtoken:jjwt:0.13.0")
   testImplementation("net.javacrumbs.json-unit:json-unit-assertj:5.1.2")
-  testImplementation("io.swagger.parser.v3:swagger-parser-v2-converter:2.1.45")
+  testImplementation("io.swagger.parser.v3:swagger-parser-v2-converter:2.1.48")
   testImplementation("org.mockito:mockito-inline:5.2.0")
-  testImplementation("org.junit.jupiter:junit-jupiter:6.1.2")
+  testImplementation("org.junit.jupiter:junit-jupiter:6.1.3")
   testImplementation("org.testcontainers:localstack:1.21.4")
   testImplementation("org.testcontainers:postgresql:1.21.4")
 }
