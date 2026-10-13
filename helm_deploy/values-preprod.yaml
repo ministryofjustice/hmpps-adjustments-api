@@ -37,7 +37,7 @@ generic-prometheus-alerts:
     - "farsight-devs-preprod-hmpps_unused_deductions_dlq"
   sqsAlertsOldestThreshold: 2
   sqsAlertsTotalMessagesThreshold: 1
-  alertSeverity: legacy-replacement-alerts-non-prod
+  alertSeverityOverride: legacy-replacement-alerts-non-prod
 
 generic-data-analytics-extractor:
   enabled: false

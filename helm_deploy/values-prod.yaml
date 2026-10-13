@@ -38,7 +38,7 @@ generic-prometheus-alerts:
     - "farsight-devs-prod-hmpps_unused_deductions_dlq"
   sqsAlertsOldestThreshold: 2
   sqsAlertsTotalMessagesThreshold: 1
-  alertSeverity: legacy-replacement-alerts
+  alertSeverityOverride: legacy-replacement-alerts
 
 generic-data-analytics-extractor:
   serviceAccountName: hmpps-adjustments-prod-to-ap-s3
