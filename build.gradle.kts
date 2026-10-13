@@ -1,8 +1,8 @@
 
 plugins {
-  id("uk.gov.justice.hmpps.gradle-spring-boot") version "11.0.11"
-  kotlin("plugin.spring") version "2.4.20"
-  kotlin("plugin.jpa") version "2.4.20"
+  id("uk.gov.justice.hmpps.gradle-spring-boot") version "11.0.12"
+  kotlin("plugin.spring") version "2.4.21"
+  kotlin("plugin.jpa") version "2.4.21"
   id("se.patrikerdes.use-latest-versions") version "0.2.19"
 }
 
@@ -28,7 +28,7 @@ dependencies {
   implementation("io.hypersistence:hypersistence-utils-hibernate-71:3.16.0")
 
   // Enable kotlin reflect
-  implementation("org.jetbrains.kotlin:kotlin-reflect:2.4.20")
+  implementation("org.jetbrains.kotlin:kotlin-reflect:2.4.21")
 
   implementation("uk.gov.justice.service.hmpps:hmpps-sqs-spring-boot-starter:7.4.1")
 
@@ -37,7 +37,7 @@ dependencies {
   // Database dependencies
   runtimeOnly("org.flywaydb:flyway-core")
   runtimeOnly("org.flywaydb:flyway-database-postgresql")
-  runtimeOnly("org.postgresql:postgresql:42.7.13")
+  runtimeOnly("org.postgresql:postgresql:42.7.14")
 
   // OpenAPI
   implementation("org.springdoc:springdoc-openapi-starter-webmvc-ui:3.1.1")
@@ -51,7 +51,7 @@ dependencies {
   testImplementation("org.springframework.boot:spring-boot-webtestclient")
   testImplementation("org.awaitility:awaitility-kotlin:4.3.0")
   testImplementation("io.jsonwebtoken:jjwt:0.13.0")
-  testImplementation("net.javacrumbs.json-unit:json-unit-assertj:6.2.0")
+  testImplementation("net.javacrumbs.json-unit:json-unit-assertj:6.3.0")
   testImplementation("io.swagger.parser.v3:swagger-parser-v2-converter:2.1.48")
   testImplementation("org.mockito:mockito-inline:5.2.0")
   testImplementation("org.junit.jupiter:junit-jupiter:6.1.3")
