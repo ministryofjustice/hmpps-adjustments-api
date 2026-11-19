@@ -32,6 +32,8 @@ generic-service:
     HMPPS_SQS_USE_WEB_TOKEN: "true"
     DISPLAY_POTENTIAL_ADAS_FEATURE_TOGGLE: "true"
     CHECK_FOR_PREVIOUS_PERIODS_OF_UAL_FEATURE_TOGGLE: "true"
+    # Remove below after Java4Shell is resolved
+    JAVA_TOOL_OPTIONS: "-XX:+ExitOnOutOfMemoryError -XX:MaxRAMPercentage=50.0 -XX:-UseBASE64Intrinsics"
 
   # Pre-existing kubernetes secrets to load as environment variables in the deployment.
   # namespace_secrets:
