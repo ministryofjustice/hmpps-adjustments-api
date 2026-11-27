@@ -49,7 +49,7 @@ dependencies {
   testImplementation("org.springframework.boot:spring-boot-starter-webmvc-test")
   testImplementation("org.springframework.boot:spring-boot-starter-security-test")
   testImplementation("org.springframework.boot:spring-boot-webtestclient")
-  testImplementation("org.awaitility:awaitility-kotlin:4.3.0")
+  testImplementation("org.awaitility:awaitility-kotlin:4.4.0")
   testImplementation("io.jsonwebtoken:jjwt:0.13.0")
   testImplementation("net.javacrumbs.json-unit:json-unit-assertj:6.4.1")
   testImplementation("io.swagger.parser.v3:swagger-parser-v2-converter:2.1.49")
